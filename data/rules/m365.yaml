@@ -1,0 +1,75 @@
+# M365 / Entra savings-rule skeletons. See docs/plan.md §6.
+
+- id: M365.UNUSED_LICENSE_30D
+  surface: m365
+  severity: high
+  summary: Assigned SKU shows no service-plan activity in 30 days.
+  recommendation_template: >
+    Remove the {current_sku} assignment from {principal} or step down
+    to a lower-cost SKU. No covered service has recorded activity in
+    the last 30 days.
+  inactivity_days: 30
+
+- id: M365.OVER_LICENSED_VS_PERSONA
+  surface: m365
+  severity: medium
+  summary: Assigned SKU exceeds the features required by the user's persona.
+  recommendation_template: >
+    {principal} is classified as persona '{persona}'. Their current
+    SKU {current_sku} provides features beyond what this persona
+    requires. Consider {recommended_sku}.
+
+- id: M365.DUPLICATE_BUNDLE
+  surface: m365
+  severity: medium
+  summary: User holds both a bundle SKU and a child SKU it already includes.
+  recommendation_template: >
+    {principal} has {current_sku} which already includes the
+    capabilities of the additionally-assigned {duplicate_sku}.
+    Remove {duplicate_sku}.
+
+- id: M365.DISABLED_USER_LICENSED
+  surface: m365
+  severity: high
+  summary: Disabled account still carries paid licenses.
+  recommendation_template: >
+    {principal} (accountEnabled = false) still has {current_sku}
+    assigned. Reclaim the license.
+
+- id: M365.SHARED_MAILBOX_LICENSED
+  surface: m365
+  severity: medium
+  summary: Shared mailbox under 50 GB has a paid user license.
+  recommendation_template: >
+    Shared mailbox {principal} ({mailbox_size_gb} GB) does not need a
+    paid Exchange license below the 50 GB threshold. Remove
+    {current_sku}.
+
+- id: M365.GUEST_PREMIUM_LICENSED
+  surface: m365
+  severity: medium
+  summary: Entra B2B guest carries an interactive M365 license.
+  recommendation_template: >
+    Guest user {principal} has {current_sku} assigned. Guests should
+    rely on the host tenant's resources; remove the assignment unless
+    explicitly justified.
+
+- id: M365.COPILOT_INACTIVE_60D
+  surface: m365
+  severity: high
+  summary: Copilot for M365 add-on with no Copilot activity in 60 days.
+  recommendation_template: >
+    {principal} has Copilot for M365 assigned but no Copilot
+    interactions in the last 60 days. Reassign the seat.
+  inactivity_days: 60
+
+- id: M365.E5_FEATURES_UNUSED
+  surface: m365
+  severity: medium
+  summary: E5 user shows no Defender / Purview / Entra-P2 signal in 90 days.
+  recommendation_template: >
+    {principal} is on E5 but none of the E5-exclusive capabilities
+    (Defender for O365 P2, Purview DLP/IP, Entra P2 risk policies)
+    have been exercised in 90 days. Consider stepping down to E3 plus
+    targeted add-ons.
+  inactivity_days: 90

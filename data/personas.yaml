@@ -1,0 +1,72 @@
+# Persona model — see docs/plan.md §5.
+# Each persona declares the *minimum* feature tags required.
+# A user is "right-sized" if their assigned SKUs cover these features
+# with no strictly cheaper alternative.
+
+- id: service_account
+  display_name: Service / non-human account
+  description: Excluded from licensing recommendations.
+  required_features: []
+  title_patterns:
+    - "(?i)^svc[-_]"
+    - "(?i)service account"
+
+- id: frontline_kiosk
+  display_name: Frontline kiosk worker
+  description: Shared device, schedule + comms only, no email at desk.
+  required_features:
+    - teams.basic
+  title_patterns:
+    - "(?i)kiosk"
+    - "(?i)shared station"
+
+- id: frontline_worker
+  display_name: Frontline worker
+  description: Deskless, mobile-first, light productivity.
+  required_features:
+    - mailbox.2gb
+    - office.web
+    - teams.basic
+    - intune.mam
+  title_patterns:
+    - "(?i)retail|warehouse|technician|driver|nurse|operator"
+
+- id: information_worker
+  display_name: Information worker
+  description: Full productivity suite, desktop apps, large mailbox.
+  required_features:
+    - mailbox.50gb
+    - office.desktop
+    - teams.full
+    - sharepoint.full
+  title_patterns:
+    - "(?i)analyst|manager|coordinator|specialist|consultant"
+
+- id: power_user_secure
+  display_name: Power / regulated user
+  description: Information worker + advanced security & compliance.
+  required_features:
+    - mailbox.100gb
+    - office.desktop
+    - teams.full
+    - entra.p2
+    - defender.o365.p2
+    - purview.dlp
+  title_patterns:
+    - "(?i)executive|legal|compliance|finance lead|ciso|cfo|ceo"
+
+- id: developer
+  display_name: Developer / engineer
+  description: Information worker + GitHub + dev tooling.
+  required_features:
+    - mailbox.50gb
+    - office.web
+    - teams.full
+    - github.enterprise
+  title_patterns:
+    - "(?i)developer|engineer|sre|devops|programmer"
+
+- id: guest
+  display_name: External guest (B2B)
+  description: Should not carry an interactive license unless explicitly justified.
+  required_features: []

@@ -1,0 +1,123 @@
+# Standalone Exchange / SharePoint / Teams / Power Platform SKUs.
+
+- id: EXCHANGESTANDARD
+  display_name: Exchange Online (Plan 1)
+  family: exchange
+  cloud: m365
+  list_price_usd_month: 4.00
+  source_url: https://m365maps.com/
+  features:
+    - mailbox.50gb
+
+- id: EXCHANGEENTERPRISE
+  display_name: Exchange Online (Plan 2)
+  family: exchange
+  cloud: m365
+  list_price_usd_month: 8.00
+  source_url: https://m365maps.com/
+  features:
+    - mailbox.100gb
+  successor_of: [EXCHANGESTANDARD]
+
+- id: SHAREPOINTSTANDARD
+  display_name: SharePoint Online (Plan 1)
+  family: sharepoint
+  cloud: m365
+  list_price_usd_month: 5.00
+  source_url: https://m365maps.com/
+  features:
+    - sharepoint.full
+
+- id: SHAREPOINTENTERPRISE
+  display_name: SharePoint Online (Plan 2)
+  family: sharepoint
+  cloud: m365
+  list_price_usd_month: 10.00
+  source_url: https://m365maps.com/
+  features:
+    - sharepoint.full
+    - sharepoint.advanced
+  successor_of: [SHAREPOINTSTANDARD]
+
+- id: TEAMS_ESSENTIALS
+  display_name: Microsoft Teams Essentials
+  family: teams
+  cloud: m365
+  list_price_usd_month: 4.00
+  source_url: https://m365maps.com/
+  features:
+    - teams.basic
+
+- id: TEAMS_PHONE_STANDARD
+  display_name: Microsoft Teams Phone Standard
+  family: teams
+  cloud: m365
+  list_price_usd_month: 8.00
+  source_url: https://m365maps.com/
+  features:
+    - teams.phone
+
+- id: TEAMS_PREMIUM
+  display_name: Microsoft Teams Premium
+  family: teams
+  cloud: m365
+  list_price_usd_month: 10.00
+  source_url: https://m365maps.com/
+  features:
+    - teams.premium
+
+- id: POWER_BI_PRO
+  display_name: Power BI Pro
+  family: power_platform
+  cloud: m365
+  list_price_usd_month: 14.00
+  source_url: https://m365maps.com/
+  features:
+    - powerbi.pro
+
+- id: POWER_BI_PREMIUM_PER_USER
+  display_name: Power BI Premium Per User
+  family: power_platform
+  cloud: m365
+  list_price_usd_month: 24.00
+  source_url: https://m365maps.com/
+  features:
+    - powerbi.pro
+    - powerbi.premium
+  successor_of: [POWER_BI_PRO]
+
+- id: POWERAPPS_PER_USER
+  display_name: Power Apps Premium (per user)
+  family: power_platform
+  cloud: m365
+  list_price_usd_month: 20.00
+  source_url: https://m365maps.com/
+  features:
+    - powerapps.premium
+
+- id: FLOW_PER_USER
+  display_name: Power Automate Premium (per user)
+  family: power_platform
+  cloud: m365
+  list_price_usd_month: 15.00
+  source_url: https://m365maps.com/
+  features:
+    - powerautomate.premium
+
+- id: PROJECT_P3
+  display_name: Project Plan 3
+  family: project
+  cloud: m365
+  list_price_usd_month: 30.00
+  source_url: https://m365maps.com/
+  features:
+    - project.plan3
+
+- id: VISIOCLIENT
+  display_name: Visio Plan 2
+  family: visio
+  cloud: m365
+  list_price_usd_month: 15.00
+  source_url: https://m365maps.com/
+  features:
+    - visio.plan2
