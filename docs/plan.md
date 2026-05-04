@@ -281,3 +281,36 @@ is source-agnostic.
 3. How to handle **per-user Copilot for M365** vs **GitHub Copilot** vs
    **Copilot Studio** in the same report without confusing the reader?
    *Group under a single "Copilot" report section with sub-tables.*
+
+---
+
+## 11. Per-step delivery process (multi-agent)
+
+Every milestone (and any non-trivial sub-task within one) is delivered
+through a fixed five-stage loop. Each stage is owned by a dedicated
+sub-agent — invoked via the Copilot CLI's `task` tool with the
+`agent_type` shown — so the work is parallelisable, reviewable, and
+auditable. **No code change skips stages 1–4.**
+
+| # | Stage | Agent | Output |
+|---|-------|-------|--------|
+| 1 | **Research** | `explore` (Haiku, parallel-safe) | A short brief: relevant API surfaces, SKU IDs, prior-art links, public docs, identified unknowns. Read-only — no code edits. |
+| 2 | **Rubberduck** | `general-purpose` (Sonnet) | Plain-English walkthrough of the proposed approach against the brief: what could go wrong, edge cases, false-positive risks, security implications, alternative designs considered. |
+| 3 | **Plan** | `general-purpose` (Sonnet) | Concrete checklist of file-level changes (paths, schemas, rule IDs), tests to add, and acceptance criteria — small enough to fit in one PR. Posted into the issue/PR before any edits. |
+| 4 | **Consensus** | Human reviewer + `general-purpose` adversarial pass | Reviewer signs off on the plan; an adversarial agent run challenges the plan ("steelman the case against shipping this"). Disagreements are resolved by amending the plan, not by overriding it silently. |
+| 5 | **Implement** | `general-purpose` (Sonnet) or `task` (Haiku, for narrow mechanical edits) | The actual code/data/doc changes, plus tests, plus a `parallel_validation` (code review + CodeQL) gate before opening the PR. |
+
+Stages 1–3 produce **artefacts that live in the PR description or in
+`docs/decisions/`** so future contributors can reconstruct *why* a
+choice was made, not just *what* changed. Stage 4 must reach explicit
+agreement; "no objections raised within X" does not count as consensus
+for security-relevant or schema-changing work.
+
+When an agent fails or hits a dead-end, the next agent must restate
+the brief from stage 1 in its own words before proceeding — this
+catches misunderstandings early and prevents single-agent tunnel
+vision. Agents are stateless across invocations; the PR is the shared
+memory.
+
+This process is mirrored in `.github/copilot-instructions.md` so that
+Copilot-assisted work picks it up automatically.

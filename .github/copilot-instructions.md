@@ -40,10 +40,15 @@ evidence — it never mutates the systems it inspects.
 ## Tech stack & conventions
 
 - **Language: Python ≥ 3.11.** Cross-platform (Linux/macOS/Windows),
-  rich SDK coverage for Graph/Azure/GitHub, and the same engine can
-  run locally, in CI, and in containers. Do not introduce a second
-  runtime (PowerShell, Node, Go) unless `docs/plan.md` is updated to
-  justify it.
+  rich SDK coverage for Graph/Azure/GitHub/ADO, and the same engine can
+  run locally, in CI, and in containers. CI exercises every push on
+  the full `{ubuntu-latest, windows-latest, macos-latest} × {3.11,
+  3.12}` matrix — **never introduce OS-specific code paths, paths
+  built with `os.sep`/`\\`, or shell-only invocations that wouldn't
+  work in `cmd.exe` and `pwsh` and `bash`**. Use `pathlib.Path`,
+  `subprocess` with a list-form `args`, and `importlib.resources` for
+  bundled data. Do not introduce a second runtime (PowerShell, Node,
+  Go) unless `docs/plan.md` is updated to justify it.
 - **Type-checked**: `mypy --strict` over `src/`. New code must pass.
 - **Linted/formatted**: `ruff check` and `ruff format` (line length
   100, target `py311`). New code must pass both.
@@ -129,3 +134,38 @@ CI runs the same gates on Python 3.11 and 3.12. Don't merge red.
 - Docstrings on every public symbol; one-line summary + optional body.
 - No `print()` in library code — use `click.echo` in CLI, `logging`
   elsewhere.
+
+## Per-step delivery process (multi-agent)
+
+Every milestone — and every non-trivial sub-task within one — is
+delivered through the five-stage loop documented in `docs/plan.md`
+§11. Copilot agents working on this repo **must** follow it:
+
+1. **Research** (`explore` agent, parallel-safe). Produce a short
+   brief: relevant API surfaces, SKU IDs, prior-art links, public
+   docs, identified unknowns. Read-only — no edits.
+2. **Rubberduck** (`general-purpose`). Plain-English walkthrough of
+   the proposed approach against the brief: what could go wrong, edge
+   cases, false-positive risks, security implications, alternatives
+   considered.
+3. **Plan**. Concrete checklist of file-level changes (paths, schemas,
+   rule IDs), tests to add, and acceptance criteria — small enough to
+   fit in one PR. Posted into the PR description **before** any edits.
+4. **Consensus**. Human reviewer signs off on the plan; an adversarial
+   `general-purpose` pass steelmans the case against shipping it.
+   Disagreements are resolved by amending the plan, not by silently
+   overriding it. "No objections within X" never counts as consensus
+   for security-relevant or schema-changing work.
+5. **Implement** (`general-purpose`, or `task` for narrow mechanical
+   edits). Code/data/doc changes + tests + a `parallel_validation`
+   gate (code review + CodeQL) before opening the PR.
+
+Stages 1–3 produce artefacts that live in the PR description (or in
+`docs/decisions/` for cross-PR decisions) so future contributors can
+reconstruct *why* a choice was made, not just *what* changed.
+
+When an agent fails or hits a dead end, the next agent must restate
+the brief from stage 1 in its own words before proceeding — this
+catches misunderstandings early and prevents single-agent tunnel
+vision. Agents are stateless across invocations; the PR is the shared
+memory.

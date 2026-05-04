@@ -11,10 +11,12 @@ permissions:
 
 jobs:
   lint-and-test:
-    name: Lint, type-check, test
-    runs-on: ubuntu-latest
+    name: Lint, type-check, test (${{ matrix.os }} / py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.11", "3.12"]
     steps:
       - name: Checkout
@@ -41,6 +43,9 @@ jobs:
 
       - name: Pytest
         run: pytest --cov=finops_assess --cov-report=term-missing
+
+      - name: Smoke-test CLI (cross-platform)
+        run: finops-assess validate
 
   catalog-validation:
     name: Validate YAML catalog & rules

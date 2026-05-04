@@ -39,9 +39,38 @@ tests/                    # pytest loader + CLI smoke tests
 
 ## Quick start
 
-```bash
-python -m pip install -e ".[dev]"
+The tool is a single Python package and a single CLI (`finops-assess`).
+It runs identically on **Windows**, **macOS**, **Linux**, and inside
+**GitHub Actions** / Azure DevOps Pipelines / any container — there is
+no OS-specific code path. CI exercises every push on the full
+`{ubuntu-latest, windows-latest, macos-latest} × {3.11, 3.12}` matrix
+to keep it that way.
 
+### Install (any OS)
+
+You only need Python ≥ 3.11. Pick the one-liner for your shell:
+
+```bash
+# Linux / macOS (bash, zsh)
+python3 -m venv .venv && source .venv/bin/activate
+python -m pip install -e ".[dev]"
+```
+
+```powershell
+# Windows (PowerShell 5.1 or 7+)
+py -3.11 -m venv .venv; .\.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
+```
+
+```bat
+:: Windows (cmd.exe)
+py -3.11 -m venv .venv && .venv\Scripts\activate.bat
+python -m pip install -e ".[dev]"
+```
+
+### Run
+
+```bash
 # Validate the bundled catalogue, personas, and rules.
 finops-assess validate
 # or, equivalently:
@@ -51,6 +80,26 @@ python -m finops_assess.rules   validate
 # Run the test suite.
 pytest
 ```
+
+### Run inside a GitHub Actions workflow
+
+Drop this into any repo's `.github/workflows/finops.yml`:
+
+```yaml
+jobs:
+  finops-assess:
+    runs-on: ubuntu-latest   # also valid: windows-latest, macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -e ".[dev]"
+      - run: finops-assess validate
+```
+
+For Azure DevOps Pipelines the equivalent is `UsePythonVersion@0`
+followed by the same two `pip install` / `finops-assess` steps — no
+extra agent capabilities required.
 
 The collectors and rule engine arrive in M2; today's scaffold
 exercises the data model and validation pipeline end-to-end.
