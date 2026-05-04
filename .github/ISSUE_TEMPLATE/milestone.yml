@@ -1,0 +1,62 @@
+name: 🛠 Roadmap milestone
+description: Open a milestone issue (M1–M7) for the squad to pick up via the §11 five-stage loop.
+title: "[Mx] <milestone short title>"
+labels: ["squad", "milestone:Mx"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Opening this issue puts a milestone on the squad's inbox. The
+        Lead (Maya) will triage it within one working day: assign one
+        `squad:{member}` label, confirm the `milestone:Mx` label, and
+        post a 🟢/🟡/🔴 fit comment for `@copilot`.
+
+        See `docs/plan.md` §2 for the milestone definitions and §11
+        for the five-stage delivery loop.
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Milestone
+      options:
+        - "M1 — License catalogue (~50 SKUs)"
+        - "M2 — CSV collector + persona engine + core savings rules"
+        - "M3 — HTML/JSON report + demo workflow + PowerShell wrapper"
+        - "M4 — Microsoft Graph live collector (OIDC)"
+        - "M5 — Azure Cost Management collector"
+        - "M6 — GitHub + Azure DevOps collectors"
+        - "M7 — PDF executive report"
+    validations:
+      required: true
+  - type: textarea
+    id: brief
+    attributes:
+      label: Stage 1 — Research brief (start here)
+      description: Relevant API surfaces, SKU IDs, prior-art links, public docs, identified unknowns. Filled in by the `explore` agent / surface specialist.
+      placeholder: |
+        - APIs: ...
+        - SKU IDs touched: ...
+        - Public docs: ...
+        - Unknowns: ...
+    validations:
+      required: false
+  - type: textarea
+    id: ac
+    attributes:
+      label: Acceptance criteria (exit criteria from `docs/plan.md` §2)
+      placeholder: |
+        - [ ] ...
+        - [ ] CI green on `{ubuntu, windows, macos} × {3.11, 3.12}`
+        - [ ] `finops-assess validate` smoke step passes
+    validations:
+      required: true
+  - type: checkboxes
+    id: gates
+    attributes:
+      label: §11 stage gates
+      description: Tick as each stage completes. PR must not merge with any unticked.
+      options:
+        - label: Stage 1 — Research brief posted
+        - label: Stage 2 — Rubberduck pass posted
+        - label: Stage 3 — Plan checklist signed off
+        - label: Stage 4 — Consensus + adversarial pass (Noor)
+        - label: Stage 5 — Implementation PR with tests + `parallel_validation`

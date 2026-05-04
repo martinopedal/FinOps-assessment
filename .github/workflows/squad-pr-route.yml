@@ -1,0 +1,101 @@
+name: Squad PR Route
+
+# Mirrors squad-issue-assign.yml for pull requests.
+# When a `squad:{member}` label is applied to a PR, post a routing
+# acknowledgment comment so the named member (or @copilot) knows to
+# pick the review/work up. Issues are handled by squad-issue-assign.yml.
+#
+# This file is repo-local (not shipped by `squad init`) so the squad
+# CLI's upgrade path won't overwrite it.
+
+on:
+  pull_request_target:
+    types: [labeled]
+
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
+
+jobs:
+  route-pr:
+    if: startsWith(github.event.label.name, 'squad:')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Identify assigned member and acknowledge on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const pr = context.payload.pull_request;
+            const label = context.payload.label.name;
+            const memberName = label.replace('squad:', '').toLowerCase();
+
+            let teamFile = '.squad/team.md';
+            if (!fs.existsSync(teamFile)) {
+              teamFile = '.ai-team/team.md';
+            }
+            if (!fs.existsSync(teamFile)) {
+              core.warning('No .squad/team.md or .ai-team/team.md found — cannot route PR');
+              return;
+            }
+
+            const isCopilot = memberName === 'copilot';
+            let assignedMember = isCopilot
+              ? { name: '@copilot', role: 'Coding Agent' }
+              : null;
+
+            if (!isCopilot) {
+              const lines = fs.readFileSync(teamFile, 'utf8').split('\n');
+              let inMembers = false;
+              for (const line of lines) {
+                if (line.match(/^##\s+(Members|Team Roster)/i)) { inMembers = true; continue; }
+                if (inMembers && line.startsWith('## ')) break;
+                if (inMembers && line.startsWith('|') && !line.includes('---') && !line.includes('Name')) {
+                  const cells = line.split('|').map(c => c.trim()).filter(Boolean);
+                  if (cells.length >= 2 && cells[0].toLowerCase() === memberName) {
+                    assignedMember = { name: cells[0], role: cells[1] };
+                    break;
+                  }
+                }
+              }
+            }
+
+            if (!assignedMember) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: `⚠️ No squad member found matching label \`${label}\`. Check \`.squad/team.md\` for valid member names.`
+              });
+              return;
+            }
+
+            const body = isCopilot
+              ? [
+                  `### 🤖 PR routed to @copilot (Coding Agent)`,
+                  '',
+                  `**PR:** #${pr.number} — ${pr.title}`,
+                  '',
+                  `@copilot will pick this PR up — review or follow-up changes per the issue brief.`,
+                  '',
+                  `> See \`.squad/routing.md\` and the §11 stage gates in \`docs/plan.md\`.`,
+                ].join('\n')
+              : [
+                  `### 👋 PR routed to **${assignedMember.name}** (${assignedMember.role})`,
+                  '',
+                  `**PR:** #${pr.number} — ${pr.title}`,
+                  '',
+                  `${assignedMember.name} owns this review per \`.squad/routing.md\`.`,
+                  '',
+                  `> Charter: \`.squad/agents/${memberName}/charter.md\``,
+                ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body,
+            });

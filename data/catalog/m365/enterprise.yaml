@@ -1,0 +1,162 @@
+# Microsoft 365 Enterprise SKUs.
+# Seeded from publicly documented service-plan IDs and the M365 Maps
+# taxonomy (https://m365maps.com/). Prices are list USD/user/month and
+# may lag retail; prefer the catalog loader's `list_price_usd_month: null`
+# over a stale value when in doubt.
+
+- id: SPE_E1
+  display_name: Microsoft 365 E1
+  family: m365_enterprise
+  cloud: m365
+  list_price_usd_month: 12.50
+  source_url: https://m365maps.com/
+  includes:
+    - EXCHANGE_S_STANDARD
+    - SHAREPOINTSTANDARD
+    - TEAMS1
+    - YAMMER_ENTERPRISE
+  features:
+    - mailbox.50gb
+    - office.web
+    - teams.full
+    - sharepoint.full
+
+- id: SPE_E3
+  display_name: Microsoft 365 E3
+  family: m365_enterprise
+  cloud: m365
+  list_price_usd_month: 36.00
+  source_url: https://m365maps.com/
+  includes:
+    - EXCHANGE_S_ENTERPRISE
+    - SHAREPOINTENTERPRISE
+    - TEAMS1
+    - OFFICESUBSCRIPTION
+    - INTUNE_A
+    - AAD_PREMIUM
+  features:
+    - mailbox.100gb
+    - office.desktop
+    - teams.full
+    - sharepoint.full
+    - intune.mdm
+    - intune.mam
+    - entra.p1
+  successor_of: [SPE_E1]
+
+- id: SPE_E5
+  display_name: Microsoft 365 E5
+  family: m365_enterprise
+  cloud: m365
+  list_price_usd_month: 57.00
+  source_url: https://m365maps.com/
+  includes:
+    - EXCHANGE_S_ENTERPRISE
+    - SHAREPOINTENTERPRISE
+    - TEAMS1
+    - OFFICESUBSCRIPTION
+    - INTUNE_A
+    - AAD_PREMIUM_P2
+    - THREAT_INTELLIGENCE
+    - INFORMATION_BARRIERS
+    - PURVIEW_DLP
+  features:
+    - mailbox.100gb
+    - office.desktop
+    - teams.full
+    - sharepoint.full
+    - intune.mdm
+    - intune.mam
+    - entra.p2
+    - defender.o365.p2
+    - purview.dlp
+    - purview.records
+  successor_of: [SPE_E3]
+
+- id: SPE_F1
+  display_name: Microsoft 365 F1
+  family: m365_frontline
+  cloud: m365
+  list_price_usd_month: 2.25
+  source_url: https://m365maps.com/
+  features:
+    - teams.basic
+    - sharepoint.read
+
+- id: SPE_F3
+  display_name: Microsoft 365 F3
+  family: m365_frontline
+  cloud: m365
+  list_price_usd_month: 8.00
+  source_url: https://m365maps.com/
+  includes:
+    - EXCHANGE_S_DESKLESS
+    - SHAREPOINTDESKLESS
+    - TEAMS1
+    - INTUNE_A
+  features:
+    - mailbox.2gb
+    - office.web
+    - teams.basic
+    - intune.mam
+    - entra.p1.frontline
+  successor_of: [SPE_F1]
+
+- id: O365_BUSINESS_ESSENTIALS
+  display_name: Microsoft 365 Business Basic
+  family: m365_business
+  cloud: m365
+  list_price_usd_month: 6.00
+  source_url: https://m365maps.com/
+  features:
+    - mailbox.50gb
+    - office.web
+    - teams.full
+    - sharepoint.full
+
+- id: O365_BUSINESS_PREMIUM
+  display_name: Microsoft 365 Business Standard
+  family: m365_business
+  cloud: m365
+  list_price_usd_month: 12.50
+  source_url: https://m365maps.com/
+  features:
+    - mailbox.50gb
+    - office.desktop
+    - teams.full
+    - sharepoint.full
+
+- id: SPB
+  display_name: Microsoft 365 Business Premium
+  family: m365_business
+  cloud: m365
+  list_price_usd_month: 22.00
+  source_url: https://m365maps.com/
+  features:
+    - mailbox.50gb
+    - office.desktop
+    - teams.full
+    - sharepoint.full
+    - intune.mdm
+    - intune.mam
+    - entra.p1
+    - defender.o365.p1
+    - defender.endpoint.business
+
+- id: M365_APPS_FOR_ENTERPRISE
+  display_name: Microsoft 365 Apps for Enterprise
+  family: m365_apps
+  cloud: m365
+  list_price_usd_month: 12.00
+  source_url: https://m365maps.com/
+  features:
+    - office.desktop
+
+- id: M365_COPILOT
+  display_name: Microsoft 365 Copilot
+  family: m365_addon
+  cloud: m365
+  list_price_usd_month: 30.00
+  source_url: https://m365maps.com/
+  features:
+    - copilot.m365
