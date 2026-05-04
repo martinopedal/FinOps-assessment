@@ -141,24 +141,29 @@ Every milestone — and every non-trivial sub-task within one — is
 delivered through the five-stage loop documented in `docs/plan.md`
 §11. Copilot agents working on this repo **must** follow it:
 
-1. **Research** (`explore` agent, parallel-safe). Produce a short
+1. **Research** (`explore` agent, parallel-safe; Haiku). Produce a short
    brief: relevant API surfaces, SKU IDs, prior-art links, public
    docs, identified unknowns. Read-only — no edits.
-2. **Rubberduck** (`general-purpose`). Plain-English walkthrough of
-   the proposed approach against the brief: what could go wrong, edge
-   cases, false-positive risks, security implications, alternatives
+2. **Rubberduck** (`general-purpose`; Sonnet). Plain-English walkthrough
+   of the proposed approach against the brief: what could go wrong,
+   edge cases, false-positive risks, security implications, alternatives
    considered.
-3. **Plan**. Concrete checklist of file-level changes (paths, schemas,
-   rule IDs), tests to add, and acceptance criteria — small enough to
-   fit in one PR. Posted into the PR description **before** any edits.
+3. **Plan** (`general-purpose`; **Opus 4.7 — always**). Concrete
+   checklist of file-level changes (paths, schemas, rule IDs), tests to
+   add, and acceptance criteria — small enough to fit in one PR. Posted
+   into the PR description **before** any edits. Plan owns the most
+   consequential reasoning of the loop; we never trade capability for
+   cost here. If Opus 4.7 is unavailable, **block** stage 3 rather than
+   downgrade.
 4. **Consensus**. Human reviewer signs off on the plan; an adversarial
-   `general-purpose` pass steelmans the case against shipping it.
-   Disagreements are resolved by amending the plan, not by silently
-   overriding it. "No objections within X" never counts as consensus
-   for security-relevant or schema-changing work.
-5. **Implement** (`general-purpose`, or `task` for narrow mechanical
-   edits). Code/data/doc changes + tests + a `parallel_validation`
-   gate (code review + CodeQL) before opening the PR.
+   `general-purpose` pass (**Opus 4.7**) steelmans the case against
+   shipping it. Disagreements are resolved by amending the plan, not by
+   silently overriding it. "No objections within X" never counts as
+   consensus for security-relevant or schema-changing work.
+5. **Implement** (`general-purpose`, Sonnet by default; Opus 4.7 if the
+   plan calls for it; `task` Haiku for narrow mechanical edits).
+   Code/data/doc changes + tests + a `parallel_validation` gate (code
+   review + CodeQL) before opening the PR.
 
 Stages 1–3 produce artefacts that live in the PR description (or in
 `docs/decisions/` for cross-PR decisions) so future contributors can
@@ -174,11 +179,25 @@ memory.
 
 This repo is initialised with [Squad](https://github.com/bradygaster/squad)
 (`@bradygaster/squad-cli`). Squad provides repo-native, multi-agent
-orchestration via labelled GitHub issues. The five-stage delivery loop
-above maps onto squad members; the squad workflow then routes those
-issues to the right agent.
+orchestration via labelled GitHub issues **and pull requests**, all
+running on cloud agents (GitHub Actions). The five-stage delivery loop
+above maps onto squad members; the squad workflows route work on the
+relevant `squad:{member}` label event.
 
-When picking up an issue autonomously as `@copilot`:
+The cloud-agent surface:
+
+- `squad-triage.yml` — fires on `issues: labeled` with the `squad`
+  label; Lead triages and applies one `squad:{member}` label.
+- `squad-issue-assign.yml` — fires on `issues: labeled` with any
+  `squad:{member}` label; posts routing acknowledgment + (if
+  `squad:copilot` and a PAT is configured) auto-assigns `@copilot`.
+- `squad-pr-route.yml` — fires on `pull_request_target: labeled`;
+  mirrors the issue-assign behaviour for PRs so labelling a PR with
+  `squad:{member}` posts the same routing acknowledgment.
+- `sync-squad-labels.yml` — fires on push when `.squad/team.md`
+  changes; ensures every `squad:{member}` label exists in the repo.
+
+When picking up an issue **or PR review** autonomously as `@copilot`:
 
 1. Read `.squad/team.md` for the team roster and your capability
    profile (🟢 / 🟡 / 🔴).

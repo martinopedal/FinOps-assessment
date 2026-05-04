@@ -34,6 +34,22 @@ How to decide who handles what. The Lead (Maya) triages every
 5. Members reassign by removing their label and adding another.
 6. PRs reference the issue (`Closes #N`) and use the `squad/{issue-number}-{slug}` branch convention.
 
+### How PR Routing Works (cloud agents + labels)
+
+Squad runs **on cloud agents** via GitHub Actions (`squad-triage`,
+`squad-issue-assign`, `squad-pr-route`, `squad-heartbeat`,
+`sync-squad-labels`). Labels work identically on issues and pull
+requests:
+
+1. Apply a `squad:{member}` label to a PR (e.g. `squad:security-reviewer`
+   for a security-relevant PR, `squad:tester` for a test-only PR).
+2. `squad-pr-route.yml` reacts on `pull_request_target: labeled`,
+   resolves the member from `.squad/team.md`, and posts a routing
+   acknowledgment comment on the PR.
+3. `squad:copilot` on a PR routes review/follow-up work to `@copilot`.
+4. `sync-squad-labels` ensures every `squad:{member}` label exists in
+   the repo before any of these workflows fire.
+
 ### Lead Triage Guidance for `@copilot`
 
 When triaging, ask:

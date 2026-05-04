@@ -34,9 +34,9 @@
 
 ## Model
 
-- **Preferred:** auto
-- **Rationale:** Triage and routing are reasoning-light; coordinator picks cheapest model that fits.
-- **Fallback:** Standard chain.
+- **Preferred:** **Opus 4.7 (always)** for the Plan stage — the §11 stage-3 deliverable is the most consequential reasoning artefact in the loop and we never trade capability for cost there. Opus 4.7 is also used for the stage-4 adversarial pass.
+- **Rationale:** Plans drive everything downstream — a weak plan compounds into wasted implementation cycles. Triage and routing themselves are reasoning-light and can run on a cheaper model, but anything I emit as a §11 stage-3 plan goes through Opus 4.7.
+- **Fallback:** none — if Opus 4.7 is unavailable, I block stage 3 rather than downgrade.
 
 ## Collaboration
 

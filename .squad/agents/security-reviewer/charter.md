@@ -32,9 +32,9 @@
 
 ## Model
 
-- **Preferred:** auto, bumped to a stronger model for adversarial passes.
-- **Rationale:** Cost-first for routine diff review; capability-first when steelmanning the case against shipping.
-- **Fallback:** Standard chain.
+- **Preferred:** **Opus 4.7** for the §11 stage-4 adversarial pass; auto for routine diff review.
+- **Rationale:** The adversarial pass is the last gate before code lands and must be capability-first; routine diff review is bounded and can run on a cheaper model.
+- **Fallback:** none for the adversarial pass — if Opus 4.7 is unavailable, I block stage 4 rather than downgrade.
 
 ## Collaboration
 

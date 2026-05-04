@@ -292,13 +292,13 @@ sub-agent — invoked via the Copilot CLI's `task` tool with the
 `agent_type` shown — so the work is parallelisable, reviewable, and
 auditable. **No code change skips stages 1–4.**
 
-| # | Stage | Agent | Output |
-|---|-------|-------|--------|
-| 1 | **Research** | `explore` (Haiku, parallel-safe) | A short brief: relevant API surfaces, SKU IDs, prior-art links, public docs, identified unknowns. Read-only — no code edits. |
-| 2 | **Rubberduck** | `general-purpose` (Sonnet) | Plain-English walkthrough of the proposed approach against the brief: what could go wrong, edge cases, false-positive risks, security implications, alternative designs considered. |
-| 3 | **Plan** | `general-purpose` (Sonnet) | Concrete checklist of file-level changes (paths, schemas, rule IDs), tests to add, and acceptance criteria — small enough to fit in one PR. Posted into the issue/PR before any edits. |
-| 4 | **Consensus** | Human reviewer + `general-purpose` adversarial pass | Reviewer signs off on the plan; an adversarial agent run challenges the plan ("steelman the case against shipping this"). Disagreements are resolved by amending the plan, not by overriding it silently. |
-| 5 | **Implement** | `general-purpose` (Sonnet) or `task` (Haiku, for narrow mechanical edits) | The actual code/data/doc changes, plus tests, plus a `parallel_validation` (code review + CodeQL) gate before opening the PR. |
+| # | Stage | Agent | Model | Output |
+|---|-------|-------|-------|--------|
+| 1 | **Research** | `explore` (parallel-safe) | Haiku (cost-first; reads docs + repo) | A short brief: relevant API surfaces, SKU IDs, prior-art links, public docs, identified unknowns. Read-only — no code edits. |
+| 2 | **Rubberduck** | `general-purpose` | Sonnet | Plain-English walkthrough of the proposed approach against the brief: what could go wrong, edge cases, false-positive risks, security implications, alternative designs considered. |
+| 3 | **Plan** | `general-purpose` | **Opus 4.7 (always)** | Concrete checklist of file-level changes (paths, schemas, rule IDs), tests to add, and acceptance criteria — small enough to fit in one PR. Posted into the issue/PR before any edits. Plan owns the most consequential reasoning of the loop and is the one stage where we never trade capability for cost. |
+| 4 | **Consensus** | Human reviewer + `general-purpose` adversarial pass | **Opus 4.7** for the adversarial pass | Reviewer signs off on the plan; an adversarial agent run challenges the plan ("steelman the case against shipping this"). Disagreements are resolved by amending the plan, not by overriding it silently. |
+| 5 | **Implement** | `general-purpose` (or `task` for narrow mechanical edits) | Sonnet by default; Opus 4.7 if the plan calls for it; Haiku for purely mechanical edits | The actual code/data/doc changes, plus tests, plus a `parallel_validation` (code review + CodeQL) gate before opening the PR. |
 
 Stages 1–3 produce **artefacts that live in the PR description or in
 `docs/decisions/`** so future contributors can reconstruct *why* a
@@ -320,15 +320,22 @@ Copilot-assisted work picks it up automatically.
 The five stages map onto a [Squad](https://github.com/bradygaster/squad)
 team initialised under `.squad/`:
 
-| Stage | Owner(s) | Squad label |
-|-------|----------|-------------|
-| 1. Research | surface specialist (Priya / Diego / Sam) | `squad:m365-specialist` · `squad:azure-specialist` · `squad:devsurfaces-specialist` |
-| 2. Rubberduck | same surface specialist + Lead | as above + `squad:lead` |
-| 3. Plan | Lead (Maya) | `squad:lead` |
-| 4. Consensus | Lead + Security reviewer (Noor, adversarial pass) | `squad:lead` + `squad:security-reviewer` |
-| 5. Implement | surface specialist + Tester (Yuki) + optionally `@copilot` for 🟢 work | `squad:{specialist}` + `squad:tester` (+ `squad:copilot`) |
+| Stage | Owner(s) | Squad label | Model |
+|-------|----------|-------------|-------|
+| 1. Research | surface specialist (Priya / Diego / Sam) | `squad:m365-specialist` · `squad:azure-specialist` · `squad:devsurfaces-specialist` | Haiku |
+| 2. Rubberduck | same surface specialist + Lead | as above + `squad:lead` | Sonnet |
+| 3. Plan | Lead (Maya) | `squad:lead` | **Opus 4.7 (always)** |
+| 4. Consensus | Lead + Security reviewer (Noor, adversarial pass) | `squad:lead` + `squad:security-reviewer` | **Opus 4.7** for the adversarial pass |
+| 5. Implement | surface specialist + Tester (Yuki) + optionally `@copilot` for 🟢 work | `squad:{specialist}` + `squad:tester` (+ `squad:copilot`) | Sonnet (default) |
 
 Charters live under `.squad/agents/{member}/charter.md`. Routing rules
 live in `.squad/routing.md`. Issue templates under
 `.github/ISSUE_TEMPLATE/` open milestones and tasks straight onto the
 squad inbox (`squad` label). The Lead triages within one working day.
+
+The squad runs **on cloud agents** via GitHub Actions — `squad-triage`,
+`squad-issue-assign`, and `squad-pr-route` react to label events on
+**both issues and pull requests**, so labelling a PR with
+`squad:{member}` posts the same routing acknowledgment that labelling
+an issue does. `sync-squad-labels` keeps the `squad:{member}` label set
+in sync with `.squad/team.md` on every push to that file.
