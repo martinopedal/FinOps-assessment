@@ -35,6 +35,50 @@ data/
   rules/                  # savings-rule skeletons per surface
 tests/                    # pytest loader + CLI smoke tests
 .github/workflows/ci.yml  # lint + type-check + tests + YAML validation
+.squad/                   # Squad multi-agent team (charters, routing, decisions)
+.github/ISSUE_TEMPLATE/   # roadmap-milestone & squad-task issue forms
+```
+
+## Squad — multi-agent delivery
+
+This repo runs on [Squad](https://github.com/bradygaster/squad)
+(`@bradygaster/squad-cli`). Squad gives us a repo-native team of AI
+agents that pick up GitHub issues by label and follow the §11
+five-stage delivery loop documented in `docs/plan.md`.
+
+The team (full charters under `.squad/agents/{name}/charter.md`):
+
+| Member | Role | Issue label |
+|--------|------|-------------|
+| **Maya** | Lead / FinOps PM (triage, plan sign-off) | `squad:lead` |
+| **Priya** | M365 / Entra / EMS / Defender / Purview / Power Platform | `squad:m365-specialist` |
+| **Diego** | Azure compute / storage / SQL / Cost Management | `squad:azure-specialist` |
+| **Sam** | GitHub & Azure DevOps | `squad:devsurfaces-specialist` |
+| **Noor** | Security & compliance reviewer (adversarial pass) | `squad:security-reviewer` |
+| **Yuki** | Tester / quality / CI matrix | `squad:tester` |
+| **Scribe** | Decisions & history log | (auto, never routed) |
+| **`@copilot`** | Async, well-defined work matching its 🟢 capability profile | `squad:copilot` |
+
+How to delegate work:
+
+1. Open an issue using `.github/ISSUE_TEMPLATE/milestone.yml` (for an
+   M1–M7 roadmap item) or `squad-task.yml` (for a smaller task).
+   Both apply the `squad` label automatically.
+2. The squad workflows (under `.github/workflows/squad-*.yml`) sync
+   labels from `.squad/team.md` and notify members when their
+   `squad:{member}` label is applied.
+3. **Maya** triages within one working day, applying one
+   `squad:{member}` label, the right `milestone:Mx` label, and a
+   🟢/🟡/🔴 fit comment for `@copilot`.
+4. The named member picks the issue up and works through stages 1–5
+   of the delivery loop in `docs/plan.md` §11.
+
+To run the squad CLI locally (Node.js ≥ 20):
+
+```bash
+npm install -g @bradygaster/squad-cli
+squad status        # show which member is active
+squad triage        # scan the inbox and route untriaged issues
 ```
 
 ## Quick start

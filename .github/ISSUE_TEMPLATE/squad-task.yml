@@ -1,0 +1,43 @@
+name: 📋 Squad task
+description: Smaller squad-routable task (sub-task of a milestone, bug, or polish item).
+title: "<short imperative title>"
+labels: ["squad"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        New issues land in the `squad` inbox. The Lead (Maya) will
+        triage and apply one `squad:{member}` label.
+
+        Match your description to the routing table in
+        `.squad/routing.md` to make Maya's life easier.
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Primary surface
+      options:
+        - "M365 / Entra / EMS / Defender / Purview / Power Platform → squad:m365-specialist"
+        - "Azure compute / storage / SQL / network / Cost Management → squad:azure-specialist"
+        - "GitHub / Copilot / GHAS / Azure DevOps → squad:devsurfaces-specialist"
+        - "Tests / CI / fixtures → squad:tester"
+        - "Security / scope / PII / copyright → squad:security-reviewer"
+        - "Roadmap / planning / cross-cutting → squad:lead"
+        - "Other (let Maya decide)"
+    validations:
+      required: true
+  - type: textarea
+    id: ask
+    attributes:
+      label: What needs doing
+      placeholder: One paragraph. Link relevant files in the repo.
+    validations:
+      required: true
+  - type: textarea
+    id: ac
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] ...
+        - [ ] tests + `finops-assess validate` green
+    validations:
+      required: true

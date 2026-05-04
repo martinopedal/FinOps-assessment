@@ -169,3 +169,31 @@ the brief from stage 1 in its own words before proceeding — this
 catches misunderstandings early and prevents single-agent tunnel
 vision. Agents are stateless across invocations; the PR is the shared
 memory.
+
+## Squad orchestration
+
+This repo is initialised with [Squad](https://github.com/bradygaster/squad)
+(`@bradygaster/squad-cli`). Squad provides repo-native, multi-agent
+orchestration via labelled GitHub issues. The five-stage delivery loop
+above maps onto squad members; the squad workflow then routes those
+issues to the right agent.
+
+When picking up an issue autonomously as `@copilot`:
+
+1. Read `.squad/team.md` for the team roster and your capability
+   profile (🟢 / 🟡 / 🔴).
+2. Read `.squad/routing.md` for routing rules.
+3. If the issue carries a `squad:{member}` label, read that member's
+   charter at `.squad/agents/{member}/charter.md` and work in that
+   member's voice and within their boundaries.
+4. Use the squad branch convention `squad/{issue-number}-{slug}`.
+5. Reference the issue in the PR (`Closes #N`) and, if the task was
+   flagged 🟡, add the standard "needs review" banner to the PR body.
+6. If you make a decision other members should know, drop a note at
+   `.squad/decisions/inbox/copilot-{slug}.md`; the Scribe will merge
+   it into `.squad/decisions.md`.
+
+🔴 (not-suitable) issues — security-sensitive work, schema changes,
+catalogue-pricing edits, and anything that would relax the read-only
+posture — must not be picked up autonomously. Comment on the issue
+asking the Lead to reassign to a human squad member.

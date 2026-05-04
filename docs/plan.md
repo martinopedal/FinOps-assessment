@@ -314,3 +314,21 @@ memory.
 
 This process is mirrored in `.github/copilot-instructions.md` so that
 Copilot-assisted work picks it up automatically.
+
+### Squad team that executes the loop
+
+The five stages map onto a [Squad](https://github.com/bradygaster/squad)
+team initialised under `.squad/`:
+
+| Stage | Owner(s) | Squad label |
+|-------|----------|-------------|
+| 1. Research | surface specialist (Priya / Diego / Sam) | `squad:m365-specialist` · `squad:azure-specialist` · `squad:devsurfaces-specialist` |
+| 2. Rubberduck | same surface specialist + Lead | as above + `squad:lead` |
+| 3. Plan | Lead (Maya) | `squad:lead` |
+| 4. Consensus | Lead + Security reviewer (Noor, adversarial pass) | `squad:lead` + `squad:security-reviewer` |
+| 5. Implement | surface specialist + Tester (Yuki) + optionally `@copilot` for 🟢 work | `squad:{specialist}` + `squad:tester` (+ `squad:copilot`) |
+
+Charters live under `.squad/agents/{member}/charter.md`. Routing rules
+live in `.squad/routing.md`. Issue templates under
+`.github/ISSUE_TEMPLATE/` open milestones and tasks straight onto the
+squad inbox (`squad` label). The Lead triages within one working day.
