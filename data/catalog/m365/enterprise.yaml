@@ -160,3 +160,81 @@
   source_url: https://m365maps.com/
   features:
     - copilot.m365
+
+# --- Office 365 user-SKUs (distinct from M365 *PE bundles: no Windows, no EMS) ---
+
+- id: STANDARDPACK
+  display_name: Office 365 E1
+  family: o365_enterprise
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  includes:
+    - EXCHANGE_S_STANDARD
+    - SHAREPOINTSTANDARD
+    - TEAMS1
+    - YAMMER_ENTERPRISE
+  features:
+    - mailbox.50gb
+    - office.web
+    - teams.full
+    - sharepoint.full
+
+- id: ENTERPRISEPACK
+  display_name: Office 365 E3
+  family: o365_enterprise
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  includes:
+    - EXCHANGE_S_ENTERPRISE
+    - SHAREPOINTENTERPRISE
+    - TEAMS1
+    - OFFICESUBSCRIPTION
+  features:
+    - mailbox.100gb
+    - office.desktop
+    - teams.full
+    - sharepoint.full
+    - purview.dlp
+  successor_of: [STANDARDPACK]
+
+- id: ENTERPRISEPREMIUM
+  display_name: Office 365 E5
+  family: o365_enterprise
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  includes:
+    - EXCHANGE_S_ENTERPRISE
+    - SHAREPOINTENTERPRISE
+    - TEAMS1
+    - OFFICESUBSCRIPTION
+    - THREAT_INTELLIGENCE
+    - PURVIEW_DLP
+    - MCOMEETADV
+  features:
+    - mailbox.100gb
+    - office.desktop
+    - teams.full
+    - sharepoint.full
+    - defender.o365.p2
+    - purview.dlp
+    - purview.records
+    - powerbi.pro
+  successor_of: [ENTERPRISEPACK]
+
+- id: DESKLESSPACK
+  display_name: Office 365 F3
+  family: o365_frontline
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  includes:
+    - EXCHANGE_S_DESKLESS
+    - SHAREPOINTDESKLESS
+    - TEAMS1
+  features:
+    - mailbox.2gb
+    - office.web
+    - teams.basic

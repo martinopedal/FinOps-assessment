@@ -48,3 +48,22 @@
     - ghas.code_scanning
     - ghas.secret_scanning
     - ghas.dependency_review
+
+- id: GH.FREE
+  display_name: GitHub Free (per user)
+  family: github_seat
+  cloud: github
+  list_price_usd_month: 0.00
+  source_url: https://github.com/pricing
+  features:
+    - github.free
+
+- id: GH.PRO
+  display_name: GitHub Pro (per user)
+  family: github_seat
+  cloud: github
+  list_price_usd_month: null
+  source_url: https://github.com/pricing
+  features:
+    - github.pro
+  successor_of: [GH.FREE]

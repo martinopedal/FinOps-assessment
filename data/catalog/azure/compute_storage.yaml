@@ -105,3 +105,101 @@
   list_price_usd_month: null
   features:
     - network.public_ip.standard
+
+# --- Additional VM families (compute-optimised, storage-optimised, GPU) ---
+
+- id: AZ.VM.Standard_F4s_v2
+  display_name: Azure VM Standard_F4s_v2
+  family: azure_compute_optimized
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/virtual-machines/linux/
+  features:
+    - vm.cpu.4
+    - vm.mem.8gb
+    - vm.compute_optimized
+
+- id: AZ.VM.Standard_L8s_v3
+  display_name: Azure VM Standard_L8s_v3
+  family: azure_compute_storage
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/virtual-machines/linux/
+  features:
+    - vm.cpu.8
+    - vm.mem.64gb
+    - vm.storage_optimized
+
+- id: AZ.VM.Standard_NC6s_v3
+  display_name: Azure VM Standard_NC6s_v3 (GPU)
+  family: azure_compute_gpu
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/virtual-machines/linux/
+  features:
+    - vm.cpu.6
+    - vm.mem.112gb
+    - vm.gpu
+
+# --- Additional storage tiers ---
+
+- id: AZ.DISK.Standard_HDD
+  display_name: Azure Standard HDD managed disk
+  family: azure_storage_disk
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/managed-disks/
+  features:
+    - disk.standard.hdd
+
+- id: AZ.STORAGE.Blob_Cool
+  display_name: Azure Blob Storage (Cool)
+  family: azure_storage_blob
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/storage/blobs/
+  features:
+    - blob.cool
+
+- id: AZ.STORAGE.Blob_Archive
+  display_name: Azure Blob Storage (Archive)
+  family: azure_storage_blob
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/storage/blobs/
+  features:
+    - blob.archive
+
+# --- Additional SQL families ---
+
+- id: AZ.SQL.HS_Gen5_2
+  display_name: Azure SQL Database Hyperscale (HS_Gen5_2)
+  family: azure_sql_hyperscale
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/azure-sql-database/single/
+  features:
+    - sql.vcore.2
+    - sql.hyperscale
+
+- id: AZ.SQL.BC_Gen5_2
+  display_name: Azure SQL Database Business Critical (BC_Gen5_2)
+  family: azure_sql_vcore
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/azure-sql-database/single/
+  features:
+    - sql.vcore.2
+    - sql.bc
+  successor_of: [AZ.SQL.GP_Gen5_2]
+
+- id: AZ.SQLMI.GP_Gen5_4
+  display_name: Azure SQL Managed Instance GP_Gen5_4
+  family: azure_sql_managed_instance
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/azure-sql-managed-instance/single/
+  features:
+    - sql.vcore.4
+    - sql.gp
+    - sql.managed_instance
