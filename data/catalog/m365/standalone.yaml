@@ -113,6 +113,26 @@
   features:
     - project.plan3
 
+- id: PROJECT_P1
+  display_name: Project Plan 1
+  family: project
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  features:
+    - project.plan1
+
+- id: PROJECT_P5
+  display_name: Project Plan 5
+  family: project
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  features:
+    - project.plan3
+    - project.plan5
+  successor_of: [PROJECT_P3]
+
 - id: VISIOCLIENT
   display_name: Visio Plan 2
   family: visio
@@ -121,3 +141,73 @@
   source_url: https://m365maps.com/
   features:
     - visio.plan2
+
+- id: VISIO_PLAN1
+  display_name: Visio Plan 1
+  family: visio
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  features:
+    - visio.plan1
+
+# --- Voice / calling add-ons ---
+
+- id: MCOMEETADV
+  display_name: Microsoft 365 Audio Conferencing
+  family: voice
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  features:
+    - teams.audio_conferencing
+
+- id: MCOEV
+  display_name: Microsoft Teams Phone (Resource Account)
+  family: voice
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  features:
+    - teams.phone.resource
+
+- id: MCOPSTN1
+  display_name: Microsoft Teams Domestic Calling Plan
+  family: voice
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  features:
+    - teams.calling.domestic
+
+# --- Windows user-licenses (commonly assigned alongside M365) ---
+
+- id: WIN10_VDA_E3
+  display_name: Windows 10/11 Enterprise E3
+  family: windows
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  features:
+    - windows.enterprise.e3
+
+- id: WIN10_VDA_E5
+  display_name: Windows 10/11 Enterprise E5
+  family: windows
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  features:
+    - windows.enterprise.e3
+    - windows.enterprise.e5
+    - defender.endpoint.p2
+  successor_of: [WIN10_VDA_E3]
+
+- id: CPC_B_2C_4RAM_128GB
+  display_name: Windows 365 Business 2vCPU/4GB/128GB
+  family: windows_365
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://www.microsoft.com/en-us/windows-365
+  features:
+    - windows365.cloudpc

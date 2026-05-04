@@ -107,3 +107,97 @@
   features:
     - purview.records
     - purview.classification
+
+# --- Additional Defender SKUs ---
+
+- id: MDE_P1
+  display_name: Microsoft Defender for Endpoint Plan 1
+  family: defender
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  features:
+    - defender.endpoint.p1
+
+- id: ATA
+  display_name: Microsoft Defender for Identity
+  family: defender
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  features:
+    - defender.identity
+
+- id: ADALLOM_S_STANDALONE
+  display_name: Microsoft Defender for Cloud Apps
+  family: defender
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  features:
+    - defender.cloudapps
+
+- id: M365_SECURITY
+  display_name: Microsoft 365 E5 Security
+  family: m365_addon
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  includes:
+    - AAD_PREMIUM_P2
+    - THREAT_INTELLIGENCE
+    - WIN_DEF_ATP
+    - ATA
+    - ADALLOM_S_STANDALONE
+  features:
+    - entra.p2
+    - defender.o365.p2
+    - defender.endpoint.p2
+    - defender.identity
+    - defender.cloudapps
+
+# --- Additional Purview / Compliance SKUs ---
+
+- id: M365_E5_COMPLIANCE
+  display_name: Microsoft 365 E5 Compliance
+  family: m365_addon
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  includes:
+    - PURVIEW_DLP
+    - INFORMATION_PROTECTION_AND_GOVERNANCE
+  features:
+    - purview.dlp
+    - purview.records
+    - purview.classification
+    - purview.ediscovery.premium
+    - purview.insider_risk
+    - purview.audit.premium
+
+- id: EQUIVIO_ANALYTICS
+  display_name: Microsoft Purview eDiscovery (Premium)
+  family: purview
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  features:
+    - purview.ediscovery.premium
+
+- id: INSIDER_RISK_MANAGEMENT
+  display_name: Microsoft Purview Insider Risk Management
+  family: purview
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  features:
+    - purview.insider_risk
+
+- id: M365_ADVANCED_AUDITING
+  display_name: Microsoft Purview Audit (Premium)
+  family: purview
+  cloud: m365
+  list_price_usd_month: null
+  source_url: https://m365maps.com/
+  features:
+    - purview.audit.premium
