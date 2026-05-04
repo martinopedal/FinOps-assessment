@@ -35,6 +35,17 @@
    Azure retail prices API). Rules reference catalogue entries by ID.
 6. **No redistribution of third-party copyrighted material.** We link
    to and credit source diagrams; we do not copy them.
+7. **Python is the engine language.** Cross-platform, first-class SDKs
+   for Graph / ARM / GitHub / ADO, strong schema/typing tools
+   (pydantic v2, mypy strict). PowerShell is a great *admin shell* but
+   not a great normalisation/reporting engine, and we need one engine
+   that runs identically on Linux runners, in containers, and on a
+   Windows admin's laptop. A thin PowerShell wrapper script
+   (`scripts/Invoke-FinOpsAssess.ps1`) ships in M3 so PowerShell-native
+   operators can pipeline our JSON output without touching Python
+   directly; collectors may shell out to `pwsh` only when a
+   PowerShell-only module returns materially richer data than the raw
+   API (documented exception, not the default).
 
 ---
 
