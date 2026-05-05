@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="finops-assess {{ run.version }}">
+<meta name="referrer" content="no-referrer">
+<title>FinOps assessment report — {{ run.generated_at }}</title>
+<style>
+  /* Vendored, print-friendly CSS — no remote assets, CSP-safe. */
+  :root {
+    --fg: #1f2328;
+    --muted: #57606a;
+    --border: #d0d7de;
+    --bg: #ffffff;
+    --bg-alt: #f6f8fa;
+    --sev-info: #0969da;
+    --sev-low: #1a7f37;
+    --sev-medium: #bf8700;
+    --sev-high: #cf222e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    margin: 0;
+    padding: 2rem;
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  h1 { font-size: 1.6rem; margin: 0 0 0.25rem 0; }
+  h2 { font-size: 1.2rem; margin: 2rem 0 0.5rem 0; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+  h3 { font-size: 1rem; margin: 1rem 0 0.5rem 0; color: var(--muted); }
+  .meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .meta code { background: var(--bg-alt); padding: 0 0.3rem; border-radius: 3px; }
+  .cards { display: flex; gap: 1rem; flex-wrap: wrap; margin: 1rem 0; }
+  .card { flex: 1 1 180px; border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem 1rem; background: var(--bg-alt); }
+  .card .label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .card .value { font-size: 1.4rem; font-weight: 600; margin-top: 0.25rem; }
+  table { width: 100%; border-collapse: collapse; margin: 0.5rem 0 1.5rem 0; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--bg-alt); font-weight: 600; }
+  tr:hover { background: var(--bg-alt); }
+  .sev { display: inline-block; padding: 0.05rem 0.5rem; border-radius: 10px; font-size: 0.75rem; font-weight: 600; color: white; }
+  .sev-info    { background: var(--sev-info); }
+  .sev-low     { background: var(--sev-low); }
+  .sev-medium  { background: var(--sev-medium); }
+  .sev-high    { background: var(--sev-high); }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85rem; }
+  details { margin: 0.25rem 0; }
+  summary { cursor: pointer; color: var(--muted); }
+  pre { background: var(--bg-alt); border: 1px solid var(--border); border-radius: 4px; padding: 0.6rem; overflow-x: auto; font-size: 0.8rem; margin: 0.4rem 0 0 0; }
+  .pill-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .pill { background: var(--bg-alt); border: 1px solid var(--border); border-radius: 12px; padding: 0.1rem 0.6rem; font-size: 0.8rem; }
+  .empty { color: var(--muted); font-style: italic; padding: 0.5rem 0; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.8rem; }
+  @media print {
+    body { padding: 0.5in; max-width: none; }
+    details { page-break-inside: avoid; }
+    .card { page-break-inside: avoid; }
+    tr   { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>FinOps assessment report</h1>
+    <p class="meta">
+      Generated <code>{{ run.generated_at }}</code> by
+      <code>{{ run.tool }} {{ run.version }}</code>
+      &middot; mode <code>{{ run.mode }}</code>
+      &middot; PII redaction <code>{{ "on" if run.pii_redaction else "off" }}</code>
+      &middot; input <code>{{ run.input }}</code>
+    </p>
+  </header>
+
+  <section>
+    <h2>Summary</h2>
+    <div class="cards">
+      <div class="card"><div class="label">Findings</div><div class="value">{{ summary.findings_count|default(findings|length) }}</div></div>
+      <div class="card"><div class="label">Rules fired</div><div class="value">{{ rules_fired_count }}</div></div>
+      <div class="card"><div class="label">Estimated monthly savings</div><div class="value">{{ "$%.2f"|format(total_estimated_savings) }}</div></div>
+      <div class="card"><div class="label">Principals</div><div class="value">{{ summary.persona_distribution.values()|sum }}</div></div>
+    </div>
+
+    <h3>Persona distribution</h3>
+    {% if summary.persona_distribution %}
+      <div class="pill-list">
+        {% for persona_id, count in (summary.persona_distribution.items()|sort) %}
+          <span class="pill"><span class="mono">{{ persona_id }}</span> &middot; {{ count }}</span>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty">No persona assignments.</p>
+    {% endif %}
+
+    {% if summary.rules_skipped_no_impl %}
+      <h3>Rules in catalogue without an implementation</h3>
+      <div class="pill-list">
+        {% for rid in summary.rules_skipped_no_impl %}
+          <span class="pill mono">{{ rid }}</span>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </section>
+
+  {% for surface, label in surface_labels %}
+    <section>
+      <h2>{{ label }}</h2>
+      {% set surface_findings = findings_by_surface.get(surface, []) %}
+      {% if surface_findings %}
+        <table>
+          <thead>
+            <tr>
+              <th>Severity</th>
+              <th>Rule</th>
+              <th>Principal</th>
+              <th>Current SKU</th>
+              <th>Recommended SKU</th>
+              <th>Est. savings / mo</th>
+              <th>Recommendation</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in surface_findings %}
+              <tr>
+                <td><span class="sev sev-{{ f.severity }}">{{ f.severity }}</span></td>
+                <td class="mono">{{ f.rule_id }}</td>
+                <td class="mono">{{ f.principal }}</td>
+                <td class="mono">{{ f.current_sku or "—" }}</td>
+                <td class="mono">{{ f.recommended_sku or "—" }}</td>
+                <td>{{ "$%.2f"|format(f.estimated_monthly_savings_usd) if f.estimated_monthly_savings_usd is not none else "—" }}</td>
+                <td>
+                  {{ f.recommendation }}
+                  {% if f.evidence %}
+                    <details>
+                      <summary>Evidence ({{ f.confidence }} confidence)</summary>
+                      <pre>{{ f.evidence|tojson(indent=2) }}</pre>
+                    </details>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty">No findings.</p>
+      {% endif %}
+    </section>
+  {% endfor %}
+
+  <footer>
+    <p>
+      <strong>finops-assess</strong> is a read-only auditing tool. This report
+      contains advisory recommendations only — no changes were made to any
+      system. See the
+      <a href="https://github.com/martinopedal/FinOps-assessment">project
+      repository</a> for the rule definitions and source code.
+    </p>
+  </footer>
+</body>
+</html>

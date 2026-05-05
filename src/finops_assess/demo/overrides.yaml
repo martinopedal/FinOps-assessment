@@ -1,0 +1,4 @@
+# Explicit persona overrides — highest-priority signal in the persona engine.
+# Use this file to pin a principal to a persona when title/group inference
+# would otherwise be wrong (e.g. an executive whose title is "Engineer").
+alice@contoso.example: frontline_worker

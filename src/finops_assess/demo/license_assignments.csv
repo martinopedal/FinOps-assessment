@@ -1,0 +1,14 @@
+principal,sku_id,assigned_date
+alice@contoso.example,SPE_E5,2024-06-01
+bob@contoso.example,SPE_E5,2024-01-15
+carol@contoso.example,SPE_E3,2024-01-15
+carol@contoso.example,SHAREPOINTENTERPRISE,2024-02-01
+dan@contoso.example,SPE_E3,2023-06-12
+dan@contoso.example,M365_COPILOT,2024-09-01
+erin@contoso.example,SPE_E3,2024-04-01
+erin@contoso.example,M365_COPILOT,2024-09-01
+frank@contoso.example,SPE_E3,2024-02-12
+gloria@contoso.example,SPE_E3,2023-11-04
+hugo@external.example,SPE_E3,2024-03-15
+mailroom@contoso.example,EXCHANGESTANDARD,2023-01-01
+isla@contoso.example,SPE_E5,2024-05-01
