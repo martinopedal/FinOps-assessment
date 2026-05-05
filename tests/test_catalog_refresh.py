@@ -91,3 +91,48 @@ def test_write_autogen_round_trips_through_catalog_loader(tmp_path: Path) -> Non
     )
     entries = load_catalog(fake_root)
     assert any(e.id == "TOTALLY_NEW_SKU_2099" for e in entries)
+
+
+def test_autogen_stubs_do_not_pollute_includes(tmp_path: Path) -> None:
+    """Regression: stubs must NOT write upstream service-plan GUIDs/names
+    into ``includes`` — the engine treats ``includes`` as a list of child
+    catalog SKU ids and walks it transitively. Putting raw service-plan
+    ids there would silently corrupt :func:`engine.transitive_includes`
+    and :func:`engine.effective_features` as soon as the file is loaded.
+    """
+    upstream = fetch_and_parse(str(FIXTURES / "ms_skus_with_gap.csv"))
+    coverage = compute_coverage(upstream)
+    body = render_autogen_yaml(coverage.missing)
+    # No `includes:` line should carry payload (only `includes: []`).
+    for line in body.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("includes:") and stripped != "includes: []":
+            raise AssertionError(f"autogen stub leaked service-plan ids into `includes`: {line!r}")
+    # The plan ids should still be visible to a human reviewer via `notes`.
+    assert "Upstream service plans:" in body or "Auto-generated stub" in body
+
+
+def test_compute_coverage_excludes_autogen_stubs_from_local_count(tmp_path: Path) -> None:
+    """Regression: ``catalog coverage --fail-on-gap`` must stay red after
+    ``catalog refresh --write`` — the autogen stub file is loaded by
+    ``load_catalog`` and previously made the missing SKU look "covered"
+    even though it has no curated features or pricing.
+    """
+    upstream = fetch_and_parse(str(FIXTURES / "ms_skus_with_gap.csv"))
+    # Build an isolated catalog root containing the curated catalog AND
+    # an autogen file that "covers" the missing SKU as a stub.
+    fake_root = tmp_path / "catalog"
+    (fake_root / "m365").mkdir(parents=True)
+    (fake_root / "m365" / "stub.yaml").write_text(
+        "- id: TOTALLY_NEW_SKU_2099\n"
+        "  display_name: Stub\n"
+        "  family: m365_uncategorized\n"
+        "  cloud: m365\n"
+        "  list_price_usd_month: null\n",
+        encoding="utf-8",
+    )
+    coverage = compute_coverage(upstream, catalog_root=fake_root)
+    missing_ids = {s.string_id for s in coverage.missing}
+    assert "TOTALLY_NEW_SKU_2099" in missing_ids, (
+        "autogen-family stubs must NOT count as locally covered"
+    )

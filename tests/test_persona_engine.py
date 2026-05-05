@@ -68,3 +68,21 @@ def test_unknown_override_is_rejected() -> None:
     user = UserRecord(principal="z@x")
     with pytest.raises(ValueError, match="unknown persona"):
         assign_personas(_ds(user, overrides={"z@x": "no-such"}), PERSONAS)
+
+
+def test_svc_prefixed_principal_falls_back_to_service_account() -> None:
+    """A `svc-build@…` account with no other signal must NOT be classified
+    as an information_worker (regression: the persona's `^svc[-_]` regex
+    is matched against job_title, but svc accounts typically have none —
+    the fallback now also inspects the principal local part).
+    """
+    user = UserRecord(principal="svc-build@contoso.example")
+    assn = assign_personas(_ds(user), PERSONAS)
+    assert assn["svc-build@contoso.example"].persona_id == "service_account"
+    assert assn["svc-build@contoso.example"].matched_by == "fallback"
+
+
+def test_svc_underscore_prefix_also_matches() -> None:
+    user = UserRecord(principal="svc_deploy@contoso.example")
+    assn = assign_personas(_ds(user), PERSONAS)
+    assert assn["svc_deploy@contoso.example"].persona_id == "service_account"

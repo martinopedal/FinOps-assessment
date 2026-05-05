@@ -8,6 +8,7 @@ from finops_assess.engine import (
     RuleContext,
     cheapest_covering_sku,
     effective_features,
+    features_for_surface,
     register,
     render,
     transitive_includes,
@@ -134,7 +135,11 @@ def over_licensed_vs_persona(ctx: RuleContext) -> Iterable[Finding]:
         persona = ctx.personas.get(persona_assn.persona_id)
         if persona is None or not persona.required_features:
             continue
-        required = set(persona.required_features)
+        required = features_for_surface(persona.required_features, "m365")
+        if not required:
+            # Persona has no M365-relevant requirements; right-sizing
+            # against an M365 SKU is meaningless here.
+            continue
         current_features = effective_features(assignment.sku_id, ctx.catalog)
         if not required.issubset(current_features):
             continue  # Current SKU doesn't even cover the persona; not over-licensed.

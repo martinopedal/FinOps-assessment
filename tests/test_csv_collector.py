@@ -58,3 +58,17 @@ def test_collect_parses_lists_via_pipe_separator(tmp_path: Path) -> None:
     )
     dataset = collect_from_directory(tmp_path)
     assert dataset.users[0].groups == ["sales", "all-staff"]
+
+
+def test_collect_rejects_rows_with_extra_cells(tmp_path: Path) -> None:
+    """A row with more cells than the header must fail loudly (strict-column
+    contract); previously the extras were silently dropped, hiding
+    operator-entered data. Regression for PR review feedback.
+    """
+    # 2 header columns, 4 data cells → 2 extras under DictReader's `None` key.
+    (tmp_path / "users.csv").write_text(
+        "principal,display_name\nalice@example.test,Alice,extra1,extra2\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="beyond the declared header columns"):
+        collect_from_directory(tmp_path)

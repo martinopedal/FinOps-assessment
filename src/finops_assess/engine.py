@@ -91,7 +91,26 @@ def register(rule_id: str) -> Callable[[RuleImpl], RuleImpl]:
     return decorator
 
 
+def _ensure_rule_impls_loaded() -> None:
+    """Import the rule-impl package so its ``@register`` decorators fire.
+
+    Idempotent — Python caches imports — but defined as a separate helper
+    so that callers like :func:`registered_rule_ids` get the same view of
+    the registry as :func:`run_rules` regardless of import order.
+    """
+    # Local import to avoid a circular dependency at module load time.
+    from finops_assess import rules_impl  # noqa: F401  (registers rules)
+
+
 def registered_rule_ids() -> set[str]:
+    """Return every rule id that has a registered implementation.
+
+    Triggers import of ``finops_assess.rules_impl`` so the result is
+    correct even when this helper is the first thing called (e.g. from
+    a unit test). Without that, the registry would appear empty until
+    :func:`run_rules` had populated it as a side effect.
+    """
+    _ensure_rule_impls_loaded()
     return set(_REGISTRY)
 
 
@@ -124,8 +143,7 @@ def run_rules(
     re-correlate later if they choose).
     """
     # Import the rule-impl modules so their @register decorators fire.
-    # Local import to avoid a circular dependency at module load time.
-    from finops_assess import rules_impl  # noqa: F401  (registers rules)
+    _ensure_rule_impls_loaded()
 
     catalog_by_id = {c.id: c for c in catalog}
     personas_by_id = {p.id: p for p in personas}
@@ -248,6 +266,55 @@ def transitive_includes(sku_id: str, catalog: dict[str, CatalogEntry]) -> set[st
             if child not in out:
                 out.add(child)
                 stack.append(child)
+    return out
+
+
+# Maps each known feature-tag prefix to its surface. Used by
+# :func:`features_for_surface` so persona requirements that span clouds
+# (e.g. a `developer` persona requiring both `mailbox.50gb` and
+# `github.enterprise`) can be filtered to the subset relevant to the SKU
+# being evaluated. Anything not listed here is treated as cross-surface
+# and ignored by per-surface coverage rules.
+_FEATURE_SURFACE_PREFIXES: dict[str, str] = {
+    "mailbox.": "m365",
+    "office.": "m365",
+    "teams.": "m365",
+    "sharepoint.": "m365",
+    "intune.": "m365",
+    "entra.": "m365",
+    "defender.": "m365",
+    "purview.": "m365",
+    "powerbi.": "m365",
+    "power.": "m365",
+    "copilot.": "m365",
+    "windows.": "m365",
+    "vm.": "azure",
+    "disk.": "azure",
+    "sql.": "azure",
+    "logs.": "azure",
+    "network.": "azure",
+    "github.": "github",
+    "ghas.": "github",
+    "ado.": "ado",
+}
+
+
+def features_for_surface(features: Iterable[str], surface: str) -> set[str]:
+    """Filter ``features`` to those whose prefix maps to ``surface``.
+
+    Persona ``required_features`` lists are intentionally cross-cloud
+    (a developer needs both Office tooling and a GitHub seat). When a
+    rule evaluates whether a single M365 SKU "covers" a persona, it
+    must compare against the M365-relevant subset only — otherwise no
+    M365 SKU could ever satisfy the developer persona's
+    ``github.enterprise`` requirement and the rule silently never fires.
+    """
+    out: set[str] = set()
+    for feat in features:
+        for prefix, surf in _FEATURE_SURFACE_PREFIXES.items():
+            if feat.startswith(prefix) and surf == surface:
+                out.add(feat)
+                break
     return out
 
 

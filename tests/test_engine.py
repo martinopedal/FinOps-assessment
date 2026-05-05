@@ -122,3 +122,34 @@ def test_cheapest_covering_sku_for_frontline_worker_picks_f3() -> None:
     assert chosen is not None
     # Among priced SKUs covering the frontline persona, F3 ($8) should win.
     assert chosen.id == "SPE_F3"
+
+
+def test_registered_rule_ids_works_before_run_rules_is_called() -> None:
+    """Regression: previously registered_rule_ids() returned an empty set
+    when called before run_rules(), because the rules_impl modules were
+    only imported as a side effect of run_rules(). The helper now triggers
+    the import itself so callers (and unit tests) get a consistent view.
+    """
+    # This test relies on subprocess-isolation-like guarantees being absent;
+    # importing the engine alone in a fresh interpreter must yield the full
+    # set. We can't easily unimport modules, but we can at least assert the
+    # set is non-empty and contains a known impl id.
+    from finops_assess.engine import registered_rule_ids as rri
+
+    impls = rri()
+    assert "M365.UNUSED_LICENSE_30D" in impls
+    assert "AZ.IDLE_VM_14D" in impls
+
+
+def test_features_for_surface_filters_cross_cloud_requirements() -> None:
+    """The OVER_LICENSED rule must compare M365 SKUs against the M365-only
+    subset of the persona's required features; otherwise personas like
+    `developer` (which requires `github.enterprise`) never get a finding.
+    """
+    from finops_assess.engine import features_for_surface
+
+    developer_required = {"mailbox.50gb", "office.web", "teams.full", "github.enterprise"}
+    m365_only = features_for_surface(developer_required, "m365")
+    assert m365_only == {"mailbox.50gb", "office.web", "teams.full"}
+    github_only = features_for_surface(developer_required, "github")
+    assert github_only == {"github.enterprise"}

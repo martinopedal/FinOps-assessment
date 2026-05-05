@@ -58,7 +58,12 @@ def unattached_disk(ctx: RuleContext) -> Iterable[Finding]:
             continue
         if resource.attached is None or resource.attached:
             continue
-        if resource.days_inactive is not None and resource.days_inactive < days:
+        # The rule is "not attached for ≥ N days"; with no telemetry we
+        # cannot prove the threshold, so we abstain rather than emit a
+        # false positive (`last_attached_at` would render as `? days ago`).
+        if resource.days_inactive is None:
+            continue
+        if resource.days_inactive < days:
             continue
         yield Finding(
             rule_id=ctx.rule.id,
@@ -72,7 +77,7 @@ def unattached_disk(ctx: RuleContext) -> Iterable[Finding]:
                 principal=ctx.redact(resource.resource_id),
                 disk_size_gb="?",
                 disk_sku=resource.sku or "?",
-                last_attached_at=f"{resource.days_inactive or '?'} days ago",
+                last_attached_at=f"{resource.days_inactive} days ago",
             ),
             evidence={
                 "attached": False,
@@ -88,6 +93,13 @@ def public_ip_unattached(ctx: RuleContext) -> Iterable[Finding]:
         if resource.resource_type != "publicIp":
             continue
         if resource.associated is None or resource.associated:
+            continue
+        # The rule's pricing assumption (~$3.65/mo idle charge) is
+        # specifically for **Standard** public IPs; Basic public IPs are
+        # priced and lifecycle differently and Microsoft is retiring the
+        # SKU on its own schedule. Skip anything that isn't explicitly
+        # tagged Standard so the recommendation is sound.
+        if (resource.sku or "").lower() != "standard":
             continue
         yield Finding(
             rule_id=ctx.rule.id,

@@ -40,14 +40,32 @@ M = TypeVar("M", bound=BaseModel)
 
 
 def _coerce_row(model: type[M], row: dict[str, str]) -> dict[str, Any]:
-    """Normalise CSV string cells to the types pydantic expects."""
+    """Normalise CSV string cells to the types pydantic expects.
+
+    Strict-column contract: rows with **fewer** cells than the header are
+    accepted (missing keys default to ``None``); rows with **extra** cells
+    (csv.DictReader stores them under the ``None`` key) are rejected so
+    that hand-edited / mis-quoted CSVs surface immediately rather than
+    silently dropping operator-entered data.
+    """
     out: dict[str, Any] = {}
     fields = model.model_fields
+    # csv.DictReader stores cells beyond the header column-count under
+    # the literal None key (always a list). The annotation on `row`
+    # doesn't capture that, so cast for the lookup.
+    extras = row.get(None)  # type: ignore[call-overload]
+    if extras:
+        # Treat any non-empty extra as a hard error to honour the
+        # strict-column contract.
+        non_empty = [str(v).strip() for v in extras if str(v).strip()]
+        if non_empty:
+            raise ValueError(
+                f"{model.__name__}: row has {len(non_empty)} cell(s) beyond the "
+                f"declared header columns: {non_empty!r}"
+            )
     for raw_key, raw_value in row.items():
-        # csv.DictReader populates keys as None for cells beyond the header
-        # row's column count (rare, but happens when an operator hand-edits a
-        # CSV in a tool that pads rows). We tolerate and skip them.
         if raw_key is None:
+            # Already validated above; nothing left to coerce.
             continue
         key = raw_key.strip()
         if key not in fields:

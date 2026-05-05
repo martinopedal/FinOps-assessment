@@ -48,12 +48,27 @@ def _match_group(user: UserRecord, personas: list[Persona]) -> str | None:
     return None
 
 
+# A principal whose local part starts with `svc-`/`svc_` is treated as a
+# non-human service account when no stronger signal is present. Matches the
+# documented `service_account` persona pattern in `data/personas.yaml` but
+# applies it to the principal (UPN/email local part) rather than only to
+# job_title, because most service accounts have no job_title set.
+_SERVICE_PRINCIPAL_RE = re.compile(r"^svc[-_]", re.IGNORECASE)
+
+
+def _looks_like_service_principal(principal: str) -> bool:
+    local = principal.split("@", 1)[0]
+    return bool(_SERVICE_PRINCIPAL_RE.match(local))
+
+
 def _fallback(user: UserRecord, personas_by_id: dict[str, Persona]) -> str:
     if user.user_type == "guest" and "guest" in personas_by_id:
         return "guest"
     if user.user_type in {"service", "shared_mailbox"} and "service_account" in personas_by_id:
         return "service_account"
     if not user.account_enabled and "service_account" in personas_by_id:
+        return "service_account"
+    if _looks_like_service_principal(user.principal) and "service_account" in personas_by_id:
         return "service_account"
     if "information_worker" in personas_by_id:
         return "information_worker"
