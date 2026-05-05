@@ -34,6 +34,7 @@ dev = [
     "ruff>=0.4.0",
     "mypy>=1.10",
     "types-PyYAML>=6.0.12",
+    "types-requests>=2.31.0",
 ]
 pdf = [
     # WeasyPrint renders the print-tuned HTML to a deterministic PDF.
@@ -41,6 +42,15 @@ pdf = [
     # **not** in the default install — see README "PDF reports" for the
     # platform-specific install hints.
     "weasyprint>=68",
+]
+live = [
+    # Live-mode collectors: Microsoft Graph (M4), ARM/Cost Management (M5),
+    # GitHub REST (M6a), Azure DevOps REST (M6b).
+    # Auth is handled by DefaultAzureCredential / env vars — no long-lived
+    # secrets belong in this package.  Install with:
+    #   pip install 'finops-assess[live]'
+    "azure-identity>=1.17",
+    "requests>=2.32",
 ]
 
 [project.scripts]
@@ -80,4 +90,16 @@ files = ["src"]
 # the same source compiles cleanly with or without the extra installed.
 [[tool.mypy.overrides]]
 module = ["weasyprint"]
+ignore_missing_imports = true
+
+# azure-identity and requests are optional [live] extras; type stubs for
+# azure.* packages may not be installed in the base dev environment.
+[[tool.mypy.overrides]]
+module = ["azure.identity", "azure.core.*"]
+ignore_missing_imports = true
+
+# requests is included in the [live] extra; the types-requests stub is in [dev]
+# but the runtime package may not be installed in the base CI environment.
+[[tool.mypy.overrides]]
+module = ["requests"]
 ignore_missing_imports = true

@@ -385,5 +385,184 @@ def catalog_coverage(source: str, fail_on_gap: bool) -> None:
         raise SystemExit(1)
 
 
+@main.command()
+@click.option(
+    "--surface",
+    "surfaces",
+    type=click.Choice(["m365", "azure", "github", "ado"]),
+    multiple=True,
+    default=["m365", "azure", "github", "ado"],
+    show_default=True,
+    help="Surface(s) to collect.  Repeat to select multiple.  Defaults to all four.",
+)
+@click.option(
+    "--output-dir",
+    "output_dir",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=Path("./collected-data"),
+    show_default=True,
+    help="Directory to write normalised CSV files into.  Passed directly to "
+    "'finops-assess run --input' afterwards.",
+)
+@click.option(
+    "--tenant-id",
+    default=None,
+    envvar="AZURE_TENANT_ID",
+    help="Azure Entra tenant ID (M365 + Azure).  Falls back to AZURE_TENANT_ID.",
+)
+@click.option(
+    "--subscription-ids",
+    "subscription_ids",
+    default=None,
+    help="Comma-separated Azure subscription IDs to scan (Azure only).  "
+    "Omit to scan all subscriptions the credential can read.",
+)
+@click.option(
+    "--github-enterprise",
+    "github_enterprise",
+    default=None,
+    envvar="GITHUB_ENTERPRISE",
+    help="GitHub Enterprise slug.  Falls back to GITHUB_ENTERPRISE.",
+)
+@click.option(
+    "--github-orgs",
+    "github_orgs",
+    default=None,
+    help="Comma-separated GitHub organisation names (for GHAS + runner data).",
+)
+@click.option(
+    "--ado-org",
+    "ado_org",
+    default=None,
+    envvar="AZURE_DEVOPS_ORG",
+    help="Azure DevOps organisation name.  Falls back to AZURE_DEVOPS_ORG.",
+)
+@click.option(
+    "--no-metrics",
+    "skip_metrics",
+    is_flag=True,
+    default=False,
+    help="Skip Azure Monitor metrics calls (useful when Reader role is present "
+    "but Monitoring Reader is not).",
+)
+@click.option(
+    "-v",
+    "--verbose",
+    is_flag=True,
+    default=False,
+    help="Enable verbose (INFO-level) logging.",
+)
+def collect(
+    surfaces: tuple[str, ...],
+    output_dir: Path,
+    tenant_id: str | None,
+    subscription_ids: str | None,
+    github_enterprise: str | None,
+    github_orgs: str | None,
+    ado_org: str | None,
+    skip_metrics: bool,
+    verbose: bool,
+) -> None:
+    """Pull live data from Microsoft / GitHub / ADO APIs into normalised CSVs.
+
+    Writes CSV files to --output-dir; the directory can then be passed
+    directly to finops-assess run --input <output-dir>.
+
+    Requires the [live] optional extra:
+    pip install 'finops-assess[live]'
+
+    Authentication uses environment variables - see the collector modules for
+    full details.
+
+    \b
+    M365 / Azure:  AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET (or
+                   AZURE_FEDERATED_TOKEN_FILE for OIDC workload identity)
+    GitHub:        GITHUB_TOKEN
+    Azure DevOps:  AZURE_DEVOPS_PAT (or AZURE_DEVOPS_TOKEN for Entra auth)
+    """
+    logging.basicConfig(
+        level=logging.INFO if verbose else logging.WARNING,
+        format="%(levelname)s %(name)s: %(message)s",
+    )
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    unique_surfaces = list(dict.fromkeys(surfaces))  # dedup while preserving order
+
+    for surface in unique_surfaces:
+        if surface == "m365":
+            try:
+                from finops_assess.collectors.graph_collector import collect_graph
+            except ImportError as exc:
+                raise click.ClickException(str(exc)) from exc
+            click.echo("Collecting Microsoft 365 data via Graph API ...")
+            try:
+                collect_graph(output_dir, tenant_id=tenant_id)
+            except RuntimeError as exc:
+                raise click.ClickException(str(exc)) from exc
+            click.echo(f"  -> CSVs written to {output_dir}")
+
+        elif surface == "azure":
+            try:
+                from finops_assess.collectors.arm_collector import collect_arm
+            except ImportError as exc:
+                raise click.ClickException(str(exc)) from exc
+            sub_ids: list[str] | None = None
+            if subscription_ids:
+                sub_ids = [s.strip() for s in subscription_ids.split(",") if s.strip()]
+            click.echo("Collecting Azure resource data via ARM API ...")
+            try:
+                collect_arm(output_dir, subscription_ids=sub_ids, collect_metrics=not skip_metrics)
+            except RuntimeError as exc:
+                raise click.ClickException(str(exc)) from exc
+            click.echo(f"  -> CSVs written to {output_dir}")
+
+        elif surface == "github":
+            try:
+                from finops_assess.collectors.github_collector import collect_github
+            except ImportError as exc:
+                raise click.ClickException(str(exc)) from exc
+            if not github_enterprise and not github_orgs:
+                raise click.UsageError(
+                    "At least one of --github-enterprise or --github-orgs is required "
+                    "when collecting the github surface."
+                )
+            orgs_list: list[str] | None = None
+            if github_orgs:
+                orgs_list = [o.strip() for o in github_orgs.split(",") if o.strip()]
+            click.echo("Collecting GitHub data via REST API ...")
+            try:
+                collect_github(
+                    output_dir,
+                    enterprise=github_enterprise,
+                    orgs=orgs_list,
+                )
+            except RuntimeError as exc:
+                raise click.ClickException(str(exc)) from exc
+            click.echo(f"  -> CSVs written to {output_dir}")
+
+        elif surface == "ado":
+            try:
+                from finops_assess.collectors.ado_collector import collect_ado
+            except ImportError as exc:
+                raise click.ClickException(str(exc)) from exc
+            if not ado_org:
+                raise click.UsageError(
+                    "--ado-org (or AZURE_DEVOPS_ORG env var) is required "
+                    "when collecting the ado surface."
+                )
+            click.echo("Collecting Azure DevOps data via REST API ...")
+            try:
+                collect_ado(output_dir, org=ado_org)
+            except RuntimeError as exc:
+                raise click.ClickException(str(exc)) from exc
+            click.echo(f"  -> CSVs written to {output_dir}")
+
+    click.echo(
+        f"\nCollection complete.  Run the assessment with:\n"
+        f"  finops-assess run --input {output_dir} --output report.json --format all"
+    )
+
+
 if __name__ == "__main__":  # pragma: no cover
     main()

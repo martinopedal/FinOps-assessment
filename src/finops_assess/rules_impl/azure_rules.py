@@ -1,9 +1,10 @@
 """Azure savings rules — see ``docs/plan.md`` §6.
 
-These rules consume :class:`AzureResource` rows that the CSV collector
-normalises (and that the M5 ARM collector will produce). Cost figures use
-``monthly_cost_usd`` from the snapshot when present and degrade gracefully
-to ``None`` otherwise (no estimates are fabricated).
+These rules consume :class:`AzureResource`, :class:`AzureReservation`, and
+:class:`AzureLogWorkspace` rows that the CSV collector normalises (and that
+the M5 ARM collector will produce). Cost figures use ``monthly_cost_usd``
+from the snapshot when present and degrade gracefully to ``None`` otherwise
+(no estimates are fabricated).
 """
 
 from __future__ import annotations
@@ -148,6 +149,143 @@ def oversized_vm(ctx: RuleContext) -> Iterable[Finding]:
             evidence={
                 "p95_cpu_pct": resource.p95_cpu_pct,
                 "p95_mem_pct": resource.p95_mem_pct,
+                "location": resource.location,
+            },
+        )
+
+
+# ---------------------------------------------------------------------------
+# AZ.RESERVATION_UNDERUTILIZED
+# ---------------------------------------------------------------------------
+_RESERVATION_UTIL_THRESHOLD = 80.0
+
+
+@register("AZ.RESERVATION_UNDERUTILIZED")
+def reservation_underutilized(ctx: RuleContext) -> Iterable[Finding]:
+    """Flag Reservations / Savings Plans with < 80 % average utilization."""
+    for reservation in ctx.dataset.azure_reservations:
+        if reservation.utilization_pct is None:
+            continue
+        if reservation.utilization_pct >= _RESERVATION_UTIL_THRESHOLD:
+            continue
+        yield Finding(
+            rule_id=ctx.rule.id,
+            surface="azure",
+            severity=ctx.rule.severity,
+            principal=ctx.redact(reservation.reservation_id),
+            current_sku=reservation.sku,
+            estimated_monthly_savings_usd=None,
+            recommendation=render(
+                ctx.rule.recommendation_template,
+                principal=ctx.redact(reservation.reservation_id),
+                utilization_pct=round(reservation.utilization_pct, 1),
+            ),
+            evidence={
+                "reservation_name": reservation.reservation_name,
+                "sku": reservation.sku,
+                "scope": reservation.scope,
+                "utilization_pct": reservation.utilization_pct,
+                "monthly_cost_usd": reservation.monthly_cost_usd,
+            },
+        )
+
+
+# ---------------------------------------------------------------------------
+# AZ.LOG_ANALYTICS_OVERINGEST
+# ---------------------------------------------------------------------------
+@register("AZ.LOG_ANALYTICS_OVERINGEST")
+def log_analytics_overingest(ctx: RuleContext) -> Iterable[Finding]:
+    """Flag Log Analytics workspaces that would save by moving commitment tiers."""
+    for workspace in ctx.dataset.azure_log_workspaces:
+        if workspace.recommended_tier is None:
+            continue
+        if workspace.daily_gb is None:
+            continue
+        # Estimate monthly saving from the pre-computed percentage when available.
+        est_savings: float | None = None
+        if workspace.est_savings_pct is not None and workspace.monthly_cost_usd is not None:
+            est_savings = _round(workspace.monthly_cost_usd * workspace.est_savings_pct / 100.0)
+        yield Finding(
+            rule_id=ctx.rule.id,
+            surface="azure",
+            severity=ctx.rule.severity,
+            principal=ctx.redact(workspace.workspace_id),
+            estimated_monthly_savings_usd=est_savings,
+            recommendation=render(
+                ctx.rule.recommendation_template,
+                principal=ctx.redact(workspace.workspace_id),
+                daily_gb=round(workspace.daily_gb, 1),
+                recommended_tier=workspace.recommended_tier,
+                est_savings_pct=round(workspace.est_savings_pct, 1)
+                if workspace.est_savings_pct is not None
+                else "?",
+            ),
+            evidence={
+                "workspace_name": workspace.workspace_name,
+                "daily_gb": workspace.daily_gb,
+                "commitment_tier_gb": workspace.commitment_tier_gb,
+                "recommended_tier": workspace.recommended_tier,
+                "est_savings_pct": workspace.est_savings_pct,
+            },
+        )
+
+
+# ---------------------------------------------------------------------------
+# AZ.DEV_TEST_SUB_MISMATCH
+# ---------------------------------------------------------------------------
+# Detects mismatches between the env tag on a resource and the subscription
+# offer type. Two cases:
+#   1. env=prod resource in a Dev/Test subscription (financial risk: prod
+#      workloads lose their SLA and may violate EA Dev/Test eligibility).
+#   2. env=dev/test resource in a non-Dev/Test subscription (cost risk:
+#      paying production prices for non-production workloads).
+def _is_devtest_offer(offer: str) -> bool:
+    """Return True when the subscription offer is a Dev/Test variant."""
+    lower = offer.lower().replace("-", "").replace("_", "").replace(" ", "").replace("/", "")
+    return "devtest" in lower or lower in {"dev", "test"}
+
+
+def _is_prod_env(env_tag: str) -> bool:
+    return env_tag.lower().startswith("prod")
+
+
+def _is_devtest_env(env_tag: str) -> bool:
+    lower = env_tag.lower()
+    return lower.startswith("dev") or lower.startswith("test") or lower == "nonprod"
+
+
+@register("AZ.DEV_TEST_SUB_MISMATCH")
+def dev_test_sub_mismatch(ctx: RuleContext) -> Iterable[Finding]:
+    """Flag resources whose env tag and subscription offer type disagree."""
+    for resource in ctx.dataset.azure_resources:
+        if resource.env_tag is None or resource.subscription_offer is None:
+            continue
+        env = resource.env_tag
+        offer = resource.subscription_offer
+        is_devtest_sub = _is_devtest_offer(offer)
+        is_mismatch = (_is_prod_env(env) and is_devtest_sub) or (
+            _is_devtest_env(env) and not is_devtest_sub
+        )
+        if not is_mismatch:
+            continue
+        yield Finding(
+            rule_id=ctx.rule.id,
+            surface="azure",
+            severity=ctx.rule.severity,
+            principal=ctx.redact(resource.resource_id),
+            current_sku=resource.sku,
+            estimated_monthly_savings_usd=None,
+            recommendation=render(
+                ctx.rule.recommendation_template,
+                principal=ctx.redact(resource.resource_id),
+                env_tag=env,
+                subscription_id=resource.subscription_id or "?",
+                subscription_offer=offer,
+            ),
+            evidence={
+                "env_tag": env,
+                "subscription_id": resource.subscription_id,
+                "subscription_offer": offer,
                 "location": resource.location,
             },
         )
