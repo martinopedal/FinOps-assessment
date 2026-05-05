@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="generator" content="finops-assess {{ run.version }}">
+<title>FinOps assessment report — {{ run.generated_at }}</title>
+<style>
+  /* Vendored print CSS — no remote assets, deterministic, CSP-safe. */
+  :root {
+    --fg: #1f2328;
+    --muted: #57606a;
+    --border: #d0d7de;
+    --bg: #ffffff;
+    --bg-alt: #f6f8fa;
+    --accent: {{ branding.accent_color }};
+    --sev-info: #0969da;
+    --sev-low: #1a7f37;
+    --sev-medium: #bf8700;
+    --sev-high: #cf222e;
+  }
+  @page {
+    size: {{ branding.page_size }};
+    margin: 18mm 16mm 22mm 16mm;
+    @bottom-left {
+      content: "finops-assess {{ run.version }} · {{ run.generated_at }}";
+      font: 9pt -apple-system, "Segoe UI", sans-serif;
+      color: #57606a;
+    }
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font: 9pt -apple-system, "Segoe UI", sans-serif;
+      color: #57606a;
+    }
+  }
+  @page cover {
+    size: {{ branding.page_size }};
+    margin: 0;
+    @bottom-left { content: ""; }
+    @bottom-right { content: ""; }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    font: 10.5pt/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    margin: 0;
+    padding: 0;
+  }
+  h1 { font-size: 20pt; margin: 0 0 0.25rem 0; }
+  h2 {
+    font-size: 14pt;
+    margin: 1.2rem 0 0.5rem 0;
+    border-bottom: 1.5pt solid var(--accent);
+    padding-bottom: 0.2rem;
+  }
+  h3 { font-size: 11pt; margin: 0.8rem 0 0.4rem 0; color: var(--muted); }
+  .meta { color: var(--muted); font-size: 9pt; margin-bottom: 1rem; }
+  .meta code {
+    background: var(--bg-alt);
+    padding: 0 0.3rem;
+    border-radius: 2pt;
+    font-size: 9pt;
+  }
+
+  /* --- Cover page --- */
+  .cover {
+    page: cover;
+    page-break-after: always;
+    height: 100vh;
+    padding: 25mm 22mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: var(--bg);
+  }
+  .cover-header { display: flex; align-items: center; gap: 12pt; }
+  .cover-logo { max-height: 36pt; max-width: 120pt; }
+  .cover-org { font-size: 13pt; color: var(--muted); font-weight: 600; }
+  .cover-title {
+    font-size: 28pt;
+    font-weight: 700;
+    color: var(--accent);
+    margin-top: 18pt;
+    line-height: 1.15;
+  }
+  .cover-subtitle {
+    font-size: 13pt;
+    color: var(--muted);
+    margin-top: 6pt;
+  }
+  .cover-summary {
+    margin-top: 18pt;
+    border-top: 1pt solid var(--border);
+    border-bottom: 1pt solid var(--border);
+    padding: 14pt 0;
+    display: flex;
+    gap: 18pt;
+    flex-wrap: wrap;
+  }
+  .cover-summary .stat { flex: 1 1 28%; min-width: 130pt; }
+  .cover-summary .stat .label {
+    font-size: 8.5pt;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .cover-summary .stat .value {
+    font-size: 22pt;
+    font-weight: 600;
+    margin-top: 2pt;
+    color: var(--fg);
+  }
+  .cover-callout {
+    margin-top: 14pt;
+    padding: 12pt 14pt;
+    background: var(--bg-alt);
+    border-left: 3pt solid var(--accent);
+    font-size: 10pt;
+    color: var(--fg);
+  }
+  .cover-callout strong { color: var(--accent); }
+  .cover-footer {
+    color: var(--muted);
+    font-size: 8.5pt;
+    border-top: 1pt solid var(--border);
+    padding-top: 8pt;
+  }
+  .cover-footer .scope { font-style: italic; }
+
+  /* --- Body sections --- */
+  .body { padding: 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.4rem 0 1.2rem 0;
+    font-size: 9pt;
+  }
+  th, td {
+    text-align: left;
+    padding: 5pt 6pt;
+    border-bottom: 0.5pt solid var(--border);
+    vertical-align: top;
+  }
+  th {
+    background: var(--bg-alt);
+    font-weight: 600;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+  }
+  .sev {
+    display: inline-block;
+    padding: 1pt 6pt;
+    border-radius: 8pt;
+    font-size: 8pt;
+    font-weight: 600;
+    color: white;
+  }
+  .sev-info    { background: var(--sev-info); }
+  .sev-low     { background: var(--sev-low); }
+  .sev-medium  { background: var(--sev-medium); }
+  .sev-high    { background: var(--sev-high); }
+  .mono {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 8.5pt;
+  }
+  .pill-list { display: flex; flex-wrap: wrap; gap: 4pt; }
+  .pill {
+    background: var(--bg-alt);
+    border: 0.5pt solid var(--border);
+    border-radius: 8pt;
+    padding: 1pt 6pt;
+    font-size: 8.5pt;
+  }
+  .empty { color: var(--muted); font-style: italic; padding: 4pt 0; }
+  .evidence {
+    background: var(--bg-alt);
+    border: 0.5pt solid var(--border);
+    border-radius: 2pt;
+    padding: 4pt 6pt;
+    margin-top: 3pt;
+    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 7.5pt;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  tr, .surface-section { page-break-inside: avoid; }
+  h2 { page-break-after: avoid; }
+  .body-header {
+    border-bottom: 1pt solid var(--border);
+    padding-bottom: 6pt;
+    margin-bottom: 10pt;
+  }
+  .body-header h1 { font-size: 16pt; }
+</style>
+</head>
+<body>
+  <section class="cover">
+    <div>
+      <div class="cover-header">
+        {% if branding.logo_data_uri %}
+          <img class="cover-logo" src="{{ branding.logo_data_uri }}" alt="">
+        {% endif %}
+        {% if branding.name %}
+          <div class="cover-org">{{ branding.name }}</div>
+        {% endif %}
+      </div>
+      <div class="cover-title">FinOps assessment</div>
+      <div class="cover-subtitle">
+        Read-only audit of licensing, identity, usage and cost across the
+        Microsoft ecosystem.
+      </div>
+
+      <div class="cover-summary">
+        <div class="stat">
+          <div class="label">Findings</div>
+          <div class="value">{{ summary.findings_count|default(findings|length) }}</div>
+        </div>
+        <div class="stat">
+          <div class="label">Rules fired</div>
+          <div class="value">{{ rules_fired_count }}</div>
+        </div>
+        <div class="stat">
+          <div class="label">Est. monthly savings</div>
+          <div class="value">{{ "$%.0f"|format(total_estimated_savings) }}</div>
+        </div>
+        <div class="stat">
+          <div class="label">Principals assessed</div>
+          <div class="value">{{ summary.persona_distribution.values()|sum }}</div>
+        </div>
+      </div>
+
+      {% if top_surfaces %}
+        <h3>Top surfaces by estimated savings</h3>
+        <div class="pill-list">
+          {% for entry in top_surfaces %}
+            <span class="pill">
+              <strong>{{ entry.label }}</strong>
+              &middot; {{ entry.findings }} finding{{ "" if entry.findings == 1 else "s" }}
+              &middot; {{ "$%.0f"|format(entry.savings) }}/mo
+            </span>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if summary.persona_distribution %}
+        <h3>Persona distribution</h3>
+        <div class="pill-list">
+          {% for persona_id, count in (summary.persona_distribution.items()|sort) %}
+            <span class="pill"><span class="mono">{{ persona_id }}</span> &middot; {{ count }}</span>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="cover-callout">
+        <strong>Read-only by construction.</strong>
+        finops-assess never mutates the systems it inspects. Every
+        recommendation in this report is advisory; a human admin must
+        confirm the action before applying it.
+      </div>
+    </div>
+
+    <div class="cover-footer">
+      <p class="scope">
+        Generated <code>{{ run.generated_at }}</code> by
+        <code>{{ run.tool }} {{ run.version }}</code>
+        &middot; mode <code>{{ run.mode }}</code>
+        &middot; PII redaction <code>{{ "on" if run.pii_redaction else "off" }}</code>
+        &middot; input <code>{{ run.input }}</code>
+      </p>
+    </div>
+  </section>
+
+  <section class="body">
+    <header class="body-header">
+      <h1>Findings by surface</h1>
+      <p class="meta">
+        Severities: <span class="sev sev-high">high</span>
+        <span class="sev sev-medium">medium</span>
+        <span class="sev sev-low">low</span>
+        <span class="sev sev-info">info</span>
+      </p>
+    </header>
+
+    {% if summary.rules_skipped_no_impl %}
+      <h3>Rules in catalogue without an implementation</h3>
+      <div class="pill-list">
+        {% for rid in summary.rules_skipped_no_impl %}
+          <span class="pill mono">{{ rid }}</span>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% for surface, label in surface_labels %}
+      <section class="surface-section">
+        <h2>{{ label }}</h2>
+        {% set surface_findings = findings_by_surface.get(surface, []) %}
+        {% if surface_findings %}
+          <table>
+            <thead>
+              <tr>
+                <th>Sev</th>
+                <th>Rule</th>
+                <th>Principal</th>
+                <th>Current SKU</th>
+                <th>Recommended SKU</th>
+                <th>Est. $/mo</th>
+                <th>Recommendation</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in surface_findings %}
+                <tr>
+                  <td><span class="sev sev-{{ f.severity }}">{{ f.severity }}</span></td>
+                  <td class="mono">{{ f.rule_id }}</td>
+                  <td class="mono">{{ f.principal }}</td>
+                  <td class="mono">{{ f.current_sku or "—" }}</td>
+                  <td class="mono">{{ f.recommended_sku or "—" }}</td>
+                  <td>{{ "$%.0f"|format(f.estimated_monthly_savings_usd) if f.estimated_monthly_savings_usd is not none else "—" }}</td>
+                  <td>
+                    {{ f.recommendation }}
+                    {% if f.evidence %}
+                      <div class="evidence">{{ f.evidence|tojson(indent=2) }}</div>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="empty">No findings.</p>
+        {% endif %}
+      </section>
+    {% endfor %}
+  </section>
+</body>
+</html>
