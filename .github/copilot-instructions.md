@@ -20,6 +20,12 @@ context, in this order, before reading task-specific files or making
 edits. Skipping this step causes duplicated work, contradicted
 decisions, and broken cross-PR continuity.
 
+0. **Audit CI health first.** Use `list_workflow_runs` (GitHub MCP
+   tool) to fetch the most recent runs on `main`. If any CI job is
+   failing, surface the failure in your first response and investigate
+   with `get_job_logs` before touching any other file. Do **not**
+   start feature work while `main` is red — fix CI first or hand off
+   to the tester squad member (`squad:tester`).
 1. **Read this file in full** (`.github/copilot-instructions.md`) and
    `docs/plan.md` — the plan is the source of truth for scope and
    the §11 delivery loop.
@@ -27,8 +33,10 @@ decisions, and broken cross-PR continuity.
    sorted by `updated`) using the GitHub MCP tools. Read at least the
    titles and descriptions of the most recent ~10 to understand what
    has just shipped, what is in flight, and what conventions prior
-   sessions established. If your task overlaps a PR that is still
-   open, coordinate with that branch instead of forking the work.
+   sessions established. Pay special attention to any PR authored by
+   `@copilot` or carrying a `squad:*` label — these represent agent
+   history. If your task overlaps a PR that is still open, coordinate
+   with that branch instead of forking the work.
 3. **Scan open issues**, especially anything with a `squad:*` label,
    and read the full issue (and its comment thread) for the one you
    are picking up.
@@ -38,6 +46,12 @@ decisions, and broken cross-PR continuity.
    their boundaries.
 5. **Check `.squad/decisions.md` and `.squad/decisions/inbox/`** for
    prior cross-PR decisions that constrain your approach.
+6. **Review your stored memories.** The `<memories>` block injected at
+   session start contains facts accumulated by prior agent sessions.
+   Treat them as squad short-term memory: verify any that are relevant
+   to your task, refresh them with `store_memory` if still accurate,
+   and correct or discard any that have been superseded by recent
+   changes in steps 0–5.
 
 If any of these reads contradict the user's stated request, surface
 the conflict in your first response rather than silently picking one.
