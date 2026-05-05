@@ -33,7 +33,7 @@ import mimetypes
 import os
 from collections.abc import Iterator
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from importlib import resources
 from pathlib import Path
@@ -80,6 +80,12 @@ class Branding:
     """Branding options for the PDF cover page.
 
     All fields are optional. Defaults reproduce the unbranded look.
+
+    Validation runs in :meth:`__post_init__`, so direct construction
+    (``Branding(accent_color="…")``) is checked just as strictly as
+    :meth:`from_options`. The convenience factory only adds the
+    file-handling step (reading a logo into a ``data:`` URI) on top of
+    the same validators.
     """
 
     name: str | None = None
@@ -87,9 +93,18 @@ class Branding:
     page_size: str = _DEFAULT_PAGE_SIZE
     logo_data_uri: str | None = None
 
-    # Pre-validated rendering context. Internal; populated via
-    # :meth:`from_options` so callers can't smuggle arbitrary CSS.
-    _validated: bool = field(default=False, repr=False)
+    def __post_init__(self) -> None:
+        # Frozen dataclass: re-set normalised values via object.__setattr__
+        # so direct ``Branding(page_size="a4")`` calls also normalise to
+        # the canonical "A4" the template expects.
+        normalised_color = _validate_accent_color(self.accent_color)
+        normalised_size = _validate_page_size(self.page_size)
+        if self.logo_data_uri is not None:
+            _validate_logo_data_uri(self.logo_data_uri)
+        if normalised_color != self.accent_color:
+            object.__setattr__(self, "accent_color", normalised_color)
+        if normalised_size != self.page_size:
+            object.__setattr__(self, "page_size", normalised_size)
 
     @classmethod
     def from_options(
@@ -107,15 +122,14 @@ class Branding:
         template. The logo path, if given, is read and base64-encoded
         into a ``data:`` URI; only PNG/JPEG/GIF are accepted.
         """
-        validated_color = _validate_accent_color(accent_color) if accent_color else _DEFAULT_ACCENT
-        validated_size = _validate_page_size(page_size) if page_size else _DEFAULT_PAGE_SIZE
         logo_uri = _read_logo_data_uri(Path(logo_path)) if logo_path is not None else None
+        # __post_init__ runs the field validators; this constructor does
+        # the file I/O step (which is not safe to repeat on every render).
         return cls(
             name=name,
-            accent_color=validated_color,
-            page_size=validated_size,
+            accent_color=accent_color if accent_color else _DEFAULT_ACCENT,
+            page_size=page_size if page_size else _DEFAULT_PAGE_SIZE,
             logo_data_uri=logo_uri,
-            _validated=True,
         )
 
 
@@ -148,21 +162,71 @@ def _validate_page_size(value: str) -> str:
     )
 
 
+def _sniff_image_mime(raw: bytes) -> str | None:
+    """Return the MIME type implied by the file's magic bytes, or ``None``.
+
+    Extension-based MIME detection is trivially spoofable; sniffing the
+    first few bytes catches files whose extension lies about their
+    contents (and corrupt files that would otherwise blow up inside
+    WeasyPrint with an unhelpful error).
+    """
+    if raw.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if raw.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if raw.startswith(b"GIF87a") or raw.startswith(b"GIF89a"):
+        return "image/gif"
+    return None
+
+
 def _read_logo_data_uri(path: Path) -> str:
-    """Read ``path`` and encode it as a self-contained ``data:`` URI."""
+    """Read ``path`` and encode it as a self-contained ``data:`` URI.
+
+    Both the filename extension and the file's magic bytes are checked,
+    and they must agree. This catches both spoofed extensions and
+    corrupt image files before they reach WeasyPrint.
+    """
     if not path.is_file():
         raise FileNotFoundError(f"branding logo not found: {path}")
     raw = path.read_bytes()
     if len(raw) > _MAX_LOGO_BYTES:
         raise ValueError(f"branding logo {path} is {len(raw)} bytes; max is {_MAX_LOGO_BYTES}")
-    mime, _ = mimetypes.guess_type(path.name)
-    if mime not in _ALLOWED_LOGO_MIME:
+    extension_mime, _ = mimetypes.guess_type(path.name)
+    if extension_mime not in _ALLOWED_LOGO_MIME:
         raise ValueError(
-            f"branding logo {path} has unsupported type {mime!r}; "
+            f"branding logo {path} has unsupported type {extension_mime!r}; "
             f"allowed: {sorted(_ALLOWED_LOGO_MIME)}"
         )
+    sniffed_mime = _sniff_image_mime(raw)
+    if sniffed_mime is None:
+        raise ValueError(
+            f"branding logo {path} does not begin with a recognised "
+            f"PNG/JPEG/GIF magic-byte signature; refusing to embed."
+        )
+    if sniffed_mime != extension_mime:
+        raise ValueError(
+            f"branding logo {path} extension says {extension_mime!r} but "
+            f"its magic bytes say {sniffed_mime!r}; refusing to embed."
+        )
     encoded = base64.b64encode(raw).decode("ascii")
-    return f"data:{mime};base64,{encoded}"
+    return f"data:{sniffed_mime};base64,{encoded}"
+
+
+def _validate_logo_data_uri(value: str) -> None:
+    """Sanity-check a logo ``data:`` URI passed via direct construction.
+
+    The full :func:`_read_logo_data_uri` path covers operator-supplied
+    files; this guard catches the rarer case of a caller building a
+    :class:`Branding` directly with a hand-crafted ``logo_data_uri``.
+    """
+    if not value.startswith("data:"):
+        raise ValueError(f"branding logo_data_uri must start with 'data:', got {value[:32]!r}…")
+    head = value.split(",", 1)[0]
+    if not any(head.startswith(f"data:{m};") for m in _ALLOWED_LOGO_MIME):
+        raise ValueError(
+            f"branding logo_data_uri MIME must be one of {sorted(_ALLOWED_LOGO_MIME)}; "
+            f"got header {head!r}"
+        )
 
 
 def _load_template_source(name: str) -> str | None:
@@ -312,7 +376,7 @@ def _import_weasyprint() -> Any:
     a bare :class:`ImportError` bubble up.
     """
     try:
-        import weasyprint  # type: ignore[import-untyped]
+        import weasyprint
     except ImportError as exc:  # pragma: no cover - exercised only when extra missing
         raise RuntimeError(
             "PDF reporting requires the optional 'pdf' extra. "

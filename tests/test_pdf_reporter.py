@@ -126,6 +126,27 @@ def test_branding_color_must_be_hex_literal() -> None:
         Branding.from_options(accent_color="#xyz")
 
 
+def test_branding_direct_construction_also_validates() -> None:
+    """Construction via ``Branding(...)`` must enforce the same validators.
+
+    A reviewer flagged that `from_options` could be bypassed by calling
+    the dataclass constructor directly with malicious values; the
+    validators now run in ``__post_init__`` so neither path is unsafe.
+    """
+    with pytest.raises(ValueError, match="accent_color"):
+        Branding(accent_color="red; } body{}")
+    with pytest.raises(ValueError, match="page_size"):
+        Branding(page_size="Tabloid")
+    with pytest.raises(ValueError, match="logo_data_uri"):
+        Branding(logo_data_uri="javascript:alert(1)")
+    with pytest.raises(ValueError, match="logo_data_uri"):
+        Branding(logo_data_uri="data:image/svg+xml;base64,PHN2Zy8+")
+
+
+def test_branding_direct_construction_normalises_page_size() -> None:
+    assert Branding(page_size="a4").page_size == "A4"
+
+
 def test_branding_page_size_is_allow_listed() -> None:
     assert Branding.from_options(page_size="a4").page_size == "A4"
     with pytest.raises(ValueError, match="page_size"):
@@ -146,9 +167,24 @@ def test_branding_logo_rejects_oversized_file(tmp_path: Path) -> None:
         Branding.from_options(logo_path=big)
 
 
+def test_branding_logo_rejects_extension_magic_byte_mismatch(tmp_path: Path) -> None:
+    """A .png with JPEG magic bytes is a spoof attempt; reject it cleanly."""
+    spoof = tmp_path / "logo.png"
+    spoof.write_bytes(b"\xff\xd8\xff\xe0fake-jpeg-payload")
+    with pytest.raises(ValueError, match="magic bytes"):
+        Branding.from_options(logo_path=spoof)
+
+
+def test_branding_logo_rejects_unrecognised_magic_bytes(tmp_path: Path) -> None:
+    """A .png whose body is not actually a PNG should be rejected."""
+    bad = tmp_path / "logo.png"
+    bad.write_bytes(b"this is plain text, not a PNG")
+    with pytest.raises(ValueError, match="magic-byte signature"):
+        Branding.from_options(logo_path=bad)
+
+
 def test_branding_logo_embeds_as_data_uri(tmp_path: Path) -> None:
-    # Minimal PNG header bytes; content correctness doesn't matter for the
-    # data-URI test, only that we encode and tag it correctly.
+    # A real PNG signature so the magic-byte check passes.
     raw = b"\x89PNG\r\n\x1a\nfake-payload"
     logo = tmp_path / "brand.png"
     logo.write_bytes(raw)
@@ -259,6 +295,43 @@ def test_pdf_report_missing_extra_raises_helpful_error(monkeypatch: pytest.Monke
 
     with pytest.raises(RuntimeError, match=r"finops-assess\[pdf\]"):
         build_pdf_report(_minimal_report())
+
+
+def test_cli_pdf_missing_extra_renders_clickexception(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The CLI must surface the missing-extra error as a clean Click error.
+
+    Without the wrapper this would be a Python traceback on stderr; with
+    it the user sees a single ``Error: …`` line and a non-zero exit code.
+    """
+    import builtins
+
+    from click.testing import CliRunner
+
+    from finops_assess.cli import main
+
+    real_import = builtins.__import__
+
+    def fake_import(name: str, *args: Any, **kwargs: Any) -> Any:
+        if name == "weasyprint":
+            raise ImportError("not installed in this test")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+    samples = Path(__file__).resolve().parents[1] / "samples"
+    out_pdf = tmp_path / "report.pdf"
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        ["run", "--input", str(samples), "--format", "pdf", "--pdf-output", str(out_pdf)],
+    )
+    assert result.exit_code != 0
+    # Click renders ClickException as "Error: <message>" — no traceback.
+    assert "Traceback" not in result.output
+    assert "finops-assess[pdf]" in result.output
 
 
 # --- Full WeasyPrint render (skipped if extra not installed) ----------------

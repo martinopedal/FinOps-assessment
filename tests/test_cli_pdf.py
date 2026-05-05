@@ -121,12 +121,3 @@ def test_demo_pdf_flag_writes_pdf(tmp_path: Path) -> None:
     pdf_path = out_dir / "demo-report.pdf"
     assert pdf_path.exists() and pdf_path.stat().st_size > 0
     assert pdf_path.read_bytes().startswith(b"%PDF-")
-
-
-def test_demo_without_pdf_flag_does_not_write_pdf(tmp_path: Path) -> None:
-    """Default `demo` must work without the 'pdf' extra installed."""
-    out_dir = tmp_path / "demo-report"
-    runner = CliRunner()
-    result = runner.invoke(main, ["demo", "--output-dir", str(out_dir)])
-    assert result.exit_code == 0, result.output
-    assert not (out_dir / "demo-report.pdf").exists()

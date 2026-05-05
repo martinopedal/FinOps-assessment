@@ -73,3 +73,11 @@ addopts = "-ra --strict-markers"
 python_version = "3.11"
 strict = true
 files = ["src"]
+
+# WeasyPrint is an optional runtime dep behind the [pdf] extra; it has no
+# inline type stubs and isn't installed in CI by default. Tell mypy to
+# ignore it whether or not it happens to be importable in a given env, so
+# the same source compiles cleanly with or without the extra installed.
+[[tool.mypy.overrides]]
+module = ["weasyprint"]
+ignore_missing_imports = true

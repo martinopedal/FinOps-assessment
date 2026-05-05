@@ -32,7 +32,8 @@
       color: #57606a;
     }
   }
-  @page :first {
+  @page cover {
+    size: {{ branding.page_size }};
     margin: 0;
     @bottom-left { content: ""; }
     @bottom-right { content: ""; }
@@ -63,7 +64,7 @@
 
   /* --- Cover page --- */
   .cover {
-    page: first;
+    page: cover;
     page-break-after: always;
     height: 100vh;
     padding: 25mm 22mm;

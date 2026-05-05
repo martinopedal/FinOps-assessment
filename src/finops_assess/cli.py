@@ -66,6 +66,24 @@ def _execute_assessment(
     return report, rule_counts
 
 
+def _write_pdf_or_friendly_error(
+    report: dict[str, Any],
+    output: Path,
+    branding: Branding,
+) -> None:
+    """Wrap ``write_pdf_report`` so the missing-extra error is clean.
+
+    Without this, an operator who installed the base package but not
+    ``finops-assess[pdf]`` would see a Python traceback on stderr;
+    Click renders :class:`click.ClickException` as a single tidy line
+    prefixed with ``Error:`` and exits with status 1.
+    """
+    try:
+        write_pdf_report(report, output, branding=branding)
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+
 @click.group()
 @click.version_option(__version__, prog_name="finops-assess")
 def main() -> None:
@@ -226,7 +244,7 @@ def run(
             page_size=branding_page_size,
             logo_path=branding_logo,
         )
-        write_pdf_report(report, resolved_pdf, branding=branding)
+        _write_pdf_or_friendly_error(report, resolved_pdf, branding)
         wrote_any_file = True
         click.echo(f"OK — wrote PDF report to {resolved_pdf}")
 
@@ -282,7 +300,7 @@ def demo(output_dir: Path, include_pdf: bool, no_pii_redaction: bool) -> None:
     pdf_line = ""
     if include_pdf:
         pdf_path = output_dir / "demo-report.pdf"
-        write_pdf_report(report, pdf_path, branding=Branding())
+        _write_pdf_or_friendly_error(report, pdf_path, Branding())
         pdf_line = f"\n  PDF:  {pdf_path}"
 
     findings_count = len(report["findings"])
