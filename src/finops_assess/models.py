@@ -174,10 +174,11 @@ class AzureReservation(BaseModel):
 class AzureLogWorkspace(BaseModel):
     """A normalised Log Analytics workspace ingest snapshot.
 
-    ``daily_gb`` is the average daily ingest volume. ``recommended_tier`` and
-    ``est_savings_pct`` are pre-computed by the collector (or a cost-analysis
-    step) when a more cost-effective commitment tier exists. Rules fire only
-    when ``recommended_tier`` is populated and differs from the current tier.
+    ``daily_gb`` is the average daily ingest volume. ``recommended_tier`` is
+    set by the collector when a commitment tier would be more cost-effective
+    than pay-as-you-go pricing (based on the daily ingest volume). Rules fire
+    when ``recommended_tier`` is populated, indicating the workspace is not on
+    the optimal tier.
     """
 
     model_config = ConfigDict(extra="forbid")

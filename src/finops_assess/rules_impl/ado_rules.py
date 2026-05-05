@@ -161,7 +161,7 @@ def parallel_jobs_over_provisioned(ctx: RuleContext) -> Iterable[Finding]:
 # ADO.TEST_PLANS_UNUSED
 # ---------------------------------------------------------------------------
 # Basic+Test Plans seats with no Test Plans activity in the configured window.
-# The saving is the delta between Basic+Test ($52) and Basic ($6) per month.
+# The saving is the price delta between the Basic+Test and Basic catalog entries.
 @register("ADO.TEST_PLANS_UNUSED")
 def test_plans_unused(ctx: RuleContext) -> Iterable[Finding]:
     """Flag Basic+Test seats with no Test Plans activity in the window."""
