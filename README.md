@@ -134,6 +134,7 @@ finops-assess run --input ./samples --output ./report.json --format both
 finops-assess run --input ./samples --format csv --csv-output ./findings.csv
 
 # Run against your CSVs and emit json + html + csv + pdf together.
+# (The pdf step needs the optional [pdf] extra — see "PDF reports" below.)
 finops-assess run --input ./samples --output ./report.json --format all \
   --branding-name "Contoso" --branding-color "#0969da"
 

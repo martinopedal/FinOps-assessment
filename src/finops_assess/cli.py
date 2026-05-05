@@ -131,7 +131,8 @@ def info() -> None:
     default="json",
     show_default=True,
     help="Report format(s) to emit. 'both' emits json+html (back-compat); "
-    "'all' emits json+html+csv+pdf.",
+    "'all' emits json+html+csv+pdf — the pdf step requires the optional "
+    "'pdf' extra (pip install 'finops-assess[pdf]').",
 )
 @click.option(
     "--html-output",
@@ -282,7 +283,8 @@ def run(
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
     default=Path("./demo-report"),
     show_default=True,
-    help="Directory to write demo-report.json and demo-report.html into.",
+    help="Directory to write demo-report.json, demo-report.html, and "
+    "demo-report.csv into (and demo-report.pdf when --pdf is passed).",
 )
 @click.option(
     "--pdf",
@@ -301,10 +303,11 @@ def run(
 def demo(output_dir: Path, include_pdf: bool, no_pii_redaction: bool) -> None:
     """Run the assessment against the bundled synthetic tenant.
 
-    Produces ``demo-report.json`` and ``demo-report.html`` in ``--output-dir``,
-    and (with ``--pdf``) ``demo-report.pdf`` as well. The synthetic tenant
-    is shipped inside the package so this works after ``pip install``
-    without a checkout — see ``finops_assess.demo``.
+    Produces ``demo-report.json``, ``demo-report.html``, and
+    ``demo-report.csv`` in ``--output-dir``, and (with ``--pdf``)
+    ``demo-report.pdf`` as well. The synthetic tenant is shipped inside
+    the package so this works after ``pip install`` without a checkout
+    — see ``finops_assess.demo``.
     """
     redact_pii = not no_pii_redaction
     output_dir = Path(output_dir)

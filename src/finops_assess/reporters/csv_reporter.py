@@ -35,22 +35,51 @@ COLUMNS: tuple[str, ...] = (
 )
 
 
+# Leading characters that Excel / Sheets interpret as the start of a
+# formula. Tenant-controlled strings (principals, SKU IDs, recommendation
+# text) starting with any of these get a single-quote prefix so they are
+# rendered as text instead of evaluated as a formula. This is the OWASP
+# "CSV / formula injection" mitigation.
+_FORMULA_PREFIXES: frozenset[str] = frozenset(("=", "+", "-", "@", "\t", "\r"))
+
+
+def _sanitize_cell(value: Any) -> str:
+    """Render ``value`` as a CSV cell, neutralising formula-injection prefixes.
+
+    Numeric values (``int`` / ``float`` / ``bool``) are rendered as-is —
+    a legitimate negative number like ``-12.5`` is not a formula. Only
+    string-like values that start with a dangerous character are
+    prefixed with ``'`` so spreadsheet apps render them as text.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, (bool, int, float)):
+        return str(value)
+    text = str(value)
+    if text and text[0] in _FORMULA_PREFIXES:
+        return "'" + text
+    return text
+
+
 def _row_for(finding: dict[str, Any]) -> dict[str, str]:
     """Project one finding dict onto the CSV column set.
 
     ``None`` is rendered as the empty string (Excel / pandas treat that
     as NA on import). ``evidence`` is serialised as a compact JSON
     string in the ``evidence_json`` column so the structured payload
-    survives the flattening round-trip.
+    survives the flattening round-trip. Tenant-controlled string cells
+    are passed through :func:`_sanitize_cell` to neutralise CSV-formula
+    injection (cells starting with ``=``, ``+``, ``-``, ``@``, tab, or
+    CR get a leading ``'``).
     """
     row: dict[str, str] = {}
     for column in COLUMNS:
         if column == "evidence_json":
             evidence = finding.get("evidence") or {}
+            # JSON output always starts with '{' or '[' — safe by construction.
             row[column] = json.dumps(evidence, sort_keys=True, default=str)
             continue
-        value = finding.get(column)
-        row[column] = "" if value is None else str(value)
+        row[column] = _sanitize_cell(finding.get(column))
     return row
 
 
@@ -62,7 +91,9 @@ def write_csv_report(report: dict[str, Any], output: Path) -> Path:
     the delimiter on open; for explicit Excel-locale handling, users
     can re-import with the Text Import Wizard.
 
-    Returns the resolved output path so callers can echo it.
+    Returns the output path that was written, as a :class:`~pathlib.Path`
+    (relative inputs stay relative — callers that need an absolute path
+    should call :meth:`~pathlib.Path.resolve` themselves).
     """
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)

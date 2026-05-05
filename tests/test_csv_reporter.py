@@ -107,3 +107,45 @@ def test_creates_parent_directory(tmp_path: Path) -> None:
     output = tmp_path / "nested" / "dir" / "findings.csv"
     write_csv_report(_report(_sample_findings()), output)
     assert output.exists()
+
+
+def test_neutralises_csv_formula_injection(tmp_path: Path) -> None:
+    """Tenant-controlled cells starting with formula prefixes get a `'`.
+
+    Without this, opening the report in Excel / Sheets would evaluate
+    crafted strings (e.g. ``=HYPERLINK(...)``) as formulas — a classic
+    CSV-injection vector. Numeric cells must NOT be sanitised so a
+    legitimate negative savings value still pivots as a number.
+    """
+    findings = [
+        {
+            "rule_id": "M365.UNUSED_LICENSE_30D",
+            "surface": "m365",
+            "severity": "low",
+            "principal": '=HYPERLINK("http://evil/","click")',
+            "current_sku": "+SPE_E3",
+            "recommended_sku": "@admin",
+            "estimated_monthly_savings_usd": -12.5,  # legit negative number
+            "recommendation": "-rm -rf /",
+            "evidence_ref": "\tinjected",
+            "confidence": "low",
+            "evidence": {"note": "=1+1"},  # JSON-wrapped → safe (starts with '{')
+        }
+    ]
+    output = tmp_path / "findings.csv"
+    write_csv_report(_report(findings), output)
+
+    with output.open(encoding="utf-8", newline="") as fh:
+        rows = list(csv.DictReader(fh))
+
+    row = rows[0]
+    # All four formula-trigger prefixes are neutralised on string cells.
+    assert row["principal"].startswith("'=")
+    assert row["current_sku"].startswith("'+")
+    assert row["recommended_sku"].startswith("'@")
+    assert row["recommendation"].startswith("'-")
+    assert row["evidence_ref"].startswith("'\t")
+    # Numeric values pass through unmodified — even when negative.
+    assert row["estimated_monthly_savings_usd"] == "-12.5"
+    # JSON-wrapped evidence is safe by construction (starts with `{`).
+    assert json.loads(row["evidence_json"]) == {"note": "=1+1"}
