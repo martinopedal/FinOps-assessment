@@ -321,8 +321,13 @@ def guest_premium_licensed(ctx: RuleContext) -> Iterable[Finding]:
 @register("M365.COPILOT_INACTIVE_60D")
 def copilot_inactive_60d(ctx: RuleContext) -> Iterable[Finding]:
     days = ctx.rule.inactivity_days or 60
+    # Identify Copilot add-on SKUs via the canonical feature tag, not by a
+    # hard-coded SKU id (catalogue-is-data, not code).
+    copilot_sku_ids = {
+        sku.id for sku in ctx.catalog_list if sku.cloud == "m365" and "copilot.m365" in sku.features
+    }
     for assignment in ctx.dataset.assignments:
-        if assignment.sku_id != "M365_COPILOT":
+        if assignment.sku_id not in copilot_sku_ids:
             continue
         sku = ctx.catalog.get(assignment.sku_id)
         if sku is None:
@@ -350,20 +355,39 @@ def copilot_inactive_60d(ctx: RuleContext) -> Iterable[Finding]:
 # M365.E5_FEATURES_UNUSED
 # ---------------------------------------------------------------------------
 
+# Signals checked for "is the user actually exercising E5-tier capabilities?".
 _E5_SIGNALS = ("defender_o365", "purview_dlp", "entra_p2")
-_E5_SKUS = {"SPE_E5", "ENTERPRISEPREMIUM"}
-# Recommended step-down per current SKU.
-_E5_STEPDOWN = {
-    "SPE_E5": "SPE_E3",
-    "ENTERPRISEPREMIUM": "ENTERPRISEPACK",
-}
+# The set of feature tags that *define* an E5-tier SKU (all three present
+# directly on the catalogue entry). This lets us detect E5 SKUs from the
+# catalogue rather than hard-coding their string ids.
+_E5_DEFINING_FEATURES = frozenset({"entra.p2", "defender.o365.p2", "purview.dlp"})
+
+
+def _e5_skus(ctx: RuleContext) -> set[str]:
+    return {
+        sku.id
+        for sku in ctx.catalog_list
+        if sku.cloud == "m365" and _E5_DEFINING_FEATURES.issubset(set(sku.features))
+    }
+
+
+def _stepdown_sku(sku_id: str, ctx: RuleContext) -> str | None:
+    """Return the catalog id of the predecessor SKU (E5 -> E3) via ``successor_of``."""
+    sku = ctx.catalog.get(sku_id)
+    if sku is None:
+        return None
+    for predecessor_id in sku.successor_of:
+        if predecessor_id in ctx.catalog:
+            return predecessor_id
+    return None
 
 
 @register("M365.E5_FEATURES_UNUSED")
 def e5_features_unused(ctx: RuleContext) -> Iterable[Finding]:
     days = ctx.rule.inactivity_days or 90
+    e5_skus = _e5_skus(ctx)
     for assignment in ctx.dataset.assignments:
-        if assignment.sku_id not in _E5_SKUS:
+        if assignment.sku_id not in e5_skus:
             continue
         sku = ctx.catalog.get(assignment.sku_id)
         if sku is None:
@@ -374,7 +398,7 @@ def e5_features_unused(ctx: RuleContext) -> Iterable[Finding]:
         )
         if any_active:
             continue
-        recommended = _E5_STEPDOWN.get(assignment.sku_id)
+        recommended = _stepdown_sku(assignment.sku_id, ctx)
         recommended_sku = ctx.catalog.get(recommended) if recommended else None
         savings = _delta(
             sku.list_price_usd_month,

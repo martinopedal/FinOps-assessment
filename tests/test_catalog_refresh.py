@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from finops_assess.catalog import load_catalog
 from finops_assess.catalog_refresh import (
     compute_coverage,
     fetch_and_parse,
@@ -62,8 +63,6 @@ def test_write_autogen_round_trips_through_catalog_loader(tmp_path: Path) -> Non
     written = write_autogen(coverage, target=target)
     assert written == target
     # The autogen file must be a valid CatalogEntry list (the loader's contract).
-    from finops_assess.catalog import load_catalog
-
     # Build an isolated catalog root containing only the autogen file.
     fake_root = tmp_path / "catalog"
     (fake_root / "m365").mkdir(parents=True)

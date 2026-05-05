@@ -44,6 +44,9 @@ def _coerce_row(model: type[M], row: dict[str, str]) -> dict[str, Any]:
     out: dict[str, Any] = {}
     fields = model.model_fields
     for raw_key, raw_value in row.items():
+        # csv.DictReader populates keys as None for cells beyond the header
+        # row's column count (rare, but happens when an operator hand-edits a
+        # CSV in a tool that pads rows). We tolerate and skip them.
         if raw_key is None:
             continue
         key = raw_key.strip()

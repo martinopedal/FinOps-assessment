@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from finops_assess.models import NormalizedDataset, Persona, UserRecord
 from finops_assess.persona import assign_personas
 
@@ -64,7 +66,5 @@ def test_default_human_user_is_information_worker() -> None:
 
 def test_unknown_override_is_rejected() -> None:
     user = UserRecord(principal="z@x")
-    import pytest
-
     with pytest.raises(ValueError, match="unknown persona"):
         assign_personas(_ds(user, overrides={"z@x": "no-such"}), PERSONAS)
