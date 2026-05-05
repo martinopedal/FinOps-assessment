@@ -1,4 +1,4 @@
-"""Reporters package — JSON, HTML, and PDF (M7) outputs.
+"""Reporters package — JSON, HTML, CSV, and PDF (M7) outputs.
 
 The PDF reporter requires the optional ``[pdf]`` extra (WeasyPrint plus
 its native dependencies). ``Branding``, ``build_pdf_html``,
@@ -6,6 +6,8 @@ its native dependencies). ``Branding``, ``build_pdf_html``,
 the WeasyPrint dependency is loaded lazily inside ``build_pdf_report``.
 """
 
+from finops_assess.reporters.csv_reporter import COLUMNS as CSV_COLUMNS
+from finops_assess.reporters.csv_reporter import write_csv_report
 from finops_assess.reporters.html_reporter import build_html_report, write_html_report
 from finops_assess.reporters.json_reporter import write_json_report
 from finops_assess.reporters.pdf_reporter import (
@@ -16,10 +18,12 @@ from finops_assess.reporters.pdf_reporter import (
 )
 
 __all__ = [
+    "CSV_COLUMNS",
     "Branding",
     "build_html_report",
     "build_pdf_html",
     "build_pdf_report",
+    "write_csv_report",
     "write_html_report",
     "write_json_report",
     "write_pdf_report",

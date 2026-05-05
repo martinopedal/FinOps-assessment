@@ -121,7 +121,7 @@ finops-assess validate
 python -m finops_assess.catalog validate
 python -m finops_assess.rules   validate
 
-# Run the synthetic-tenant demo end-to-end (writes JSON + HTML reports).
+# Run the synthetic-tenant demo end-to-end (writes JSON + HTML + CSV reports).
 finops-assess demo --output-dir ./demo-report
 
 # Same demo, but also emit a PDF executive report (requires the [pdf] extra).
@@ -130,7 +130,11 @@ finops-assess demo --output-dir ./demo-report --pdf
 # Run against your own normalised CSVs.
 finops-assess run --input ./samples --output ./report.json --format both
 
-# Run against your CSVs and emit json + html + pdf together.
+# Emit a flat CSV of findings for pivoting in Excel / Sheets.
+finops-assess run --input ./samples --format csv --csv-output ./findings.csv
+
+# Run against your CSVs and emit json + html + csv + pdf together.
+# (The pdf step needs the optional [pdf] extra — see "PDF reports" below.)
 finops-assess run --input ./samples --output ./report.json --format all \
   --branding-name "Contoso" --branding-color "#0969da"
 

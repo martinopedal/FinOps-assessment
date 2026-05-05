@@ -24,6 +24,7 @@ from finops_assess.engine import run_rules
 from finops_assess.persona import assign_personas
 from finops_assess.reporters import (
     Branding,
+    write_csv_report,
     write_html_report,
     write_json_report,
     write_pdf_report,
@@ -126,11 +127,12 @@ def info() -> None:
 @click.option(
     "--format",
     "fmt",
-    type=click.Choice(["json", "html", "pdf", "both", "all"]),
+    type=click.Choice(["json", "html", "csv", "pdf", "both", "all"]),
     default="json",
     show_default=True,
     help="Report format(s) to emit. 'both' emits json+html (back-compat); "
-    "'all' emits json+html+pdf.",
+    "'all' emits json+html+csv+pdf — the pdf step requires the optional "
+    "'pdf' extra (pip install 'finops-assess[pdf]').",
 )
 @click.option(
     "--html-output",
@@ -139,6 +141,14 @@ def info() -> None:
     default=None,
     help="Path to write the HTML report (only used when --format is html, both, or all). "
     "Defaults to --output with the suffix replaced by .html when --format is both or all.",
+)
+@click.option(
+    "--csv-output",
+    "csv_output",
+    type=click.Path(dir_okay=False, path_type=Path),
+    default=None,
+    help="Path to write the flat CSV findings report (only used when --format is csv or all). "
+    "Defaults to --output with the suffix replaced by .csv when --format=all.",
 )
 @click.option(
     "--pdf-output",
@@ -189,6 +199,7 @@ def run(
     output: Path | None,
     fmt: str,
     html_output: Path | None,
+    csv_output: Path | None,
     pdf_output: Path | None,
     branding_name: str | None,
     branding_color: str | None,
@@ -230,6 +241,18 @@ def run(
         wrote_any_file = True
         click.echo(f"OK — wrote HTML report to {resolved_html}")
 
+    if fmt in ("csv", "all"):
+        resolved_csv = csv_output
+        if resolved_csv is None and output is not None and fmt == "all":
+            resolved_csv = output.with_suffix(".csv")
+        if resolved_csv is None:
+            raise click.UsageError(
+                "--csv-output (or --output, when --format=all) is required for CSV output."
+            )
+        write_csv_report(report, resolved_csv)
+        wrote_any_file = True
+        click.echo(f"OK — wrote CSV report to {resolved_csv}")
+
     if fmt in ("pdf", "all"):
         resolved_pdf = pdf_output
         if resolved_pdf is None and output is not None and fmt == "all":
@@ -260,7 +283,8 @@ def run(
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
     default=Path("./demo-report"),
     show_default=True,
-    help="Directory to write demo-report.json and demo-report.html into.",
+    help="Directory to write demo-report.json, demo-report.html, and "
+    "demo-report.csv into (and demo-report.pdf when --pdf is passed).",
 )
 @click.option(
     "--pdf",
@@ -279,10 +303,11 @@ def run(
 def demo(output_dir: Path, include_pdf: bool, no_pii_redaction: bool) -> None:
     """Run the assessment against the bundled synthetic tenant.
 
-    Produces ``demo-report.json`` and ``demo-report.html`` in ``--output-dir``,
-    and (with ``--pdf``) ``demo-report.pdf`` as well. The synthetic tenant
-    is shipped inside the package so this works after ``pip install``
-    without a checkout — see ``finops_assess.demo``.
+    Produces ``demo-report.json``, ``demo-report.html``, and
+    ``demo-report.csv`` in ``--output-dir``, and (with ``--pdf``)
+    ``demo-report.pdf`` as well. The synthetic tenant is shipped inside
+    the package so this works after ``pip install`` without a checkout
+    — see ``finops_assess.demo``.
     """
     redact_pii = not no_pii_redaction
     output_dir = Path(output_dir)
@@ -294,8 +319,10 @@ def demo(output_dir: Path, include_pdf: bool, no_pii_redaction: bool) -> None:
 
     json_path = output_dir / "demo-report.json"
     html_path = output_dir / "demo-report.html"
+    csv_path = output_dir / "demo-report.csv"
     write_json_report(report, json_path)
     write_html_report(report, html_path)
+    write_csv_report(report, csv_path)
 
     pdf_line = ""
     if include_pdf:
@@ -308,7 +335,8 @@ def demo(output_dir: Path, include_pdf: bool, no_pii_redaction: bool) -> None:
     click.echo(
         f"OK — demo run produced {findings_count} findings across {active} rules.\n"
         f"  JSON: {json_path}\n"
-        f"  HTML: {html_path}"
+        f"  HTML: {html_path}\n"
+        f"  CSV:  {csv_path}"
         f"{pdf_line}"
     )
 
