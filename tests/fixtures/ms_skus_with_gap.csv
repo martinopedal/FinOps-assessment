@@ -1,0 +1,3 @@
+Product_Display_Name,String_Id,GUID,Service_Plan_Name,Service_Plan_Id,Service_Plans_Included_Friendly_Names
+Microsoft 365 E3,SPE_E3,05e9a617-0261-4cee-bb44-138d3ef5d965,EXCHANGE_S_ENTERPRISE,efb87545-963c-4e0d-99df-69c6916d9eb0,Exchange Online (Plan 2)
+Hypothetical Future SKU,TOTALLY_NEW_SKU_2099,99999999-9999-9999-9999-999999999999,SOMEPLAN,12345678-1234-1234-1234-123456789012,Some New Plan
