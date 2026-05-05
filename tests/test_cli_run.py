@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 
 from finops_assess.cli import main
@@ -82,6 +83,7 @@ def test_run_emits_csv_via_format_flag(tmp_path: Path) -> None:
 
 
 def test_run_format_all_emits_every_format(tmp_path: Path) -> None:
+    pytest.importorskip("weasyprint")  # --format all includes PDF
     base = tmp_path / "report.json"
     result = CliRunner().invoke(
         main,
