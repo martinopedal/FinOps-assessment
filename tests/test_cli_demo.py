@@ -18,8 +18,10 @@ def test_demo_command_writes_json_and_html(tmp_path: Path) -> None:
 
     json_path = out_dir / "demo-report.json"
     html_path = out_dir / "demo-report.html"
+    csv_path = out_dir / "demo-report.csv"
     assert json_path.exists() and json_path.stat().st_size > 0
     assert html_path.exists() and html_path.stat().st_size > 0
+    assert csv_path.exists() and csv_path.stat().st_size > 0
 
     payload = json.loads(json_path.read_text(encoding="utf-8"))
     assert payload["run"]["pii_redaction"] is True
@@ -77,4 +79,5 @@ def test_demo_without_pdf_flag_does_not_write_pdf(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert (out_dir / "demo-report.json").exists()
     assert (out_dir / "demo-report.html").exists()
+    assert (out_dir / "demo-report.csv").exists()
     assert not (out_dir / "demo-report.pdf").exists()
