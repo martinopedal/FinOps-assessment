@@ -1,5 +1,6 @@
-resource_id,resource_type,sku,location,avg_cpu_pct,p95_cpu_pct,p95_mem_pct,avg_net_kbps,days_inactive,attached,associated,monthly_cost_usd,recommended_sku
-/subscriptions/00000000/rg/dev/vm/vm-idle,virtualMachine,Standard_D4s_v5,eastus,2.0,3.5,12.0,8.0,,,,140.00,
-/subscriptions/00000000/rg/dev/vm/vm-oversized,virtualMachine,Standard_D8s_v5,eastus,18.0,25.0,30.0,520.0,,,,280.00,Standard_D4s_v5
-/subscriptions/00000000/rg/dev/disks/disk-orphan,managedDisk,Premium_LRS_512,eastus,,,,,30,false,,42.00,
-/subscriptions/00000000/rg/dev/networkInterfaces/pip-orphan,publicIp,Standard,eastus,,,,,,,false,3.65,
+resource_id,resource_type,sku,location,avg_cpu_pct,p95_cpu_pct,p95_mem_pct,avg_net_kbps,days_inactive,attached,associated,monthly_cost_usd,recommended_sku,subscription_id,subscription_offer,env_tag
+/subscriptions/00000000/rg/dev/vm/vm-idle,virtualMachine,Standard_D4s_v5,eastus,2.0,3.5,12.0,8.0,,,,140.00,,,,
+/subscriptions/00000000/rg/dev/vm/vm-oversized,virtualMachine,Standard_D8s_v5,eastus,18.0,25.0,30.0,520.0,,,,280.00,Standard_D4s_v5,,,
+/subscriptions/00000000/rg/dev/disks/disk-orphan,managedDisk,Premium_LRS_512,eastus,,,,,30,false,,42.00,,,,
+/subscriptions/00000000/rg/dev/networkInterfaces/pip-orphan,publicIp,Standard,eastus,,,,,,,false,3.65,,,,
+/subscriptions/11111111/rg/prod/vm/vm-prod-in-devtest,virtualMachine,Standard_D4s_v3,westus,45.0,62.0,55.0,1200.0,,,,120.00,,11111111,Dev/Test,prod

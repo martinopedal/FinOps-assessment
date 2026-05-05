@@ -1,0 +1,6 @@
+principal,org,seat_type,sku_id,last_activity_days,only_stakeholder_activity,last_test_plan_days
+ado-inactive@contoso.example,contoso,basic,ADO.BASIC,120,false,
+ado-boards@contoso.example,contoso,basic,ADO.BASIC,5,true,
+ado-notest@contoso.example,contoso,basic_plus_test,ADO.BASIC_TEST,10,false,90
+ado-active@contoso.example,contoso,basic,ADO.BASIC,3,false,
+ado-testactive@contoso.example,contoso,basic_plus_test,ADO.BASIC_TEST,7,false,2

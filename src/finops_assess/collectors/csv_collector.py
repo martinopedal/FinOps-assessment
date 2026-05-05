@@ -6,8 +6,12 @@ Expected files (all optional; missing files yield empty lists):
 * ``license_assignments.csv`` — :class:`LicenseAssignment` fields.
 * ``usage.csv`` — :class:`UsageSignal` fields.
 * ``azure_resources.csv`` — :class:`AzureResource` fields.
+* ``azure_reservations.csv`` — :class:`AzureReservation` fields.
+* ``azure_log_workspaces.csv`` — :class:`AzureLogWorkspace` fields.
 * ``github_seats.csv`` — :class:`GitHubSeat` fields.
 * ``github_orgs.csv`` — :class:`GitHubOrg` fields.
+* ``ado_seats.csv`` — :class:`AdoSeat` fields.
+* ``ado_orgs.csv`` — :class:`AdoOrgUsage` fields.
 * ``overrides.yaml`` — ``{ principal: persona_id }`` mapping for explicit
   persona pinning (highest-priority signal in the persona engine).
 
@@ -26,6 +30,10 @@ import yaml
 from pydantic import BaseModel, ValidationError
 
 from finops_assess.models import (
+    AdoOrgUsage,
+    AdoSeat,
+    AzureLogWorkspace,
+    AzureReservation,
     AzureResource,
     GitHubOrg,
     GitHubSeat,
@@ -133,7 +141,11 @@ def collect_from_directory(input_dir: Path) -> NormalizedDataset:
         assignments=_read_csv(input_dir / "license_assignments.csv", LicenseAssignment),
         usage=_read_csv(input_dir / "usage.csv", UsageSignal),
         azure_resources=_read_csv(input_dir / "azure_resources.csv", AzureResource),
+        azure_reservations=_read_csv(input_dir / "azure_reservations.csv", AzureReservation),
+        azure_log_workspaces=_read_csv(input_dir / "azure_log_workspaces.csv", AzureLogWorkspace),
         github_seats=_read_csv(input_dir / "github_seats.csv", GitHubSeat),
         github_orgs=_read_csv(input_dir / "github_orgs.csv", GitHubOrg),
+        ado_seats=_read_csv(input_dir / "ado_seats.csv", AdoSeat),
+        ado_orgs=_read_csv(input_dir / "ado_orgs.csv", AdoOrgUsage),
         overrides=_read_overrides(input_dir / "overrides.yaml"),
     )

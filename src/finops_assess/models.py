@@ -147,6 +147,48 @@ class AzureResource(BaseModel):
     associated: bool | None = None
     monthly_cost_usd: float | None = Field(default=None, ge=0)
     recommended_sku: str | None = None
+    # Subscription / environment metadata (used by AZ.DEV_TEST_SUB_MISMATCH)
+    subscription_id: str | None = None
+    subscription_offer: str | None = None
+    env_tag: str | None = None
+
+
+class AzureReservation(BaseModel):
+    """A normalised Azure Reservation / Savings Plan snapshot.
+
+    ``utilization_pct`` is the average utilization over the trailing 30 days
+    (0-100). Rules abstain when the signal is absent rather than assuming
+    zero utilization.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    reservation_id: str = Field(..., min_length=1)
+    reservation_name: str | None = None
+    sku: str | None = None
+    scope: str | None = None
+    utilization_pct: float | None = Field(default=None, ge=0, le=100)
+    monthly_cost_usd: float | None = Field(default=None, ge=0)
+
+
+class AzureLogWorkspace(BaseModel):
+    """A normalised Log Analytics workspace ingest snapshot.
+
+    ``daily_gb`` is the average daily ingest volume. ``recommended_tier`` and
+    ``est_savings_pct`` are pre-computed by the collector (or a cost-analysis
+    step) when a more cost-effective commitment tier exists. Rules fire only
+    when ``recommended_tier`` is populated and differs from the current tier.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    workspace_id: str = Field(..., min_length=1)
+    workspace_name: str | None = None
+    daily_gb: float | None = Field(default=None, ge=0)
+    commitment_tier_gb: float | None = Field(default=None, ge=0)
+    recommended_tier: str | None = None
+    est_savings_pct: float | None = Field(default=None, ge=0, le=100)
+    monthly_cost_usd: float | None = Field(default=None, ge=0)
 
 
 GitHubSeatType = Literal[
@@ -210,6 +252,45 @@ class PersonaAssignment(BaseModel):
     confidence: Confidence = "medium"
 
 
+AdoSeatType = Literal["stakeholder", "basic", "basic_plus_test"]
+
+
+class AdoSeat(BaseModel):
+    """A normalised Azure DevOps seat / access-level assignment.
+
+    ``last_activity_days`` is days since the last work-item, code, or pipeline
+    activity (``None`` means no telemetry). ``only_stakeholder_activity`` is
+    ``True`` when the only observed activity is board reads and comments, making
+    the user a candidate for the free Stakeholder tier. ``last_test_plan_days``
+    is days since the last Test Plans activity — only meaningful for
+    ``basic_plus_test`` seats.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    principal: str = Field(..., min_length=1)
+    org: str | None = None
+    seat_type: AdoSeatType
+    sku_id: str | None = None
+    last_activity_days: int | None = Field(default=None, ge=0)
+    only_stakeholder_activity: bool | None = None
+    last_test_plan_days: int | None = Field(default=None, ge=0)
+
+
+class AdoOrgUsage(BaseModel):
+    """Org-level Azure DevOps pipeline usage snapshot.
+
+    Drives ``ADO.PARALLEL_JOBS_OVER_PROVISIONED``. All counts are optional;
+    the rule abstains when either signal is absent.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    org: str = Field(..., min_length=1)
+    purchased_parallel_jobs: int | None = Field(default=None, ge=0)
+    p95_concurrent_jobs: int | None = Field(default=None, ge=0)
+
+
 class NormalizedDataset(BaseModel):
     """The complete input the rule engine consumes."""
 
@@ -219,6 +300,10 @@ class NormalizedDataset(BaseModel):
     assignments: list[LicenseAssignment] = Field(default_factory=list)
     usage: list[UsageSignal] = Field(default_factory=list)
     azure_resources: list[AzureResource] = Field(default_factory=list)
+    azure_reservations: list[AzureReservation] = Field(default_factory=list)
+    azure_log_workspaces: list[AzureLogWorkspace] = Field(default_factory=list)
     github_seats: list[GitHubSeat] = Field(default_factory=list)
     github_orgs: list[GitHubOrg] = Field(default_factory=list)
+    ado_seats: list[AdoSeat] = Field(default_factory=list)
+    ado_orgs: list[AdoOrgUsage] = Field(default_factory=list)
     overrides: dict[str, str] = Field(default_factory=dict)
