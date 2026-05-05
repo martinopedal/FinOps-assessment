@@ -1,0 +1,5 @@
+principal,org,seat_type,sku_id,last_activity_days,copilot_acceptances_30d
+ivan@contoso.example,contoso,enterprise,GH.ENTERPRISE,180,
+jade@contoso.example,contoso,enterprise,GH.ENTERPRISE,5,
+kai@contoso.example,contoso,copilot_business,GH.COPILOT_BUSINESS,45,0
+lara@contoso.example,contoso,copilot_business,GH.COPILOT_BUSINESS,1,42

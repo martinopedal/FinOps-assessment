@@ -6,6 +6,8 @@ Expected files (all optional; missing files yield empty lists):
 * ``license_assignments.csv`` — :class:`LicenseAssignment` fields.
 * ``usage.csv`` — :class:`UsageSignal` fields.
 * ``azure_resources.csv`` — :class:`AzureResource` fields.
+* ``github_seats.csv`` — :class:`GitHubSeat` fields.
+* ``github_orgs.csv`` — :class:`GitHubOrg` fields.
 * ``overrides.yaml`` — ``{ principal: persona_id }`` mapping for explicit
   persona pinning (highest-priority signal in the persona engine).
 
@@ -25,6 +27,8 @@ from pydantic import BaseModel, ValidationError
 
 from finops_assess.models import (
     AzureResource,
+    GitHubOrg,
+    GitHubSeat,
     LicenseAssignment,
     NormalizedDataset,
     UsageSignal,
@@ -129,5 +133,7 @@ def collect_from_directory(input_dir: Path) -> NormalizedDataset:
         assignments=_read_csv(input_dir / "license_assignments.csv", LicenseAssignment),
         usage=_read_csv(input_dir / "usage.csv", UsageSignal),
         azure_resources=_read_csv(input_dir / "azure_resources.csv", AzureResource),
+        github_seats=_read_csv(input_dir / "github_seats.csv", GitHubSeat),
+        github_orgs=_read_csv(input_dir / "github_orgs.csv", GitHubOrg),
         overrides=_read_overrides(input_dir / "overrides.yaml"),
     )
