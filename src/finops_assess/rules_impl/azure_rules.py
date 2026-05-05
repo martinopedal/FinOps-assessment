@@ -263,11 +263,10 @@ def dev_test_sub_mismatch(ctx: RuleContext) -> Iterable[Finding]:
         env = resource.env_tag
         offer = resource.subscription_offer
         is_devtest_sub = _is_devtest_offer(offer)
-        if _is_prod_env(env) and is_devtest_sub:
-            pass  # prod workload in a dev/test subscription — flag it
-        elif _is_devtest_env(env) and not is_devtest_sub:
-            pass  # dev/test workload in a production subscription — flag it
-        else:
+        is_mismatch = (_is_prod_env(env) and is_devtest_sub) or (
+            _is_devtest_env(env) and not is_devtest_sub
+        )
+        if not is_mismatch:
             continue
         yield Finding(
             rule_id=ctx.rule.id,

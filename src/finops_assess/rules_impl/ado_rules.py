@@ -176,17 +176,16 @@ def test_plans_unused(ctx: RuleContext) -> Iterable[Finding]:
         # Saving = (Basic+Test price) - (Basic price)
         basic_test_sku = ctx.catalog.get("ADO.BASIC_TEST")
         basic_sku = ctx.catalog.get("ADO.BASIC")
+        est_savings: float | None = None
         if (
             basic_test_sku is not None
             and basic_test_sku.list_price_usd_month is not None
             and basic_sku is not None
             and basic_sku.list_price_usd_month is not None
         ):
-            est_savings: float | None = _round(
+            est_savings = _round(
                 basic_test_sku.list_price_usd_month - basic_sku.list_price_usd_month
             )
-        else:
-            est_savings = None
         yield Finding(
             rule_id=ctx.rule.id,
             surface="ado",
