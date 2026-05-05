@@ -16,8 +16,12 @@ _DEMO_FILES = (
     "license_assignments.csv",
     "usage.csv",
     "azure_resources.csv",
+    "azure_reservations.csv",
+    "azure_log_workspaces.csv",
     "github_seats.csv",
     "github_orgs.csv",
+    "ado_seats.csv",
+    "ado_orgs.csv",
     "overrides.yaml",
 )
 
