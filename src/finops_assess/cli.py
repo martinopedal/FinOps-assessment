@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 import logging
+import tempfile
 from pathlib import Path
+from typing import Any
 
 import click
 
@@ -17,11 +19,46 @@ from finops_assess.catalog_refresh import (
     write_autogen,
 )
 from finops_assess.collectors import collect_from_directory
+from finops_assess.demo import materialise_demo_data
 from finops_assess.engine import run_rules
 from finops_assess.persona import assign_personas
-from finops_assess.reporters import write_json_report
+from finops_assess.reporters import write_html_report, write_json_report
 from finops_assess.reporters.json_reporter import build_report
 from finops_assess.rules import load_personas, load_rules
+
+
+def _execute_assessment(
+    *,
+    input_dir: Path,
+    redact_pii: bool,
+) -> tuple[dict[str, Any], dict[str, int]]:
+    """Run the collector → engine → report pipeline against ``input_dir``.
+
+    Returns the report dict and the per-rule count summary so the caller
+    can format CLI output without re-deriving anything.
+    """
+    dataset = collect_from_directory(input_dir)
+    catalog = load_catalog()
+    personas = load_personas()
+    rules = load_rules()
+    persona_assignments = assign_personas(dataset, personas)
+    findings, summary = run_rules(
+        rules=rules,
+        catalog=catalog,
+        personas=personas,
+        persona_assignments=persona_assignments,
+        dataset=dataset,
+        redact_pii=redact_pii,
+    )
+    report = build_report(
+        findings=findings,
+        summary=summary,
+        persona_assignments=persona_assignments,
+        input_path=input_dir,
+        redact_pii=redact_pii,
+    )
+    rule_counts: dict[str, int] = summary["rule_counts"]
+    return report, rule_counts
 
 
 @click.group()
@@ -64,6 +101,22 @@ def info() -> None:
     help="Path to write the JSON report; if omitted, prints to stdout.",
 )
 @click.option(
+    "--format",
+    "fmt",
+    type=click.Choice(["json", "html", "both"]),
+    default="json",
+    show_default=True,
+    help="Report format(s) to emit.",
+)
+@click.option(
+    "--html-output",
+    "html_output",
+    type=click.Path(dir_okay=False, path_type=Path),
+    default=None,
+    help="Path to write the HTML report (only used when --format is html or both). "
+    "Defaults to --output with the suffix replaced by .html when --format=both.",
+)
+@click.option(
     "--no-pii-redaction",
     is_flag=True,
     default=False,
@@ -76,39 +129,93 @@ def info() -> None:
     default=False,
     help="Enable verbose (INFO-level) logging.",
 )
-def run(input_dir: Path, output: Path | None, no_pii_redaction: bool, verbose: bool) -> None:
+def run(
+    input_dir: Path,
+    output: Path | None,
+    fmt: str,
+    html_output: Path | None,
+    no_pii_redaction: bool,
+    verbose: bool,
+) -> None:
     """Run the rule engine over a directory of normalised CSVs."""
     logging.basicConfig(
         level=logging.INFO if verbose else logging.WARNING,
         format="%(levelname)s %(name)s: %(message)s",
     )
 
-    dataset = collect_from_directory(input_dir)
-    catalog = load_catalog()
-    personas = load_personas()
-    rules = load_rules()
-    persona_assignments = assign_personas(dataset, personas)
-    findings, summary = run_rules(
-        rules=rules,
-        catalog=catalog,
-        personas=personas,
-        persona_assignments=persona_assignments,
-        dataset=dataset,
-        redact_pii=not no_pii_redaction,
+    redact_pii = not no_pii_redaction
+    report, rule_counts = _execute_assessment(input_dir=input_dir, redact_pii=redact_pii)
+    findings_count = len(report["findings"])
+    active = sum(1 for v in rule_counts.values() if v)
+
+    wrote_any_file = False
+    if fmt in ("json", "both"):
+        json_payload = write_json_report(report, output)
+        if output is not None:
+            wrote_any_file = True
+            click.echo(f"OK — wrote {findings_count} findings across {active} rules to {output}")
+        elif fmt == "json":
+            click.echo(json_payload)
+
+    if fmt in ("html", "both"):
+        resolved_html = html_output
+        if resolved_html is None and output is not None and fmt == "both":
+            resolved_html = output.with_suffix(".html")
+        if resolved_html is None:
+            raise click.UsageError(
+                "--html-output (or --output, when --format=both) is required for HTML output."
+            )
+        write_html_report(report, resolved_html)
+        wrote_any_file = True
+        click.echo(f"OK — wrote HTML report to {resolved_html}")
+
+    if not wrote_any_file and fmt == "json" and output is None:
+        # Already echoed JSON to stdout above; nothing else to do.
+        return
+
+
+@main.command()
+@click.option(
+    "--output-dir",
+    "output_dir",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=Path("./demo-report"),
+    show_default=True,
+    help="Directory to write demo-report.json and demo-report.html into.",
+)
+@click.option(
+    "--no-pii-redaction",
+    is_flag=True,
+    default=False,
+    help="Disable salted hashing of principals in the report (opt-in; default is on).",
+)
+def demo(output_dir: Path, no_pii_redaction: bool) -> None:
+    """Run the assessment against the bundled synthetic tenant.
+
+    Produces ``demo-report.json`` and ``demo-report.html`` in ``--output-dir``.
+    The synthetic tenant is shipped inside the package so this works after
+    ``pip install`` without a checkout — see ``finops_assess.demo``.
+    """
+    redact_pii = not no_pii_redaction
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    with tempfile.TemporaryDirectory(prefix="finops-demo-") as tmp:
+        demo_input = materialise_demo_data(Path(tmp))
+        report, rule_counts = _execute_assessment(input_dir=demo_input, redact_pii=redact_pii)
+
+    json_path = output_dir / "demo-report.json"
+    html_path = output_dir / "demo-report.html"
+    write_json_report(report, json_path)
+    write_html_report(report, html_path)
+
+    findings_count = len(report["findings"])
+    active = sum(1 for v in rule_counts.values() if v)
+    click.echo(
+        f"OK — demo run produced {findings_count} findings across {active} rules.\n"
+        f"  JSON: {json_path}\n"
+        f"  HTML: {html_path}"
     )
-    report = build_report(
-        findings=findings,
-        summary=summary,
-        persona_assignments=persona_assignments,
-        input_path=input_dir,
-        redact_pii=not no_pii_redaction,
-    )
-    payload = write_json_report(report, output)
-    if output is None:
-        click.echo(payload)
-    else:
-        active = sum(1 for v in summary["rule_counts"].values() if v)
-        click.echo(f"OK — wrote {len(findings)} findings across {active} rules to {output}")
 
 
 @main.group()

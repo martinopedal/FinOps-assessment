@@ -2,9 +2,14 @@
 
 This directory is a **fully synthetic** Microsoft 365 + Azure tenant used by:
 
-* the M2 unit tests (`tests/test_engine.py`, `tests/test_cli_run.py`)
+* the M2/M3 unit tests (`tests/test_engine.py`, `tests/test_cli_run.py`,
+  `tests/test_cli_demo.py`)
 * the `finops-assess run --input ./samples/` smoke command, which is the
   M2 milestone exit-criterion in `docs/plan.md` §2
+* the `finops-assess demo` command (M3) — which uses a byte-identical
+  copy bundled inside the package at `src/finops_assess/demo/` so it
+  works after `pip install` without a checkout.
+  `tests/test_demo_bundle.py` keeps the two trees in sync.
 
 No real principals, tenants, or resources are represented. All identifiers
 use the IETF-reserved `*.example` domain (RFC 2606) and the

@@ -1,0 +1,50 @@
+name: Demo report
+
+# Builds the synthetic-tenant demo report on every push to main and on
+# manual dispatch, and publishes both the JSON and HTML report as a
+# downloadable workflow artifact. M3 exit-criterion: a GitHub Actions
+# job publishes the demo report as an artifact (docs/plan.md §2).
+#
+# This workflow only ever reads the synthetic data shipped in
+# `src/finops_assess/demo/`. No tenant credentials, no secrets, and no
+# write permissions are used.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-demo-report:
+    name: Build demo report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Build demo report
+        run: finops-assess demo --output-dir ./demo-report
+
+      - name: Upload demo report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: finops-assess-demo-report
+          path: demo-report/
+          if-no-files-found: error
+          retention-days: 30

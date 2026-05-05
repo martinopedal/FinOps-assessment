@@ -14,10 +14,10 @@ right-sizing and cost-saving recommendations.
 
 | Milestone | State |
 |---|---|
-| M0 — Repo scaffold + comprehensive plan | **this PR** |
-| M1 — License catalogue YAML (~50 SKUs) | pending |
-| M2 — CSV collector + persona engine + core savings rules | pending |
-| M3 — HTML/JSON report + demo workflow | pending |
+| M0 — Repo scaffold + comprehensive plan | ✅ shipped (PR #1) |
+| M1 — License catalogue YAML (87 SKUs) | ✅ shipped (PR #2) |
+| M2 — CSV collector + persona engine + core savings rules (12) | ✅ shipped (PR #3) |
+| M3 — HTML/JSON report + demo workflow + PowerShell wrapper | **this PR** |
 | M4 — Microsoft Graph live collector (OIDC) | pending |
 | M5 — Azure Cost Management collector | pending |
 | M6 — GitHub + Azure DevOps collectors | pending |
@@ -121,8 +121,22 @@ finops-assess validate
 python -m finops_assess.catalog validate
 python -m finops_assess.rules   validate
 
+# Run the synthetic-tenant demo end-to-end (writes JSON + HTML reports).
+finops-assess demo --output-dir ./demo-report
+
+# Run against your own normalised CSVs.
+finops-assess run --input ./samples --output ./report.json --format both
+
 # Run the test suite.
 pytest
+```
+
+PowerShell-native operators can use the wrapper script in `scripts/` and
+keep the report flowing through a PowerShell pipeline:
+
+```powershell
+$report = ./scripts/Invoke-FinOpsAssess.ps1 -Demo -OutputDir ./out
+$report.findings | Where-Object severity -eq 'high' | Format-Table
 ```
 
 ### Run inside a GitHub Actions workflow
@@ -139,14 +153,21 @@ jobs:
         with: { python-version: "3.12", cache: pip }
       - run: pip install -e ".[dev]"
       - run: finops-assess validate
+      - run: finops-assess demo --output-dir ./demo-report
+      - uses: actions/upload-artifact@v4
+        with:
+          name: finops-assess-demo-report
+          path: demo-report/
 ```
 
 For Azure DevOps Pipelines the equivalent is `UsePythonVersion@0`
 followed by the same two `pip install` / `finops-assess` steps — no
 extra agent capabilities required.
 
-The collectors and rule engine arrive in M2; today's scaffold
-exercises the data model and validation pipeline end-to-end.
+This repository ships the same demo job at
+`.github/workflows/demo-report.yml`; every push to `main` (and every
+manual `workflow_dispatch`) publishes the rendered HTML + JSON reports
+as the **`finops-assess-demo-report`** workflow artifact.
 
 ## License
 
