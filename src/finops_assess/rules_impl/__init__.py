@@ -5,6 +5,6 @@ Add a new rule by creating a module and decorating its impl with
 must match the YAML rule definition under ``data/rules/``.
 """
 
-from finops_assess.rules_impl import azure_rules, m365_rules  # noqa: F401
+from finops_assess.rules_impl import azure_rules, github_rules, m365_rules  # noqa: F401
 
 __all__: list[str] = []

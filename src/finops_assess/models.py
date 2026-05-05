@@ -149,6 +149,56 @@ class AzureResource(BaseModel):
     recommended_sku: str | None = None
 
 
+GitHubSeatType = Literal[
+    "enterprise",
+    "team",
+    "copilot_business",
+    "copilot_enterprise",
+    "ghas_committer",
+]
+
+
+class GitHubSeat(BaseModel):
+    """A normalised GitHub seat (Enterprise/Team/Copilot/GHAS-committer).
+
+    ``last_activity_days`` is the number of days since the last observed
+    contribution, review, issue activity, or sign-in (``None`` means
+    "never observed"). ``copilot_acceptances_30d`` is only meaningful for
+    Copilot seats; ``None`` means we lack the signal, ``0`` means the
+    seat is provably inactive.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    principal: str = Field(..., min_length=1)
+    org: str | None = None
+    seat_type: GitHubSeatType
+    sku_id: str | None = None
+    last_activity_days: int | None = Field(default=None, ge=0)
+    copilot_acceptances_30d: int | None = Field(default=None, ge=0)
+
+
+class GitHubOrg(BaseModel):
+    """A normalised GitHub org-level snapshot for org-scoped rules.
+
+    Drives ``GH.GHAS_OVER_PROVISIONED`` (where billable committers exceed
+    repos that are actually producing scanning signal) and
+    ``GH.RUNNER_TIER_MISMATCH`` (where included runner minutes are
+    materially under- or over-utilised). All counts are optional; rules
+    abstain rather than fabricate when a signal is missing.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    org: str = Field(..., min_length=1)
+    ghas_repo_count: int | None = Field(default=None, ge=0)
+    actively_scanned_repos: int | None = Field(default=None, ge=0)
+    active_committers: int | None = Field(default=None, ge=0)
+    runner_tier: str | None = None
+    runner_minutes_used: int | None = Field(default=None, ge=0)
+    runner_minutes_included: int | None = Field(default=None, ge=0)
+
+
 class PersonaAssignment(BaseModel):
     """The persona resolved for one principal, with the signal that won."""
 
@@ -169,4 +219,6 @@ class NormalizedDataset(BaseModel):
     assignments: list[LicenseAssignment] = Field(default_factory=list)
     usage: list[UsageSignal] = Field(default_factory=list)
     azure_resources: list[AzureResource] = Field(default_factory=list)
+    github_seats: list[GitHubSeat] = Field(default_factory=list)
+    github_orgs: list[GitHubOrg] = Field(default_factory=list)
     overrides: dict[str, str] = Field(default_factory=dict)

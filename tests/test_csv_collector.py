@@ -17,6 +17,8 @@ def test_collect_samples_directory_loads_all_files() -> None:
     assert len(dataset.assignments) >= 10
     assert len(dataset.usage) > 0
     assert len(dataset.azure_resources) == 4
+    assert len(dataset.github_seats) == 4
+    assert len(dataset.github_orgs) == 1
     assert dataset.overrides["alice@contoso.example"] == "frontline_worker"
 
 
@@ -26,6 +28,8 @@ def test_collect_handles_missing_files(tmp_path: Path) -> None:
     assert dataset.assignments == []
     assert dataset.usage == []
     assert dataset.azure_resources == []
+    assert dataset.github_seats == []
+    assert dataset.github_orgs == []
     assert dataset.overrides == {}
 
 
