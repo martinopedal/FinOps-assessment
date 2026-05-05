@@ -35,6 +35,13 @@ dev = [
     "mypy>=1.10",
     "types-PyYAML>=6.0.12",
 ]
+pdf = [
+    # WeasyPrint renders the print-tuned HTML to a deterministic PDF.
+    # It pulls heavy native deps (Pango, cairo, GDK-pixbuf) so it is
+    # **not** in the default install — see README "PDF reports" for the
+    # platform-specific install hints.
+    "weasyprint>=68",
+]
 
 [project.scripts]
 finops-assess = "finops_assess.cli:main"
@@ -47,6 +54,7 @@ finops_assess = [
     "demo/*.csv",
     "demo/*.yaml",
     "reporters/templates/*.html.j2",
+    "reporters/templates/*.pdf.html.j2",
 ]
 
 [tool.ruff]

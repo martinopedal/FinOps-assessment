@@ -17,11 +17,11 @@ right-sizing and cost-saving recommendations.
 | M0 — Repo scaffold + comprehensive plan | ✅ shipped (PR #1) |
 | M1 — License catalogue YAML (87 SKUs) | ✅ shipped (PR #2) |
 | M2 — CSV collector + persona engine + core savings rules (12) | ✅ shipped (PR #3) |
-| M3 — HTML/JSON report + demo workflow + PowerShell wrapper | **this PR** |
+| M3 — HTML/JSON report + demo workflow + PowerShell wrapper | ✅ shipped (PR #4) |
 | M4 — Microsoft Graph live collector (OIDC) | pending |
 | M5 — Azure Cost Management collector | pending |
 | M6 — GitHub + Azure DevOps collectors | pending |
-| M7 — PDF executive report | pending |
+| M7 — PDF executive report | **this PR** |
 
 ## Repository layout
 
@@ -124,12 +124,35 @@ python -m finops_assess.rules   validate
 # Run the synthetic-tenant demo end-to-end (writes JSON + HTML reports).
 finops-assess demo --output-dir ./demo-report
 
+# Same demo, but also emit a PDF executive report (requires the [pdf] extra).
+finops-assess demo --output-dir ./demo-report --pdf
+
 # Run against your own normalised CSVs.
 finops-assess run --input ./samples --output ./report.json --format both
+
+# Run against your CSVs and emit json + html + pdf together.
+finops-assess run --input ./samples --output ./report.json --format all \
+  --branding-name "Contoso" --branding-color "#0969da"
 
 # Run the test suite.
 pytest
 ```
+
+### PDF reports (optional `[pdf]` extra)
+
+The PDF executive report is rendered by [WeasyPrint](https://weasyprint.org/),
+which has heavy native dependencies (Pango, cairo, GDK-pixbuf). It is not
+installed by default. To enable it:
+
+```bash
+pip install 'finops-assess[pdf]'
+```
+
+Then install the platform-specific system libraries WeasyPrint needs — see
+the [WeasyPrint installation guide](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation)
+for your OS. PDF builds are deterministic: re-running against the same JSON
+report produces a byte-identical PDF (we derive `SOURCE_DATE_EPOCH` from
+the report's own `run.generated_at` timestamp).
 
 PowerShell-native operators can use the wrapper script in `scripts/` and
 keep the report flowing through a PowerShell pipeline:

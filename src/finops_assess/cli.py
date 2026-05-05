@@ -22,7 +22,12 @@ from finops_assess.collectors import collect_from_directory
 from finops_assess.demo import materialise_demo_data
 from finops_assess.engine import run_rules
 from finops_assess.persona import assign_personas
-from finops_assess.reporters import write_html_report, write_json_report
+from finops_assess.reporters import (
+    Branding,
+    write_html_report,
+    write_json_report,
+    write_pdf_report,
+)
 from finops_assess.reporters.json_reporter import build_report
 from finops_assess.rules import load_personas, load_rules
 
@@ -103,18 +108,50 @@ def info() -> None:
 @click.option(
     "--format",
     "fmt",
-    type=click.Choice(["json", "html", "both"]),
+    type=click.Choice(["json", "html", "pdf", "both", "all"]),
     default="json",
     show_default=True,
-    help="Report format(s) to emit.",
+    help="Report format(s) to emit. 'both' emits json+html (back-compat); "
+    "'all' emits json+html+pdf.",
 )
 @click.option(
     "--html-output",
     "html_output",
     type=click.Path(dir_okay=False, path_type=Path),
     default=None,
-    help="Path to write the HTML report (only used when --format is html or both). "
-    "Defaults to --output with the suffix replaced by .html when --format=both.",
+    help="Path to write the HTML report (only used when --format is html, both, or all). "
+    "Defaults to --output with the suffix replaced by .html when --format is both or all.",
+)
+@click.option(
+    "--pdf-output",
+    "pdf_output",
+    type=click.Path(dir_okay=False, path_type=Path),
+    default=None,
+    help="Path to write the PDF report (only used when --format is pdf or all). "
+    "Defaults to --output with the suffix replaced by .pdf when --format=all. "
+    "Requires the optional 'pdf' extra (pip install 'finops-assess[pdf]').",
+)
+@click.option(
+    "--branding-name",
+    default=None,
+    help="Organisation name to print on the PDF cover page.",
+)
+@click.option(
+    "--branding-color",
+    default=None,
+    help="Accent colour for the PDF cover page as a #RRGGBB hex literal.",
+)
+@click.option(
+    "--branding-logo",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    default=None,
+    help="Path to a PNG/JPEG/GIF logo (≤1 MiB) to embed on the PDF cover page.",
+)
+@click.option(
+    "--branding-page-size",
+    type=click.Choice(["Letter", "A4", "Legal", "A3", "A5"]),
+    default=None,
+    help="Paper size for the PDF report. Defaults to Letter.",
 )
 @click.option(
     "--no-pii-redaction",
@@ -134,6 +171,11 @@ def run(
     output: Path | None,
     fmt: str,
     html_output: Path | None,
+    pdf_output: Path | None,
+    branding_name: str | None,
+    branding_color: str | None,
+    branding_logo: Path | None,
+    branding_page_size: str | None,
     no_pii_redaction: bool,
     verbose: bool,
 ) -> None:
@@ -149,7 +191,7 @@ def run(
     active = sum(1 for v in rule_counts.values() if v)
 
     wrote_any_file = False
-    if fmt in ("json", "both"):
+    if fmt in ("json", "both", "all"):
         json_payload = write_json_report(report, output)
         if output is not None:
             wrote_any_file = True
@@ -157,17 +199,36 @@ def run(
         elif fmt == "json":
             click.echo(json_payload)
 
-    if fmt in ("html", "both"):
+    if fmt in ("html", "both", "all"):
         resolved_html = html_output
-        if resolved_html is None and output is not None and fmt == "both":
+        if resolved_html is None and output is not None and fmt in ("both", "all"):
             resolved_html = output.with_suffix(".html")
         if resolved_html is None:
             raise click.UsageError(
-                "--html-output (or --output, when --format=both) is required for HTML output."
+                "--html-output (or --output, when --format is both or all) "
+                "is required for HTML output."
             )
         write_html_report(report, resolved_html)
         wrote_any_file = True
         click.echo(f"OK — wrote HTML report to {resolved_html}")
+
+    if fmt in ("pdf", "all"):
+        resolved_pdf = pdf_output
+        if resolved_pdf is None and output is not None and fmt == "all":
+            resolved_pdf = output.with_suffix(".pdf")
+        if resolved_pdf is None:
+            raise click.UsageError(
+                "--pdf-output (or --output, when --format=all) is required for PDF output."
+            )
+        branding = Branding.from_options(
+            name=branding_name,
+            accent_color=branding_color,
+            page_size=branding_page_size,
+            logo_path=branding_logo,
+        )
+        write_pdf_report(report, resolved_pdf, branding=branding)
+        wrote_any_file = True
+        click.echo(f"OK — wrote PDF report to {resolved_pdf}")
 
     if not wrote_any_file and fmt == "json" and output is None:
         # Already echoed JSON to stdout above; nothing else to do.
@@ -184,17 +245,26 @@ def run(
     help="Directory to write demo-report.json and demo-report.html into.",
 )
 @click.option(
+    "--pdf",
+    "include_pdf",
+    is_flag=True,
+    default=False,
+    help="Also emit demo-report.pdf. Requires the optional 'pdf' extra "
+    "(pip install 'finops-assess[pdf]').",
+)
+@click.option(
     "--no-pii-redaction",
     is_flag=True,
     default=False,
     help="Disable salted hashing of principals in the report (opt-in; default is on).",
 )
-def demo(output_dir: Path, no_pii_redaction: bool) -> None:
+def demo(output_dir: Path, include_pdf: bool, no_pii_redaction: bool) -> None:
     """Run the assessment against the bundled synthetic tenant.
 
-    Produces ``demo-report.json`` and ``demo-report.html`` in ``--output-dir``.
-    The synthetic tenant is shipped inside the package so this works after
-    ``pip install`` without a checkout — see ``finops_assess.demo``.
+    Produces ``demo-report.json`` and ``demo-report.html`` in ``--output-dir``,
+    and (with ``--pdf``) ``demo-report.pdf`` as well. The synthetic tenant
+    is shipped inside the package so this works after ``pip install``
+    without a checkout — see ``finops_assess.demo``.
     """
     redact_pii = not no_pii_redaction
     output_dir = Path(output_dir)
@@ -209,12 +279,19 @@ def demo(output_dir: Path, no_pii_redaction: bool) -> None:
     write_json_report(report, json_path)
     write_html_report(report, html_path)
 
+    pdf_line = ""
+    if include_pdf:
+        pdf_path = output_dir / "demo-report.pdf"
+        write_pdf_report(report, pdf_path, branding=Branding())
+        pdf_line = f"\n  PDF:  {pdf_path}"
+
     findings_count = len(report["findings"])
     active = sum(1 for v in rule_counts.values() if v)
     click.echo(
         f"OK — demo run produced {findings_count} findings across {active} rules.\n"
         f"  JSON: {json_path}\n"
         f"  HTML: {html_path}"
+        f"{pdf_line}"
     )
 
 
