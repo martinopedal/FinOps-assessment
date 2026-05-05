@@ -1,0 +1,12 @@
+principal,display_name,user_type,account_enabled,job_title,department,groups,mailbox_size_gb,last_sign_in_days
+alice@contoso.example,Alice Adams,member,true,Warehouse Operator,Logistics,frontline,1.2,3
+bob@contoso.example,Bob Brown,member,true,Senior Analyst,Finance,finance|all-staff,42.0,2
+carol@contoso.example,Carol Cruz,member,true,Compliance Officer,Legal,legal|all-staff,55.0,1
+dan@contoso.example,Dan Davies,member,false,Programme Manager,PMO,pmo,18.0,210
+erin@contoso.example,Erin Evans,member,true,Engineer,Engineering,engineering|all-staff,30.0,5
+frank@contoso.example,Frank Foster,member,true,Specialist,Operations,ops,12.0,4
+gloria@contoso.example,Gloria Gomez,member,true,Account Executive,Sales,sales|all-staff,8.0,1
+hugo@external.example,Hugo Hess,guest,true,,,partners,,2
+mailroom@contoso.example,Mailroom (shared),shared_mailbox,true,,,,9.5,
+svc-pipeline@contoso.example,SVC Pipeline,service,true,,,,0.0,
+isla@contoso.example,Isla Inkpen,member,true,Senior Manager,Finance,finance|all-staff,40.0,7

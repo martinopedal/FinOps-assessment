@@ -1,0 +1,8 @@
+Product_Display_Name,String_Id,GUID,Service_Plan_Name,Service_Plan_Id,Service_Plans_Included_Friendly_Names
+Microsoft 365 E3,SPE_E3,05e9a617-0261-4cee-bb44-138d3ef5d965,EXCHANGE_S_ENTERPRISE,efb87545-963c-4e0d-99df-69c6916d9eb0,Exchange Online (Plan 2)
+Microsoft 365 E3,SPE_E3,05e9a617-0261-4cee-bb44-138d3ef5d965,SHAREPOINTENTERPRISE,5dbe027f-2339-4123-9542-606e4d348a72,SharePoint (Plan 2)
+Microsoft 365 E3,SPE_E3,05e9a617-0261-4cee-bb44-138d3ef5d965,TEAMS1,57ff2da0-773e-42df-b2af-ffb7a2317929,Microsoft Teams
+Microsoft 365 E5,SPE_E5,06ebc4ee-1bb5-47dd-8120-11324bc54e06,EXCHANGE_S_ENTERPRISE,efb87545-963c-4e0d-99df-69c6916d9eb0,Exchange Online (Plan 2)
+Microsoft 365 E5,SPE_E5,06ebc4ee-1bb5-47dd-8120-11324bc54e06,AAD_PREMIUM_P2,eec0eb4f-6444-4f95-aba0-50c24d67f998,Microsoft Entra ID P2
+Microsoft 365 F3,SPE_F3,66b55226-6b4f-492c-910c-a3b7a3c9d993,EXCHANGE_S_DESKLESS,4a82b400-a79f-41a4-b4e2-e94f5787b113,Exchange Online Kiosk
+Microsoft 365 Copilot,M365_COPILOT,639dec6b-bb19-468b-871c-c5c441c4b0cb,M365_COPILOT,a809996b-059e-42e2-9866-db24b99a9782,Microsoft 365 Copilot
