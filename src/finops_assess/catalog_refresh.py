@@ -27,10 +27,13 @@ from __future__ import annotations
 import csv
 import io
 import logging
+import os
+import re
 import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
+from urllib.request import url2pathname
 
 import yaml
 
@@ -81,8 +84,31 @@ class CoverageReport:
         return round(100.0 * covered / self.upstream_count, 2)
 
 
+# A "scheme" returned by urlparse that's actually a Windows drive letter
+# (e.g. urlparse(r'D:\path\to\file') -> scheme='d', path='\\path\\to\\file').
+# RFC 3986 schemes can contain only ASCII letters, digits, +, -, .; so a
+# single-letter scheme on a path that exists locally is almost certainly a
+# Windows drive letter. We special-case it here so that operators on Windows
+# can pass plain native paths to --source.
+_DRIVE_LETTER_RE = re.compile(r"^[A-Za-z]$")
+
+
+def _looks_like_local_path(source: str, parsed_scheme: str) -> bool:
+    if parsed_scheme == "":
+        return True
+    # Windows drive-letter path mistaken for a URL scheme.
+    return os.name == "nt" and bool(_DRIVE_LETTER_RE.match(parsed_scheme))
+
+
 def _open_source(source: str) -> bytes:
-    """Read the CSV from an HTTP(S) URL, ``file://`` URL, or local path."""
+    """Read the CSV from an HTTP(S) URL, ``file://`` URL, or local path.
+
+    Local paths work cross-platform: a Windows drive-letter path like
+    ``D:\\tmp\\skus.csv`` is recognised even though ``urlparse`` would
+    otherwise treat ``D`` as a URL scheme. ``file://`` URLs are decoded
+    via :func:`urllib.request.url2pathname` so that percent-escapes and
+    Windows drive letters round-trip correctly.
+    """
     parsed = urlparse(source)
     if parsed.scheme in ("http", "https"):
         # urllib.request handles redirects by default.
@@ -100,8 +126,12 @@ def _open_source(source: str) -> bytes:
         ) as response:
             return bytes(response.read())
     if parsed.scheme == "file":
-        return Path(parsed.path).read_bytes()
-    if parsed.scheme == "":
+        # url2pathname handles `/C:/...` -> `C:\...` on Windows and unescapes
+        # percent-encoded characters; on POSIX it strips a leading slash only
+        # when followed by a drive letter, otherwise leaves the path alone.
+        local = url2pathname(unquote(parsed.path))
+        return Path(local).read_bytes()
+    if _looks_like_local_path(source, parsed.scheme):
         return Path(source).read_bytes()
     raise ValueError(f"unsupported source scheme: {parsed.scheme!r}")
 

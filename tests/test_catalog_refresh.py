@@ -38,6 +38,26 @@ def test_fetch_and_parse_supports_file_url() -> None:
     assert any(s.string_id == "SPE_F3" for s in skus)
 
 
+def test_open_source_treats_windows_drive_letter_as_local(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """A bare `D:\\path\\file.csv` must be read as a local file on Windows.
+
+    Regression: ``urlparse`` treats the drive letter as a URL scheme, which
+    previously raised ``ValueError("unsupported source scheme: 'd'")`` on
+    Windows CI runners.
+    """
+    from finops_assess import catalog_refresh as cr
+
+    monkeypatch.setattr(cr.os, "name", "nt")
+    # A real local file on the test runner; the path itself is POSIX, but
+    # the look-like-local-path check is what we're exercising. We
+    # synthesise a fake scheme by checking the function directly.
+    assert cr._looks_like_local_path("D:\\tmp\\skus.csv", "d") is True
+    assert cr._looks_like_local_path("/tmp/skus.csv", "") is True
+    monkeypatch.setattr(cr.os, "name", "posix")
+    assert cr._looks_like_local_path("D:\\tmp\\skus.csv", "d") is False
+    assert cr._looks_like_local_path("/tmp/skus.csv", "") is True
+
+
 def test_compute_coverage_reports_local_extras_and_upstream_gaps() -> None:
     upstream = fetch_and_parse(str(FIXTURES / "ms_skus_with_gap.csv"))
     coverage = compute_coverage(upstream)
