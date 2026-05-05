@@ -5,23 +5,19 @@ A read-only assessment tool that audits licensing and cost across the
 Power Platform, Azure, **GitHub**, and **Azure DevOps** — and emits
 right-sizing and cost-saving recommendations.
 
-> 🚧 Scaffolding in progress. The comprehensive plan, license catalogue
-> (seeded from [Aaron Dinnage's M365 Maps](https://m365maps.com/)),
-> persona model, and savings-rule engine are being authored in the
-> first PR. See `docs/plan.md` once that PR lands.
-
 ## Status
 
 | Milestone | State |
 |---|---|
 | M0 — Repo scaffold + comprehensive plan | ✅ shipped (PR #1) |
 | M1 — License catalogue YAML (87 SKUs) | ✅ shipped (PR #2) |
-| M2 — CSV collector + persona engine + core savings rules (12) | ✅ shipped (PR #3) |
+| M2 — CSV collector + persona engine + core savings rules (12 → 23) | ✅ shipped (PR #3) |
 | M3 — HTML/JSON report + demo workflow + PowerShell wrapper | ✅ shipped (PR #4) |
-| M4 — Microsoft Graph live collector (OIDC) | pending |
-| M5 — Azure Cost Management collector | pending |
-| M6 — GitHub + Azure DevOps collectors | pending |
-| M7 — PDF executive report | **this PR** |
+| M4 — Microsoft Graph live collector (OIDC) | ✅ shipped (PR #9) |
+| M5 — Azure Cost Management collector | ✅ shipped (PR #9) |
+| M6 — GitHub + Azure DevOps collectors | ✅ shipped (PR #9) |
+| M7 — PDF executive report | ✅ shipped (PR #7) |
+| Bonus — flat-CSV findings reporter | ✅ shipped (PR #10) |
 
 ## Repository layout
 
