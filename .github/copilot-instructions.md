@@ -13,6 +13,59 @@ usage, and cost across the **Microsoft ecosystem**: Microsoft 365
 and **Azure DevOps**. It emits right-sizing and savings findings with
 evidence — it never mutates the systems it inspects.
 
+## Session start: load context before doing any work
+
+Every Copilot agent session **must** begin by loading the existing
+context, in this order, before reading task-specific files or making
+edits. Skipping this step causes duplicated work, contradicted
+decisions, and broken cross-PR continuity.
+
+1. **Read this file in full** (`.github/copilot-instructions.md`) and
+   `docs/plan.md` — the plan is the source of truth for scope and
+   the §11 delivery loop.
+2. **Scan recent pull requests** (open *and* recently-merged/closed,
+   sorted by `updated`) using the GitHub MCP tools. Read at least the
+   titles and descriptions of the most recent ~10 to understand what
+   has just shipped, what is in flight, and what conventions prior
+   sessions established. If your task overlaps a PR that is still
+   open, coordinate with that branch instead of forking the work.
+3. **Scan open issues**, especially anything with a `squad:*` label,
+   and read the full issue (and its comment thread) for the one you
+   are picking up.
+4. **Read `.squad/team.md`, `.squad/routing.md`, and the relevant
+   `.squad/agents/{member}/charter.md`** if the issue or PR carries a
+   `squad:{member}` label — work in that member's voice and within
+   their boundaries.
+5. **Check `.squad/decisions.md` and `.squad/decisions/inbox/`** for
+   prior cross-PR decisions that constrain your approach.
+
+If any of these reads contradict the user's stated request, surface
+the conflict in your first response rather than silently picking one.
+
+## Session end: always open a PR and surface the link
+
+Any session that produces file changes **must** end with a pull
+request, and the final assistant reply **must** include the PR URL.
+This is the default — it does not require the user to ask for a PR.
+
+- If you made edits, you must have called `report_progress` at least
+  once (this creates the draft PR on first call).
+- Before finishing, call `create_pull_request` to ensure a PR exists
+  for the branch (the tool is idempotent and will report the existing
+  PR if one was already created by `report_progress`). Default to
+  `draft: true` unless the user explicitly asked for a non-draft PR.
+- Quote the resulting `html_url` verbatim in your final reply, e.g.
+  `PR: https://github.com/martinopedal/FinOps-assessment/pull/N`, so
+  the user can jump to it without searching.
+- A session that produced **no** file changes (pure Q&A, planning,
+  or analysis) does **not** open a PR — but its final reply must
+  still link to any issues or prior PRs it referenced.
+- Never end a session that touched files without either a PR link
+  or an explicit, written reason why no PR was opened (e.g. user
+  cancelled mid-task). "Ran out of turns" is not an acceptable
+  reason — call `report_progress` early and often so the work is at
+  least preserved on a branch.
+
 ## Hard rules (non-negotiable)
 
 1. **Read-only by construction.**
