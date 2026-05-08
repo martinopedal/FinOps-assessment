@@ -1,0 +1,39 @@
+# CODEOWNERS — required reviewers for protected paths.
+#
+# GitHub only resolves real GitHub identities here, so this file lists
+# the repository owner only. The squad personas (Maya, Priya, Diego,
+# Sam, Noor, Yuki, Scribe) referenced in `.squad/team.md` are role
+# labels, not GitHub accounts; routing to squad members happens via
+# `squad:{member}` labels and the workflows under
+# `.github/workflows/squad-*.yml`, not via CODEOWNERS.
+#
+# Documentation: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
+#
+# Pattern syntax matches gitignore. Last matching pattern wins.
+
+# Default owner for everything not matched below.
+*                                   @martinopedal
+
+# Plan, schema, and squad governance — Lead-equivalent review (the
+# repo owner) is mandatory. These files set scope and contracts for
+# the whole codebase.
+/docs/plan.md                       @martinopedal
+/docs/schema.md                     @martinopedal
+/.squad/                            @martinopedal
+/.github/copilot-instructions.md    @martinopedal
+
+# Security-relevant surfaces. Maps to `squad:security-reviewer`
+# (Noor)'s adversarial-pass charter; until that role is mapped to a
+# real GitHub account, the repository owner stands in.
+/SECURITY.md                        @martinopedal
+/.github/CODEOWNERS                 @martinopedal
+/.github/dependabot.yml             @martinopedal
+/.github/workflows/                 @martinopedal
+/src/finops_assess/collectors/      @martinopedal
+/src/finops_assess/engine.py        @martinopedal
+
+# Pricing and SKU catalogue — pricing edits are 🔴 in the squad fit
+# matrix (`.squad/team.md`), so they always need owner review.
+/data/catalog/                      @martinopedal
+/data/personas.yaml                 @martinopedal
+/data/rules/                        @martinopedal

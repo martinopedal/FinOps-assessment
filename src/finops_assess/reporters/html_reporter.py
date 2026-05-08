@@ -86,5 +86,9 @@ def write_html_report(report: dict[str, Any], output: Path | None) -> str:
     if output is not None:
         output = Path(output)
         output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(payload, encoding="utf-8")
+        # newline="" suppresses Python's text-mode CRLF translation on
+        # Windows so the HTML byte output is identical across platforms
+        # (required by the SOURCE_DATE_EPOCH determinism contract and the
+        # docs-freshness gate).
+        output.write_text(payload, encoding="utf-8", newline="")
     return payload

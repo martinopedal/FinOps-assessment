@@ -1,0 +1,63 @@
+# Dependabot configuration.
+#
+# Required by `docs/plan.md` §9 ("Security & operations") and listed
+# in the repository hardening checklist in `SECURITY.md`. Updates are
+# grouped per ecosystem to avoid PR noise; security advisories still
+# open individual PRs as Dependabot's policy dictates.
+#
+# Documentation: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+
+updates:
+  # Python runtime + dev / live / pdf optional extras (pyproject.toml).
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "squad:security-reviewer"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps(dev)"
+      include: "scope"
+    groups:
+      # Lint / type-check / test toolchain — bundle to keep CI noise low.
+      dev-tooling:
+        dependency-type: "development"
+        patterns:
+          - "ruff"
+          - "mypy"
+          - "pytest*"
+          - "types-*"
+      # Runtime libraries — bundle non-major bumps.
+      runtime:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actions used by .github/workflows/*.yml.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "squad:security-reviewer"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    groups:
+      actions:
+        patterns:
+          - "*"
