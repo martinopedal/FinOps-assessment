@@ -1,7 +1,8 @@
 # Data schema reference
 
-> Auto-generated from `src/finops_assess/models.py` (pydantic v2).
-> Do not edit by hand — update the source models and regenerate.
+> Reflects `src/finops_assess/models.py`, `src/finops_assess/engine.py`,
+> and the reporter implementations under `src/finops_assess/reporters/`.
+> Keep this document in sync when those runtime contracts change.
 
 This document describes every pydantic model in the `finops_assess`
 package, the CSV columns the collector expects for each model, and the
@@ -87,6 +88,23 @@ formats (HTML, CSV, PDF).
 | `evidence_ref` | `str \| null` | Reserved for a future evidence-bundle reference |
 | `confidence` | `Confidence` | Confidence of the finding (`"high"`, `"medium"`, or `"low"`) |
 | `evidence` | `dict` | Rule-specific diagnostic detail (raw signals) |
+
+---
+
+## Persona resolution model — `PersonaAssignment`
+
+Computed at runtime by `src/finops_assess/persona.py`; not loaded from a
+CSV file.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `principal` | `str` | Principal identifier that was assigned a persona |
+| `persona_id` | `str` | Chosen `Persona.id` |
+| `matched_by` | `"override" \| "title" \| "group" \| "fallback"` | Which signal won during persona assignment |
+| `confidence` | `Confidence` | Confidence in the assignment |
+
+The assignment map itself is internal, but its aggregated counts are
+emitted in the JSON report as `summary.persona_distribution`.
 
 ---
 
@@ -244,20 +262,55 @@ JSON file with this top-level structure:
 ```json
 {
   "run": {
+    "tool": "finops-assess",
     "version": "0.1.0",
-    "generated_at": "2026-05-05T10:00:00Z",
-    "input_dir": "./samples",
-    "pii_redaction": true
+    "generated_at": "2026-05-05T10:00:00+00:00",
+    "input": "<redacted>/samples",
+    "pii_redaction": true,
+    "mode": "read-only"
   },
   "summary": {
-    "total_findings": 34,
-    "rules_run": 23,
+    "rule_counts": {
+      "M365.UNUSED_LICENSE_30D": 3,
+      "AZ.UNATTACHED_DISK": 1
+    },
     "rules_skipped_no_impl": [],
-    "estimated_monthly_savings_usd": 1234.56
+    "total_findings": 34,
+    "principals_evaluated": 8,
+    "assignments_evaluated": 10,
+    "azure_resources_evaluated": 4,
+    "persona_distribution": {
+      "information_worker": 5,
+      "service_account": 1
+    }
   },
   "findings": [ /* list of Finding objects */ ]
 }
 ```
+
+### `run`
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `tool` | `str` | Always `finops-assess` |
+| `version` | `str` | Package version |
+| `generated_at` | `str` | ISO-8601 timestamp |
+| `input` | `str` | Input path; when PII redaction is enabled, only the leaf directory name is preserved |
+| `pii_redaction` | `bool` | Whether finding principals were redacted |
+| `mode` | `str` | Always `read-only` |
+
+### `summary`
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `rule_counts` | `dict[str, int]` | Per-rule finding counts |
+| `rules_skipped_no_impl` | `list[str]` | Rule IDs present in YAML but missing an implementation |
+| `total_findings` | `int` | Total findings emitted |
+| `principals_evaluated` | `int` | Number of principals in `users.csv` |
+| `assignments_evaluated` | `int` | Number of license assignments evaluated |
+| `azure_resources_evaluated` | `int` | Number of Azure resources evaluated |
+| `persona_distribution` | `dict[str, int]` | Count of principals per resolved persona |
+| `pii_redaction` | `"disabled"` | Present only when `--no-pii-redaction` is used |
 
 Each element of `findings` matches the `Finding` schema above.
 
@@ -270,6 +323,10 @@ Each element of `findings` matches the `Finding` schema above.
 JSON-serialised. Formula-injection characters (`=`, `+`, `-`, `@`) are
 prefix-sanitised automatically.
 
-Column order: `rule_id`, `surface`, `severity`, `principal`,
-`current_sku`, `recommended_sku`, `estimated_monthly_savings_usd`,
-`recommendation`, `confidence`, `evidence_ref`, `evidence`.
+Column order: `rule_id`, `surface`, `severity`, `confidence`,
+`principal`, `current_sku`, `recommended_sku`,
+`estimated_monthly_savings_usd`, `recommendation`, `evidence_ref`,
+`evidence_json`.
+
+`evidence_json` contains the `Finding.evidence` payload serialised as a
+JSON string so the structured detail survives the flattening round-trip.
