@@ -38,10 +38,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
+      # Regenerate into the working tree, then fail the job iff git sees
+      # any diff. On failure the upload-artifact step below captures the
+      # *regenerated* artefacts (not the stale committed ones) so the
+      # operator can grab them straight from the workflow summary.
       - name: Regenerate docs and example reports
-        run: python scripts/generate_docs.py --check
+        run: python scripts/generate_docs.py
 
-      - name: Upload regenerated examples on failure
+      - name: Fail on drift
+        run: git diff --exit-code -- docs/rules.md examples/
+
+      - name: Upload regenerated artefacts on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:

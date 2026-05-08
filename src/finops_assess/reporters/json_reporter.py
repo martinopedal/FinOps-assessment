@@ -28,9 +28,12 @@ def _generated_at() -> str:
     if epoch:
         try:
             return datetime.fromtimestamp(int(epoch), tz=UTC).isoformat(timespec="seconds")
-        except (TypeError, ValueError):
-            # Malformed env var: fall through to wall-clock time rather
-            # than failing the whole run on a transient operator error.
+        except (TypeError, ValueError, OverflowError, OSError):
+            # Malformed or out-of-range env var (very large epochs raise
+            # OverflowError on Linux and OSError on Windows from the
+            # underlying C ``localtime`` / ``gmtime``): fall through to
+            # wall-clock time rather than failing the whole run on a
+            # transient operator error.
             pass
     return datetime.now(UTC).isoformat(timespec="seconds")
 

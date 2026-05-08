@@ -1,11 +1,11 @@
 # CODEOWNERS — required reviewers for protected paths.
 #
 # GitHub only resolves real GitHub identities here, so this file lists
-# the repository owner and the @copilot coding agent. The squad
-# personas (Maya, Priya, Diego, Sam, Noor, Yuki, Scribe) referenced in
-# `.squad/team.md` are role labels, not GitHub accounts; routing to
-# squad members happens via `squad:{member}` labels and the workflows
-# under `.github/workflows/squad-*.yml`, not via CODEOWNERS.
+# the repository owner only. The squad personas (Maya, Priya, Diego,
+# Sam, Noor, Yuki, Scribe) referenced in `.squad/team.md` are role
+# labels, not GitHub accounts; routing to squad members happens via
+# `squad:{member}` labels and the workflows under
+# `.github/workflows/squad-*.yml`, not via CODEOWNERS.
 #
 # Documentation: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
 #

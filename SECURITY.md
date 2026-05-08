@@ -41,8 +41,10 @@ the channel above.
    Azure DevOps collectors only ever request read scopes
    (`*.Read.All`, `Reader`, `repo:read`, etc.). Any code path that
    requests, accepts, or documents a `*.ReadWrite.*` / write-tier scope
-   is a defect. The CLI refuses to start when a credential carrying a
-   write scope is detected.
+   is a defect. **Design goal (tracked in `docs/plan.md` §9):** the CLI
+   will additionally refuse to start when a credential carrying a write
+   scope is detected. Until that introspection is implemented,
+   operators are responsible for provisioning read-only credentials.
 2. **No remediation actions.** The tool only emits advisory findings;
    it never mutates the systems it inspects. There is no "apply",
    "remediate", or "fix" code path and there will not be one in v1.

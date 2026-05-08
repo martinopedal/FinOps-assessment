@@ -3,3 +3,14 @@
 .squad/agents/*/history.md merge=union
 .squad/log/** merge=union
 .squad/orchestration-log/** merge=union
+
+# Auto-generated artefacts whose bytes must match scripts/generate_docs.py
+# output regardless of the operator's platform. Without these rules, a
+# Windows checkout (core.autocrlf=true on hosted runners) rewrites the
+# committed files with CRLF line endings and the freshness gate in
+# .github/workflows/docs.yml — which byte-compares the regenerated LF
+# output against the working tree — fails on Windows only.
+docs/rules.md text eol=lf
+examples/demo-report.csv text eol=lf
+examples/demo-report.html text eol=lf
+examples/demo-report.json text eol=lf
