@@ -198,9 +198,12 @@ def regenerate_examples(target_dir: Path) -> None:
 def _write_if_changed(path: Path, contents: str) -> bool:
     """Write ``contents`` to ``path`` only if different. Returns True on change."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    if path.is_file() and path.read_text(encoding="utf-8") == contents:
+    # Compare as bytes to avoid platform CRLF translation; write with
+    # newline="" so docs/rules.md stays byte-identical across OSes.
+    encoded = contents.encode("utf-8")
+    if path.is_file() and path.read_bytes() == encoded:
         return False
-    path.write_text(contents, encoding="utf-8")
+    path.write_text(contents, encoding="utf-8", newline="")
     return True
 
 
