@@ -127,7 +127,7 @@ samples/                # synthetic tenants for tests + `demo`
 tests/
 docs/
   plan.md       # this file
-  schema.md     # generated from pydantic models (M2)
+  schema.md     # data/report contract reference (M2)
 ```
 
 ---
