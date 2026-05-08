@@ -192,6 +192,28 @@ This repository ships the same demo job at
 manual `workflow_dispatch`) publishes the rendered HTML + JSON reports
 as the **`finops-assess-demo-report`** workflow artifact.
 
+## Example reports & rule reference
+
+Browseable, in-repo artefacts that are auto-generated from the codebase
+on every PR (`.github/workflows/docs.yml` fails the build on drift):
+
+- [`docs/rules.md`](docs/rules.md) — full reference for every rule
+  shipped under `data/rules/`, annotated with whether each has a
+  registered Python implementation.
+- [`examples/demo-report.json`](examples/demo-report.json),
+  [`examples/demo-report.html`](examples/demo-report.html),
+  [`examples/demo-report.csv`](examples/demo-report.csv) — the
+  deterministic output of `finops-assess demo` against the bundled
+  synthetic tenant. Rendered with `SOURCE_DATE_EPOCH=0` and a fixed
+  redaction salt so the bytes are stable across CI runs.
+
+To regenerate locally after editing rules or demo data:
+
+```bash
+python scripts/generate_docs.py        # write the artefacts
+python scripts/generate_docs.py --check # CI-style freshness gate
+```
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE).

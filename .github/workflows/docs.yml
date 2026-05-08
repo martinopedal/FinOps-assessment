@@ -1,0 +1,53 @@
+name: Documentation freshness
+
+# Re-runs scripts/generate_docs.py and fails the build on any drift, so a
+# PR that adds/edits a rule (data/rules/*.yaml) or changes the demo data
+# must regenerate docs/rules.md + examples/demo-report.{json,html,csv}.
+#
+# Read-only and offline: the script only touches packaged demo data and
+# the on-disk rule YAML; no network calls, no secrets, no write
+# permissions on the repo (the gate is `git diff --exit-code`, not a
+# bot commit).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docs-freshness:
+    name: Verify docs/rules.md and examples/ are up to date
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Regenerate docs and example reports
+        run: python scripts/generate_docs.py --check
+
+      - name: Upload regenerated examples on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regenerated-docs-and-examples
+          path: |
+            docs/rules.md
+            examples/
+          if-no-files-found: ignore
+          retention-days: 7
