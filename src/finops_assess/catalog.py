@@ -20,20 +20,20 @@ from finops_assess.models import CatalogEntry
 DEFAULT_CATALOG_ROOT = Path(__file__).resolve().parents[2] / "data" / "catalog"
 
 
-def _collect_yaml_files(root: DataRoot) -> list[Path | Traversable]:
+def _yaml_files(root: DataRoot) -> list[Path | Traversable]:
     if isinstance(root, Path):
         return [*root.rglob("*.yaml"), *root.rglob("*.yml")]
     files: list[Path | Traversable] = []
     for child in root.iterdir():
         if child.is_dir():
-            files.extend(_collect_yaml_files(child))
+            files.extend(_yaml_files(child))
         elif child.is_file() and child.name.endswith((".yaml", ".yml")):
             files.append(child)
     return files
 
 
 def _iter_yaml_files(root: DataRoot) -> list[Path | Traversable]:
-    return sorted(_collect_yaml_files(root), key=lambda item: str(item))
+    return sorted(_yaml_files(root), key=lambda item: str(item))
 
 
 def _default_catalog_root() -> DataRoot:

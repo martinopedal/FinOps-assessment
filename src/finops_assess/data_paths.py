@@ -14,6 +14,8 @@ _CHECKOUT_DATA_ROOT = _CHECKOUT_ROOT / "data"
 
 def checkout_data_root() -> Path | None:
     """Return the repository-root data directory when running from a checkout."""
+    # `personas.yaml` is required by every assessment run, so it is a stable
+    # marker that the repo-root data tree is present and usable.
     if (_CHECKOUT_ROOT / "pyproject.toml").is_file() and (
         _CHECKOUT_DATA_ROOT / "personas.yaml"
     ).is_file():

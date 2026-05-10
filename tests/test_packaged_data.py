@@ -13,6 +13,9 @@ from pathlib import Path
 
 import pytest
 
+from finops_assess.catalog import load_catalog
+from finops_assess.rules import load_personas, load_rules
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REPO_DATA = REPO_ROOT / "data"
 
@@ -56,6 +59,9 @@ def test_packaged_data_has_required_surfaces() -> None:
     for surface in ("m365", "azure", "github", "ado"):
         assert any(data_root.joinpath("catalog", surface).iterdir())
     assert any(data_root.joinpath("rules").iterdir())
+    assert load_catalog(data_root.joinpath("catalog"))
+    assert load_personas(data_root.joinpath("personas.yaml"))
+    assert load_rules(data_root.joinpath("rules"))
 
 
 def _venv_python(venv_dir: Path) -> Path:
