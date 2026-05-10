@@ -8,7 +8,6 @@ Run as a module to validate the on-disk catalog:
 from __future__ import annotations
 
 import sys
-from collections.abc import Iterable
 from importlib.resources.abc import Traversable
 from pathlib import Path
 
@@ -21,16 +20,20 @@ from finops_assess.models import CatalogEntry
 DEFAULT_CATALOG_ROOT = Path(__file__).resolve().parents[2] / "data" / "catalog"
 
 
-def _iter_yaml_files(root: DataRoot) -> Iterable[Path | Traversable]:
+def _collect_yaml_files(root: DataRoot) -> list[Path | Traversable]:
     if isinstance(root, Path):
-        yield from sorted(root.rglob("*.yaml"))
-        yield from sorted(root.rglob("*.yml"))
-        return
-    for child in sorted(root.iterdir(), key=lambda item: str(item)):
+        return [*root.rglob("*.yaml"), *root.rglob("*.yml")]
+    files: list[Path | Traversable] = []
+    for child in root.iterdir():
         if child.is_dir():
-            yield from _iter_yaml_files(child)
+            files.extend(_collect_yaml_files(child))
         elif child.is_file() and child.name.endswith((".yaml", ".yml")):
-            yield child
+            files.append(child)
+    return files
+
+
+def _iter_yaml_files(root: DataRoot) -> list[Path | Traversable]:
+    return sorted(_collect_yaml_files(root), key=lambda item: str(item))
 
 
 def _default_catalog_root() -> DataRoot:

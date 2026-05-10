@@ -17,14 +17,14 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 REPO_DATA = REPO_ROOT / "data"
 
 
-def _resource_files(root: Traversable) -> dict[str, bytes]:
+def _resource_files(root: Traversable, prefix: str = "") -> dict[str, bytes]:
     files: dict[str, bytes] = {}
     for child in root.iterdir():
+        relative = f"{prefix}{child.name}"
         if child.is_dir():
-            for relative, payload in _resource_files(child).items():
-                files[f"{child.name}/{relative}"] = payload
+            files.update(_resource_files(child, f"{relative}/"))
         elif child.is_file() and child.name != "__init__.py":
-            files[child.name] = child.read_bytes()
+            files[relative] = child.read_bytes()
     return files
 
 
