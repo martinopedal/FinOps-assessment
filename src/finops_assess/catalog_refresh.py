@@ -59,7 +59,7 @@ def _default_autogen_file() -> Path:
     if data_root is None:
         raise RuntimeError(
             "catalog refresh --write requires a source checkout; run from the repository "
-            "or add generated stubs to data/catalog/m365/_autogen_unmapped.yaml manually."
+            "to add generated stubs to data/catalog/m365/_autogen_unmapped.yaml."
         )
     return data_root / "catalog" / "m365" / "_autogen_unmapped.yaml"
 
