@@ -8,6 +8,7 @@ Run as a module to validate on-disk personas and rules:
 from __future__ import annotations
 
 import sys
+from collections.abc import Iterable
 from importlib.resources.abc import Traversable
 from pathlib import Path
 
@@ -48,10 +49,11 @@ def load_personas(path: DataRoot | None = None) -> list[Persona]:
     return personas
 
 
-def _iter_rule_files(root: DataRoot) -> list[Path | Traversable]:
+def _iter_rule_files(root: DataRoot) -> Iterable[Path | Traversable]:
     if isinstance(root, Path):
-        return sorted(root.glob("*.yaml"))
-    return sorted(
+        yield from sorted(root.glob("*.yaml"))
+        return
+    yield from sorted(
         (child for child in root.iterdir() if child.is_file() and child.name.endswith(".yaml")),
         key=lambda item: str(item),
     )
