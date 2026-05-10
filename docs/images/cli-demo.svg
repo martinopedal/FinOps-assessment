@@ -1,0 +1,19 @@
+<!-- © FinOps-assessment contributors, MIT. Original animated terminal mock based on the CLI's deterministic demo output; no scripts, rasters, or remote references. -->
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" viewBox="0 0 920 360">
+  <title id="title">Animated finops-assess CLI demo transcript</title>
+  <desc id="desc">Terminal-style animation showing validation and demo report generation commands.</desc>
+  <defs><style>
+    text{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:20px;fill:#d1d7e0}.frame{fill:#0d1117;stroke:#30363d;stroke-width:2}.bar{fill:#161b22}.muted{fill:#8b949e}.ok{fill:#7ee787}.path{fill:#79c0ff}.cursor{fill:#d1d7e0}
+  </style></defs>
+  <rect x="20" y="20" width="880" height="320" rx="16" class="frame"/>
+  <rect x="20" y="20" width="880" height="48" rx="16" class="bar"/>
+  <circle cx="50" cy="44" r="7" fill="#ff7b72"/><circle cx="75" cy="44" r="7" fill="#d29922"/><circle cx="100" cy="44" r="7" fill="#3fb950"/>
+  <text x="130" y="51" class="muted">finops-assess demo</text>
+  <g opacity="0"><animate attributeName="opacity" values="0;1;1" keyTimes="0;0.08;1" dur="8s" repeatCount="indefinite"/><text x="54" y="112">$ finops-assess validate</text></g>
+  <g opacity="0"><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.16;0.24;1" dur="8s" repeatCount="indefinite"/><text x="54" y="150" class="ok">OK — catalog: 87 SKUs, personas: 6, rules: 23</text></g>
+  <g opacity="0"><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.32;0.40;1" dur="8s" repeatCount="indefinite"/><text x="54" y="198">$ finops-assess demo --output-dir ./demo-report</text></g>
+  <g opacity="0"><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.48;0.56;1" dur="8s" repeatCount="indefinite"/><text x="54" y="236" class="ok">OK — demo run produced 34 findings across 23 rules.</text></g>
+  <g opacity="0"><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.58;0.64;1" dur="8s" repeatCount="indefinite"/><text x="78" y="272">JSON: <tspan class="path">demo-report/demo-report.json</tspan></text></g>
+  <g opacity="0"><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.66;0.72;1" dur="8s" repeatCount="indefinite"/><text x="78" y="304">HTML: <tspan class="path">demo-report/demo-report.html</tspan> · CSV: <tspan class="path">demo-report/demo-report.csv</tspan></text></g>
+  <rect x="54" y="317" width="12" height="24" class="cursor"><animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite"/></rect>
+</svg>

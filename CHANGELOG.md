@@ -7,7 +7,12 @@ release.
 
 ## Unreleased
 
-No changes yet.
+### Added
+
+- User-facing guide (`docs/user-guide.md`) showing what the tool delivers,
+  with report previews, CLI visuals, worked over-licensed examples drawn from
+  the deterministic demo report, and an explicit note on current under-licensed
+  scope.
 
 ## Shipped milestones
 

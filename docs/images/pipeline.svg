@@ -1,0 +1,35 @@
+<!-- © FinOps-assessment contributors, MIT. Original vector primitives; no third-party icons, rasters, scripts, or remote references. -->
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" viewBox="0 0 900 260">
+  <title id="title">FinOps-assessment read-only reporting pipeline</title>
+  <desc id="desc">Collectors feed normalized data into the persona engine, then the rules engine, then JSON, HTML, CSV, and PDF reports.</desc>
+  <defs>
+    <style>
+      text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#1f2328}.box{fill:#f6f8fa;stroke:#d0d7de;stroke-width:2}.accent{fill:#ddf4ff;stroke:#0969da}.muted{fill:#57606a;font-size:15px}.label{font-size:22px;font-weight:700}.small{font-size:14px}.arrow{stroke:#57606a;stroke-width:3;fill:none;marker-end:url(#arrow)}
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L8,3 z" fill="#57606a"/></marker>
+  </defs>
+  <rect x="20" y="30" width="170" height="145" rx="14" class="box"/>
+  <text x="105" y="70" text-anchor="middle" class="label">Collectors</text>
+  <text x="105" y="102" text-anchor="middle" class="small">CSV · Graph · ARM</text>
+  <text x="105" y="126" text-anchor="middle" class="small">GitHub · ADO</text>
+  <text x="105" y="154" text-anchor="middle" class="muted">read-only ingest</text>
+  <path class="arrow" d="M198 102 H270"/>
+  <rect x="280" y="30" width="170" height="145" rx="14" class="accent"/>
+  <text x="365" y="70" text-anchor="middle" class="label">Personas</text>
+  <text x="365" y="102" text-anchor="middle" class="small">frontline · info worker</text>
+  <text x="365" y="126" text-anchor="middle" class="small">developer · service</text>
+  <text x="365" y="154" text-anchor="middle" class="muted">right-size context</text>
+  <path class="arrow" d="M458 102 H530"/>
+  <rect x="540" y="30" width="170" height="145" rx="14" class="box"/>
+  <text x="625" y="70" text-anchor="middle" class="label">Rules</text>
+  <text x="625" y="102" text-anchor="middle" class="small">23 checks · 4 surfaces</text>
+  <text x="625" y="126" text-anchor="middle" class="small">evidence + savings</text>
+  <text x="625" y="154" text-anchor="middle" class="muted">no mutations</text>
+  <path class="arrow" d="M718 102 H790"/>
+  <rect x="800" y="30" width="80" height="145" rx="14" class="box"/>
+  <text x="840" y="68" text-anchor="middle" class="label">Reports</text>
+  <text x="840" y="100" text-anchor="middle" class="small">JSON</text>
+  <text x="840" y="124" text-anchor="middle" class="small">HTML</text>
+  <text x="840" y="148" text-anchor="middle" class="small">CSV · PDF</text>
+  <text x="450" y="220" text-anchor="middle" class="muted">The same normalized evidence powers executive views, machine-readable exports, and spreadsheet pivots.</text>
+</svg>
