@@ -13,6 +13,8 @@ release.
   with report previews, CLI visuals, worked over-licensed examples drawn from
   the deterministic demo report, and an explicit note on current under-licensed
   scope.
+- Future-plan docs for GitHub Copilot-assisted triage and optional FinOps Hubs
+  linkage, plus contributor guidance requiring docs updates with every PR.
 
 ## Shipped milestones
 

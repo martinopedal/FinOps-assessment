@@ -187,6 +187,11 @@ For the authoritative current list, use [`docs/rules.md`](rules.md).
 
 - It does **not** remediate, remove, downgrade, or mutate anything.
 - It does **not** request write scopes or document write-scope credentials.
+- It does **not** yet provide GitHub Copilot-assisted triage for customer
+  findings; today it assesses GitHub Copilot seat usage and reports inactive
+  seats.
+- It does **not** yet connect findings to FinOps Hubs. That follow-up is
+  planned in [`docs/plan.md`](plan.md#10-open-questions-and-future-plan).
 - It does **not** audit non-Microsoft SaaS, on-prem CALs, or perpetual licensing.
 - It does **not** redistribute third-party diagrams or proprietary pricing tables.
 
