@@ -56,7 +56,7 @@ then run either the synthetic demo, normalized CSVs, or live read-only collector
 
 ```console
 $ finops-assess validate
-OK — catalog: 87 SKUs, personas: 6, rules: 23
+OK — catalog: 87 SKUs, personas: 7, rules: 23
 
 $ finops-assess demo --output-dir ./demo-report
 OK — demo run produced 34 findings across 23 rules.
