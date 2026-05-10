@@ -3,11 +3,11 @@
 Single source of truth for two committed artefacts that would otherwise
 drift from the codebase:
 
-* ``docs/rules.md`` — a human-readable reference table of every rule
+* ``docs/rules.md``: a human-readable reference table of every rule
   shipped under ``data/rules/*.yaml``, annotated with whether the rule
   has a registered Python implementation in
   ``src/finops_assess/rules_impl/``.
-* ``examples/demo-report.{json,html,csv}`` — the deterministic output of
+* ``examples/demo-report.{json,html,csv}``: the deterministic output of
   ``finops-assess demo`` against the bundled synthetic tenant, used as a
   preview for prospective users without requiring them to install the
   tool.
@@ -18,7 +18,7 @@ Reports are normally timestamped with wall-clock UTC. To make the
 committed examples byte-stable across CI machines and contributor
 checkouts, this script sets ``SOURCE_DATE_EPOCH=0`` and passes a fixed
 salt for principal redaction. The synthetic tenant contains no real PII
-so redaction is left enabled — same posture as a real run.
+so redaction is left enabled (same posture as a real run).
 
 CI freshness gate
 -----------------
@@ -73,7 +73,7 @@ _DOCS_FIXED_SALT = "finops-assess-docs-fixture-salt-v1"
 # already emits (``<redacted>/<basename>``).
 _DEMO_INPUT_PATH_PLACEHOLDER = "<redacted>/demo"
 
-# Surface labels for the rules reference — keep in sync with the order
+# Surface labels for the rules reference. Keep in sync with the order
 # used by the HTML reporter (M365 → Azure → GitHub → ADO).
 _SURFACE_LABELS: list[tuple[str, str]] = [
     ("m365", "Microsoft 365"),
@@ -126,8 +126,8 @@ def render_rules_markdown() -> str:
         out.append("| Rule ID | Severity | Impl | Inactivity (d) | Summary | Recommendation |")
         out.append("|---------|----------|------|----------------|---------|-----------------|")
         for rule in sorted(items, key=lambda r: r.id):
-            impl_marker = "✅" if rule.id in impl_ids else "—"
-            inactivity = str(rule.inactivity_days) if rule.inactivity_days is not None else "—"
+            impl_marker = "✅" if rule.id in impl_ids else "n/a"
+            inactivity = str(rule.inactivity_days) if rule.inactivity_days is not None else "n/a"
             summary = rule.summary.replace("|", "\\|")
             recommendation = _render_recommendation(rule.recommendation_template)
             out.append(
@@ -136,7 +136,7 @@ def render_rules_markdown() -> str:
             )
         out.append("")
 
-    # Surface coverage footer — surfaces declared in catalogue without
+    # Surface coverage footer: surfaces declared in catalogue without
     # any rule yet. Helps reviewers spot orphaned surfaces.
     declared = {s for s, _ in _SURFACE_LABELS}
     represented = {r.surface for r in rules}
@@ -263,7 +263,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     rules_changed = _write_if_changed(DOCS_RULES_PATH, rules_md)
-    # Stage examples in a temp dir, then promote — guarantees we never
+    # Stage examples in a temp dir, then promote. Guarantees we never
     # leave the committed examples/ in a half-written state if rendering
     # fails midway through.
     with tempfile.TemporaryDirectory(prefix="finops-docs-write-") as tmp:
