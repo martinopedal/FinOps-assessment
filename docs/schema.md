@@ -20,7 +20,7 @@ JSON shape emitted in a findings report.
 
 ---
 
-## Catalogue model — `CatalogEntry`
+## Catalogue model: `CatalogEntry`
 
 Stored in `data/catalog/{surface}/*.yaml`.
 
@@ -30,16 +30,16 @@ Stored in `data/catalog/{surface}/*.yaml`.
 | `display_name` | `str` | ✅ | Human-readable name |
 | `family` | `str` | ✅ | SKU family group (e.g. `m365_enterprise`) |
 | `cloud` | `Cloud` | ✅ | Surface: `m365`, `azure`, `github`, or `ado` |
-| `list_price_usd_month` | `float \| null` | — | Monthly list price in USD; omit or `null` if unknown |
-| `source_url` | `str \| null` | — | Public citation URL (never the raw diagram) |
-| `includes` | `list[str]` | — | Child SKU IDs (bundle composition) |
-| `features` | `list[str]` | — | Capability tags from the controlled vocabulary |
-| `successor_of` | `list[str]` | — | Predecessor SKU IDs (upgrade path hints) |
-| `notes` | `str \| null` | — | Free-text annotation |
+| `list_price_usd_month` | `float \| null` | n/a | Monthly list price in USD; omit or `null` if unknown |
+| `source_url` | `str \| null` | n/a | Public citation URL (never the raw diagram) |
+| `includes` | `list[str]` | n/a | Child SKU IDs (bundle composition) |
+| `features` | `list[str]` | n/a | Capability tags from the controlled vocabulary |
+| `successor_of` | `list[str]` | n/a | Predecessor SKU IDs (upgrade path hints) |
+| `notes` | `str \| null` | n/a | Free-text annotation |
 
 ---
 
-## Persona model — `Persona`
+## Persona model: `Persona`
 
 Stored in `data/personas.yaml`.
 
@@ -47,30 +47,30 @@ Stored in `data/personas.yaml`.
 |-------|------|----------|-------|
 | `id` | `str` | ✅ | Unique persona slug (e.g. `information_worker`) |
 | `display_name` | `str` | ✅ | Human-readable label |
-| `description` | `str \| null` | — | Brief explanation |
-| `required_features` | `list[str]` | — | Minimum feature tags this persona must have covered |
-| `title_patterns` | `list[str]` | — | Job-title regex patterns that map to this persona |
-| `group_patterns` | `list[str]` | — | Group-name regex patterns that map to this persona |
+| `description` | `str \| null` | n/a | Brief explanation |
+| `required_features` | `list[str]` | n/a | Minimum feature tags this persona must have covered |
+| `title_patterns` | `list[str]` | n/a | Job-title regex patterns that map to this persona |
+| `group_patterns` | `list[str]` | n/a | Group-name regex patterns that map to this persona |
 
 ---
 
-## Rule model — `Rule`
+## Rule model: `Rule`
 
 Stored in `data/rules/{surface}.yaml`.
 
 | Field | Type | Required | Notes |
 |-------|------|----------|-------|
-| `id` | `str` | ✅ | Rule ID — `SURFACE.SHORT_NAME` screaming-snake-case |
+| `id` | `str` | ✅ | Rule ID, `SURFACE.SHORT_NAME` screaming-snake-case |
 | `surface` | `Cloud` | ✅ | Which surface this rule targets |
-| `severity` | `Severity` | — | Default `"medium"` |
+| `severity` | `Severity` | n/a | Default `"medium"` |
 | `summary` | `str` | ✅ | One-line rule description |
 | `recommendation_template` | `str` | ✅ | Jinja-style template with `{principal}` etc. |
-| `inactivity_days` | `int \| null` | — | Inactivity window the rule uses |
-| `enabled` | `bool` | — | Default `true`; set `false` to disable without deleting |
+| `inactivity_days` | `int \| null` | n/a | Inactivity window the rule uses |
+| `enabled` | `bool` | n/a | Default `true`; set `false` to disable without deleting |
 
 ---
 
-## Finding model — `Finding`
+## Finding model: `Finding`
 
 Emitted by the rule engine into the JSON report and all derived
 formats (HTML, CSV, PDF).
@@ -91,7 +91,7 @@ formats (HTML, CSV, PDF).
 
 ---
 
-## Persona resolution model — `PersonaAssignment`
+## Persona resolution model: `PersonaAssignment`
 
 Computed at runtime by `src/finops_assess/persona.py`; not loaded from a
 CSV file.
@@ -114,7 +114,7 @@ These models describe the CSV files the collector layer writes (and the
 rule engine reads). Every live collector (`graph`, `arm`, `github`,
 `ado`) produces the same shapes; the rule engine is source-agnostic.
 
-### `UserRecord` — `samples/users.csv`
+### `UserRecord`: `samples/users.csv`
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -128,7 +128,7 @@ rule engine reads). Every live collector (`graph`, `arm`, `github`,
 | `mailbox_size_gb` | `float \| null` | Current mailbox quota consumed |
 | `last_sign_in_days` | `int \| null` | Days since last interactive sign-in |
 
-### `LicenseAssignment` — `samples/license_assignments.csv`
+### `LicenseAssignment`: `samples/license_assignments.csv`
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -136,7 +136,7 @@ rule engine reads). Every live collector (`graph`, `arm`, `github`,
 | `sku_id` | `str` | Must be a known `CatalogEntry.id` |
 | `assigned_date` | `str \| null` | ISO-8601 date string |
 
-### `UsageSignal` — `samples/usage.csv`
+### `UsageSignal`: `samples/usage.csv`
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -144,7 +144,7 @@ rule engine reads). Every live collector (`graph`, `arm`, `github`,
 | `signal` | `str` | Capability key (e.g. `copilot`, `teams`, `exchange`) |
 | `last_activity_days` | `int \| null` | Days since last observed activity; `null` = never |
 
-### `AzureResource` — `samples/azure_resources.csv`
+### `AzureResource`: `samples/azure_resources.csv`
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -152,9 +152,9 @@ rule engine reads). Every live collector (`graph`, `arm`, `github`,
 | `resource_type` | `"virtualMachine" \| "managedDisk" \| "publicIp"` | |
 | `sku` | `str \| null` | VM size, disk SKU, etc. |
 | `location` | `str \| null` | Azure region |
-| `avg_cpu_pct` | `float \| null` | Average CPU utilisation (0–100) |
-| `p95_cpu_pct` | `float \| null` | P95 CPU utilisation (0–100) |
-| `p95_mem_pct` | `float \| null` | P95 memory utilisation (0–100) |
+| `avg_cpu_pct` | `float \| null` | Average CPU utilisation (0 to 100) |
+| `p95_cpu_pct` | `float \| null` | P95 CPU utilisation (0 to 100) |
+| `p95_mem_pct` | `float \| null` | P95 memory utilisation (0 to 100) |
 | `avg_net_kbps` | `float \| null` | Average network throughput |
 | `days_inactive` | `int \| null` | Days without meaningful activity |
 | `attached` | `bool \| null` | `false` = unattached disk |
@@ -165,7 +165,7 @@ rule engine reads). Every live collector (`graph`, `arm`, `github`,
 | `subscription_offer` | `str \| null` | `"DevTest"` etc. |
 | `env_tag` | `str \| null` | Value of the `env` resource tag |
 
-### `AzureReservation` — `samples/azure_reservations.csv`
+### `AzureReservation`: `samples/azure_reservations.csv`
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -173,10 +173,10 @@ rule engine reads). Every live collector (`graph`, `arm`, `github`,
 | `reservation_name` | `str \| null` | Friendly name |
 | `sku` | `str \| null` | Reserved SKU |
 | `scope` | `str \| null` | Scope (shared, single subscription, etc.) |
-| `utilization_pct` | `float \| null` | 30-day average utilisation (0–100) |
+| `utilization_pct` | `float \| null` | 30-day average utilisation (0 to 100) |
 | `monthly_cost_usd` | `float \| null` | Monthly commitment cost |
 
-### `AzureLogWorkspace` — `samples/azure_log_workspaces.csv`
+### `AzureLogWorkspace`: `samples/azure_log_workspaces.csv`
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -188,7 +188,7 @@ rule engine reads). Every live collector (`graph`, `arm`, `github`,
 | `est_savings_pct` | `float \| null` | Estimated savings if moved to the recommended tier |
 | `monthly_cost_usd` | `float \| null` | Current monthly workspace cost |
 
-### `GitHubSeat` — `samples/github_seats.csv`
+### `GitHubSeat`: `samples/github_seats.csv`
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -199,7 +199,7 @@ rule engine reads). Every live collector (`graph`, `arm`, `github`,
 | `last_activity_days` | `int \| null` | Days since last contribution / sign-in |
 | `copilot_acceptances_30d` | `int \| null` | Accepted suggestions in last 30 days (Copilot seats only) |
 
-### `GitHubOrg` — `samples/github_orgs.csv`
+### `GitHubOrg`: `samples/github_orgs.csv`
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -211,7 +211,7 @@ rule engine reads). Every live collector (`graph`, `arm`, `github`,
 | `runner_minutes_used` | `int \| null` | Runner minutes consumed in the billing period |
 | `runner_minutes_included` | `int \| null` | Runner minutes included in the current plan |
 
-### `AdoSeat` — `samples/ado_seats.csv`
+### `AdoSeat`: `samples/ado_seats.csv`
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -223,7 +223,7 @@ rule engine reads). Every live collector (`graph`, `arm`, `github`,
 | `only_stakeholder_activity` | `bool \| null` | `true` = only board reads / comments observed |
 | `last_test_plan_days` | `int \| null` | Days since last Test Plans activity (`basic_plus_test` only) |
 
-### `AdoOrgUsage` — `samples/ado_orgs.csv`
+### `AdoOrgUsage`: `samples/ado_orgs.csv`
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -233,7 +233,7 @@ rule engine reads). Every live collector (`graph`, `arm`, `github`,
 
 ---
 
-## `NormalizedDataset` — rule-engine input
+## `NormalizedDataset`: rule-engine input
 
 Aggregates all of the above records into a single object passed to the
 rule engine.
