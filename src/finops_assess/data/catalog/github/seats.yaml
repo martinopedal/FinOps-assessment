@@ -1,0 +1,69 @@
+# GitHub seat / add-on SKUs.
+
+- id: GH.ENTERPRISE
+  display_name: GitHub Enterprise (per user)
+  family: github_seat
+  cloud: github
+  list_price_usd_month: 21.00
+  source_url: https://github.com/pricing
+  features:
+    - github.enterprise
+
+- id: GH.TEAM
+  display_name: GitHub Team (per user)
+  family: github_seat
+  cloud: github
+  list_price_usd_month: 4.00
+  source_url: https://github.com/pricing
+  features:
+    - github.team
+
+- id: GH.COPILOT_BUSINESS
+  display_name: GitHub Copilot Business (per user)
+  family: github_addon
+  cloud: github
+  list_price_usd_month: 19.00
+  source_url: https://github.com/features/copilot
+  features:
+    - copilot.github.business
+
+- id: GH.COPILOT_ENTERPRISE
+  display_name: GitHub Copilot Enterprise (per user)
+  family: github_addon
+  cloud: github
+  list_price_usd_month: 39.00
+  source_url: https://github.com/features/copilot
+  features:
+    - copilot.github.business
+    - copilot.github.enterprise
+  successor_of: [GH.COPILOT_BUSINESS]
+
+- id: GH.GHAS
+  display_name: GitHub Advanced Security (per active committer)
+  family: github_addon
+  cloud: github
+  list_price_usd_month: 49.00
+  source_url: https://github.com/enterprise/advanced-security
+  features:
+    - ghas.code_scanning
+    - ghas.secret_scanning
+    - ghas.dependency_review
+
+- id: GH.FREE
+  display_name: GitHub Free (per user)
+  family: github_seat
+  cloud: github
+  list_price_usd_month: 0.00
+  source_url: https://github.com/pricing
+  features:
+    - github.free
+
+- id: GH.PRO
+  display_name: GitHub Pro (per user)
+  family: github_seat
+  cloud: github
+  list_price_usd_month: null
+  source_url: https://github.com/pricing
+  features:
+    - github.pro
+  successor_of: [GH.FREE]

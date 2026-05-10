@@ -384,7 +384,10 @@ def catalog_refresh(source: str, write: bool) -> None:
             "in the upstream CSV (legacy or non-user SKUs); not removed."
         )
     if write and coverage.missing:
-        path = write_autogen(coverage)
+        try:
+            path = write_autogen(coverage)
+        except RuntimeError as exc:
+            raise click.ClickException(str(exc)) from exc
         if path is not None:
             click.echo(f"Wrote stubs for {len(coverage.missing)} SKUs to {path}")
 

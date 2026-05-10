@@ -117,6 +117,7 @@ src/finops_assess/
     json_reporter.py
     html_reporter.py    # M3
     pdf_reporter.py     # M7
+  data/                 # packaged mirror of repo-root data/ for wheel installs
 data/
   catalog/
     m365/   azure/   github/   ado/
@@ -129,6 +130,11 @@ docs/
   plan.md       # this file
   schema.md     # data/report contract reference (M2)
 ```
+
+The repo-root `data/` tree is the authoring location for catalogue, persona,
+and rule YAML. `src/finops_assess/data/` is a byte-identical packaged mirror so
+`finops-assess validate`, `run`, and `demo` work after a non-editable wheel
+install; CI guards the mirror against drift.
 
 ---
 

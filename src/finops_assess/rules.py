@@ -8,11 +8,13 @@ Run as a module to validate on-disk personas and rules:
 from __future__ import annotations
 
 import sys
+from importlib.resources.abc import Traversable
 from pathlib import Path
 
 import yaml
 from pydantic import ValidationError
 
+from finops_assess.data_paths import DataRoot, default_data_root
 from finops_assess.models import Persona, Rule
 
 DATA_ROOT = Path(__file__).resolve().parents[2] / "data"
@@ -20,9 +22,18 @@ PERSONAS_FILE = DATA_ROOT / "personas.yaml"
 RULES_DIR = DATA_ROOT / "rules"
 
 
-def load_personas(path: Path | None = None) -> list[Persona]:
-    path = path or PERSONAS_FILE
-    with path.open(encoding="utf-8") as fh:
+def _default_personas_file() -> DataRoot:
+    return default_data_root().joinpath("personas.yaml")
+
+
+def _default_rules_dir() -> DataRoot:
+    return default_data_root().joinpath("rules")
+
+
+def load_personas(path: DataRoot | None = None) -> list[Persona]:
+    """Load and validate the persona YAML file."""
+    path = path or _default_personas_file()
+    with path.open("r", encoding="utf-8") as fh:
         doc = yaml.safe_load(fh) or []
     if not isinstance(doc, list):
         raise ValueError(f"{path}: top-level YAML must be a list")
@@ -37,12 +48,22 @@ def load_personas(path: Path | None = None) -> list[Persona]:
     return personas
 
 
-def load_rules(root: Path | None = None) -> list[Rule]:
-    root = root or RULES_DIR
+def _iter_rule_files(root: DataRoot) -> list[Path | Traversable]:
+    if isinstance(root, Path):
+        return sorted(root.glob("*.yaml"))
+    return sorted(
+        (child for child in root.iterdir() if child.is_file() and child.name.endswith(".yaml")),
+        key=lambda item: str(item),
+    )
+
+
+def load_rules(root: DataRoot | None = None) -> list[Rule]:
+    """Load and validate every rule YAML file under ``root``."""
+    root = root or _default_rules_dir()
     rules: list[Rule] = []
     seen: set[str] = set()
-    for path in sorted(root.glob("*.yaml")):
-        with path.open(encoding="utf-8") as fh:
+    for path in _iter_rule_files(root):
+        with path.open("r", encoding="utf-8") as fh:
             doc = yaml.safe_load(fh) or []
         if not isinstance(doc, list):
             raise ValueError(f"{path}: top-level YAML must be a list")

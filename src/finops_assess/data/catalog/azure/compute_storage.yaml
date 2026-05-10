@@ -1,0 +1,205 @@
+# Azure resource SKU stubs. Pricing is region- and offer-dependent;
+# leave list_price_usd_month null and resolve via the Azure Retail
+# Prices API at collection time (M5).
+
+- id: AZ.VM.Standard_B2s
+  display_name: Azure VM Standard_B2s
+  family: azure_compute_burstable
+  cloud: azure
+  list_price_usd_month: null
+  features:
+    - vm.cpu.2
+    - vm.mem.4gb
+    - vm.burstable
+
+- id: AZ.VM.Standard_D2s_v5
+  display_name: Azure VM Standard_D2s_v5
+  family: azure_compute_general
+  cloud: azure
+  list_price_usd_month: null
+  features:
+    - vm.cpu.2
+    - vm.mem.8gb
+
+- id: AZ.VM.Standard_D4s_v5
+  display_name: Azure VM Standard_D4s_v5
+  family: azure_compute_general
+  cloud: azure
+  list_price_usd_month: null
+  features:
+    - vm.cpu.4
+    - vm.mem.16gb
+  successor_of: [AZ.VM.Standard_D2s_v5]
+
+- id: AZ.VM.Standard_E4s_v5
+  display_name: Azure VM Standard_E4s_v5
+  family: azure_compute_memory
+  cloud: azure
+  list_price_usd_month: null
+  features:
+    - vm.cpu.4
+    - vm.mem.32gb
+
+- id: AZ.DISK.Premium_SSD
+  display_name: Azure Premium SSD managed disk
+  family: azure_storage_disk
+  cloud: azure
+  list_price_usd_month: null
+  features:
+    - disk.premium
+
+- id: AZ.DISK.Standard_SSD
+  display_name: Azure Standard SSD managed disk
+  family: azure_storage_disk
+  cloud: azure
+  list_price_usd_month: null
+  features:
+    - disk.standard.ssd
+
+- id: AZ.STORAGE.Blob_Hot
+  display_name: Azure Blob Storage (Hot)
+  family: azure_storage_blob
+  cloud: azure
+  list_price_usd_month: null
+  features:
+    - blob.hot
+
+- id: AZ.SQL.S1
+  display_name: Azure SQL Database S1
+  family: azure_sql_dtu
+  cloud: azure
+  list_price_usd_month: null
+  features:
+    - sql.dtu.20
+
+- id: AZ.SQL.GP_Gen5_2
+  display_name: Azure SQL Database GP_Gen5_2 (vCore)
+  family: azure_sql_vcore
+  cloud: azure
+  list_price_usd_month: null
+  features:
+    - sql.vcore.2
+    - sql.gp
+
+- id: AZ.LOG.PerGB
+  display_name: Log Analytics — Pay-As-You-Go
+  family: azure_observability
+  cloud: azure
+  list_price_usd_month: null
+  features:
+    - logs.payg
+
+- id: AZ.LOG.Commitment100
+  display_name: Log Analytics — 100 GB/day commitment
+  family: azure_observability
+  cloud: azure
+  list_price_usd_month: null
+  features:
+    - logs.commitment.100gb
+  successor_of: [AZ.LOG.PerGB]
+
+- id: AZ.IP.Standard
+  display_name: Azure Standard Public IP
+  family: azure_network
+  cloud: azure
+  list_price_usd_month: null
+  features:
+    - network.public_ip.standard
+
+# --- Additional VM families (compute-optimised, storage-optimised, GPU) ---
+
+- id: AZ.VM.Standard_F4s_v2
+  display_name: Azure VM Standard_F4s_v2
+  family: azure_compute_optimized
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/virtual-machines/linux/
+  features:
+    - vm.cpu.4
+    - vm.mem.8gb
+    - vm.compute_optimized
+
+- id: AZ.VM.Standard_L8s_v3
+  display_name: Azure VM Standard_L8s_v3
+  family: azure_compute_storage
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/virtual-machines/linux/
+  features:
+    - vm.cpu.8
+    - vm.mem.64gb
+    - vm.storage_optimized
+
+- id: AZ.VM.Standard_NC6s_v3
+  display_name: Azure VM Standard_NC6s_v3 (GPU)
+  family: azure_compute_gpu
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/virtual-machines/linux/
+  features:
+    - vm.cpu.6
+    - vm.mem.112gb
+    - vm.gpu
+
+# --- Additional storage tiers ---
+
+- id: AZ.DISK.Standard_HDD
+  display_name: Azure Standard HDD managed disk
+  family: azure_storage_disk
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/managed-disks/
+  features:
+    - disk.standard.hdd
+
+- id: AZ.STORAGE.Blob_Cool
+  display_name: Azure Blob Storage (Cool)
+  family: azure_storage_blob
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/storage/blobs/
+  features:
+    - blob.cool
+
+- id: AZ.STORAGE.Blob_Archive
+  display_name: Azure Blob Storage (Archive)
+  family: azure_storage_blob
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/storage/blobs/
+  features:
+    - blob.archive
+
+# --- Additional SQL families ---
+
+- id: AZ.SQL.HS_Gen5_2
+  display_name: Azure SQL Database Hyperscale (HS_Gen5_2)
+  family: azure_sql_hyperscale
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/azure-sql-database/single/
+  features:
+    - sql.vcore.2
+    - sql.hyperscale
+
+- id: AZ.SQL.BC_Gen5_2
+  display_name: Azure SQL Database Business Critical (BC_Gen5_2)
+  family: azure_sql_vcore
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/azure-sql-database/single/
+  features:
+    - sql.vcore.2
+    - sql.bc
+  successor_of: [AZ.SQL.GP_Gen5_2]
+
+- id: AZ.SQLMI.GP_Gen5_4
+  display_name: Azure SQL Managed Instance GP_Gen5_4
+  family: azure_sql_managed_instance
+  cloud: azure
+  list_price_usd_month: null
+  source_url: https://azure.microsoft.com/en-us/pricing/details/azure-sql-managed-instance/single/
+  features:
+    - sql.vcore.4
+    - sql.gp
+    - sql.managed_instance
