@@ -9,6 +9,15 @@ the systems it inspects.
 Release history is in [`CHANGELOG.md`](CHANGELOG.md). Contributor
 documentation is in [`docs/contributing.md`](docs/contributing.md).
 
+## What you get
+
+- Evidence-backed right-sizing findings across Microsoft 365, Azure, GitHub, and Azure DevOps.
+- Multi-format outputs: executive HTML, canonical JSON, flat CSV, and optional PDF.
+- Clear review queues for over-licensed, duplicate, idle, inactive, and over-provisioned spend.
+
+See [`docs/user-guide.md`](docs/user-guide.md) for report previews, CLI visuals,
+and worked examples of what the tool delivers.
+
 ## Quick start
 
 The tool is a single Python package and a single CLI (`finops-assess`).
@@ -122,6 +131,8 @@ reports as the **`finops-assess-demo-report`** workflow artifact.
 In-repo artefacts that are auto-generated from the codebase on every
 PR (`.github/workflows/docs.yml` fails the build on drift):
 
+- [`docs/user-guide.md`](docs/user-guide.md): report previews, CLI visuals,
+  and worked examples for interpreting over-licensed and idle-spend findings.
 - [`docs/rules.md`](docs/rules.md): full reference for every rule
   shipped under `data/rules/`, annotated with whether each has a
   registered Python implementation.

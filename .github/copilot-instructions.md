@@ -185,6 +185,15 @@ pytest
 
 CI runs the same gates on Python 3.11 and 3.12. Don't merge red.
 
+## Documentation updates
+
+Every PR that changes behaviour, scope, rules, collectors, schemas,
+reports, examples, workflows, or user-facing commands must update the
+matching docs in the same PR before merge. At minimum, check `README.md`,
+`CHANGELOG.md`, `docs/plan.md`, `docs/schema.md`, `docs/rules.md`,
+`docs/user-guide.md`, and generated example reports for drift. If a doc
+does not need an update, say so in the PR description.
+
 ## Out of scope (don't add without an issue)
 
 - Mutation / remediation paths.

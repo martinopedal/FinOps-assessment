@@ -273,7 +273,59 @@ is source-agnostic.
 
 ---
 
-## 10. Open questions
+## 10. Open questions and future plan
+
+### Future plan: Copilot-assisted triage and FinOps Hubs
+
+This section records the next-PR plan for two related but unshipped
+capabilities: using GitHub Copilot to help triage findings, and linking
+`finops-assess` outputs with FinOps Hubs when a customer has both GitHub
+Copilot and FinOps Hubs.
+
+### Current boundary
+
+- GitHub Copilot is currently assessed as a **licensed GitHub seat** via
+  `GH.COPILOT_INACTIVE_30D`.
+- Microsoft 365 Copilot is currently assessed via
+  `M365.COPILOT_INACTIVE_60D`.
+- The product does **not** yet provide customer-facing Copilot-assisted
+  triage, natural-language finding explanations, or FinOps Hubs
+  integration.
+
+### Next-PR checklist
+
+1. Define a read-only triage contract that takes existing `Finding`
+   records plus redacted evidence and emits analyst-facing triage
+   metadata: priority rationale, suggested owner, verification checklist,
+   and recommended follow-up questions.
+2. Add a documentation-only UX contract first: GitHub Copilot may assist
+   analysts in understanding and grouping findings, but it must not take
+   remediation actions, request write scopes, or expose unredacted PII by
+   default.
+3. Add a FinOps Hubs export/import design that treats FinOps Hubs as an
+   optional integration surface: customers with both tools can correlate
+   Azure cost context, commitment data, and `finops-assess` findings,
+   while customers without FinOps Hubs keep the existing offline workflow.
+4. Keep the first implementation small: emit a stable JSON/CSV artefact
+   that FinOps Hubs workflows or GitHub Copilot prompts can consume before
+   adding any live connector.
+5. Add tests around redaction, schema stability, and the guarantee that
+   triage/export paths remain read-only and advisory.
+6. Update user docs, schema docs, generated examples, and changelog in
+   the same PR that ships the implementation.
+
+### Acceptance criteria
+
+- No new write scopes, long-lived secrets, tenant IDs, PATs, or mutation
+  paths are introduced.
+- Copilot-assisted triage output is clearly labelled advisory and includes
+  evidence references back to the original finding.
+- FinOps Hubs linkage is optional, documented, and degrades gracefully when
+  FinOps Hubs data is absent.
+- PII redaction remains on by default for any prompt, export, or triage
+  payload.
+
+### Open questions
 
 1. Should the catalogue carry **EA / CSP discount tiers** as multipliers,
    or assume list price and document the gap? *Proposed: list price in
