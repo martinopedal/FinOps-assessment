@@ -70,6 +70,7 @@ def build_report(
         "run": {
             "tool": "finops-assess",
             "version": __version__,
+            "schema_version": "1.0",
             "generated_at": _generated_at(),
             "input": _redact_input_path(input_path, redact_pii),
             "pii_redaction": redact_pii,

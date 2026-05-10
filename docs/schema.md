@@ -264,6 +264,7 @@ JSON file with this top-level structure:
   "run": {
     "tool": "finops-assess",
     "version": "0.1.0",
+    "schema_version": "1.0",
     "generated_at": "2026-05-05T10:00:00+00:00",
     "input": "<redacted>/samples",
     "pii_redaction": true,
@@ -294,6 +295,7 @@ JSON file with this top-level structure:
 |-------|------|-------|
 | `tool` | `str` | Always `finops-assess` |
 | `version` | `str` | Package version |
+| `schema_version` | `str` | Report envelope schema version; currently `1.0` |
 | `generated_at` | `str` | ISO-8601 timestamp |
 | `input` | `str` | Input path; when PII redaction is enabled, only the leaf directory name is preserved |
 | `pii_redaction` | `bool` | Whether finding principals were redacted |
@@ -330,3 +332,69 @@ Column order: `rule_id`, `surface`, `severity`, `confidence`,
 
 `evidence_json` contains the `Finding.evidence` payload serialised as a
 JSON string so the structured detail survives the flattening round-trip.
+
+---
+
+## Advisory triage artefact
+
+`finops-assess triage --input report.json --output-dir triage/` reads an
+existing read-only JSON report and emits `triage.json` and/or `triage.csv`.
+The artefact is deterministic, schema-versioned, and advisory: it helps an
+analyst prioritise verification work but never remediates or mutates systems.
+
+The command preserves the source report's `run.pii_redaction` posture. If the
+source report contains salted-hash principals, triage carries those hashes
+verbatim; if an operator intentionally generated an unredacted report, triage
+passes those principals through and clearly records `pii_redaction: false`.
+
+### `TriageReport.run`
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `tool` | `str` | Always `finops-assess-triage` |
+| `version` | `str \| null` | Source package version |
+| `schema_version` | `str` | Triage schema version; currently `1.0` |
+| `generated_at` | `str` | Copied from the source report for byte-stable output |
+| `mode` | `"advisory"` | Triage mode; not a remediation mode |
+| `pii_redaction` | `bool` | Copied from the source report |
+| `advisory` | `true` | Machine-checkable advisory marker |
+| `advisory_banner` | `str` | Human-readable warning to verify before action |
+| `copilot_helper` | `"disabled" \| "sdk" \| "cli" \| "unavailable"` | Optional GitHub Copilot helper discovery status |
+
+### `TriageItem`
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `finding_ref` | `str` | Stable derived hash pointer back to the source finding |
+| `source_finding_index` | `int` | Zero-based index into the source report's `findings` array |
+| `rule_id` | `str` | Source finding rule ID |
+| `surface` | `Cloud` | Source finding surface |
+| `severity` | `Severity` | Intrinsic rule severity |
+| `confidence` | `Confidence` | Source finding confidence |
+| `principal` | `str` | Source finding principal, unchanged |
+| `current_sku` / `recommended_sku` | `str \| null` | Source SKU fields |
+| `estimated_monthly_savings_usd` | `float \| null` | Source savings estimate |
+| `evidence_ref` | `str \| null` | Source evidence reference, when present |
+| `priority_bucket` | `"p1" \| "p2" \| "p3" \| "p4"` | Advisory analyst queue priority |
+| `priority_rationale` | `str` | Deterministic rationale using severity, confidence, and savings |
+| `suggested_owner_role` | `identity-admin \| license-admin \| azure-owner \| github-org-admin \| ado-org-admin \| finops-analyst` | Closed-vocabulary role, never a person or directory lookup |
+| `verification_checklist` | `list[str]` | Conservative checks before any human action |
+| `followup_questions` | `list[str]` | Questions for the owning admin/team |
+| `advisory` | `true` | Per-item invariant |
+
+Severity and triage priority are intentionally separate: `severity` is the
+rule's intrinsic risk/cost classification, while `priority_bucket` is an
+advisory queue order for analyst workload. The current mapping is:
+
+| Inputs | Bucket |
+|--------|--------|
+| `severity=high` and `confidence=high` | `p1` |
+| `severity=high`, or `severity=medium` with savings ≥ `$100/mo` | `p2` |
+| `severity=medium`, or `confidence=medium` | `p3` |
+| Everything else | `p4` |
+
+The triage CSV column order is stable: `finding_ref`,
+`source_finding_index`, `rule_id`, `surface`, `severity`, `confidence`,
+`principal`, `priority_bucket`, `priority_rationale`, `suggested_owner_role`,
+`current_sku`, `recommended_sku`, `estimated_monthly_savings_usd`,
+`evidence_ref`, `verification_checklist`, `followup_questions`, `advisory`.
