@@ -1,0 +1,916 @@
+{
+  "run": {
+    "tool": "finops-assess-triage",
+    "version": "0.1.0",
+    "schema_version": "1.0",
+    "generated_at": "1970-01-01T00:00:00+00:00",
+    "mode": "advisory",
+    "pii_redaction": true,
+    "advisory": true,
+    "advisory_banner": "Template-based advisory triage only. Verify findings before action; no remediation, write scopes, or de-redaction are performed.",
+    "copilot_helper": "disabled"
+  },
+  "source": {
+    "tool": "finops-assess",
+    "mode": "read-only",
+    "schema_version": "1.0",
+    "report_path": "<redacted>/demo-report.json",
+    "findings_count": 34,
+    "input_pii_redaction": true
+  },
+  "summary": {
+    "total_items": 34,
+    "priority_counts": {
+      "p1": 13,
+      "p2": 2,
+      "p3": 17,
+      "p4": 2
+    }
+  },
+  "items": [
+    {
+      "finding_ref": "finding:2211b1b5aaec9d6b",
+      "source_finding_index": 0,
+      "rule_id": "ADO.INACTIVE_BASIC_90D",
+      "surface": "ado",
+      "severity": "high",
+      "confidence": "high",
+      "principal": "sha256:124abc21ba41b6f9",
+      "current_sku": "ADO.BASIC",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 6.0,
+      "evidence_ref": null,
+      "priority_bucket": "p1",
+      "priority_rationale": "P1 because severity is high, confidence is high, and the finding has $6.00/mo estimated savings.",
+      "suggested_owner_role": "ado-org-admin",
+      "verification_checklist": [
+        "Confirm the Azure DevOps organisation and project ownership.",
+        "Review work-item, code, pipeline, and Test Plans activity before changing access.",
+        "Verify stakeholder eligibility or parallel-job needs with the ADO admin."
+      ],
+      "followup_questions": [
+        "Is the access level needed for upcoming sprint, test, or release work?",
+        "Are project-level permissions or stakeholder limitations acceptable?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:5bd2e39c60d7f6a5",
+      "source_finding_index": 1,
+      "rule_id": "ADO.STAKEHOLDER_ELIGIBLE",
+      "surface": "ado",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:6c17296b74c9fb4a",
+      "current_sku": "ADO.BASIC",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 6.0,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has $6.00/mo estimated savings.",
+      "suggested_owner_role": "ado-org-admin",
+      "verification_checklist": [
+        "Confirm the Azure DevOps organisation and project ownership.",
+        "Review work-item, code, pipeline, and Test Plans activity before changing access.",
+        "Verify stakeholder eligibility or parallel-job needs with the ADO admin."
+      ],
+      "followup_questions": [
+        "Is the access level needed for upcoming sprint, test, or release work?",
+        "Are project-level permissions or stakeholder limitations acceptable?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:9bd537e2990f78f3",
+      "source_finding_index": 2,
+      "rule_id": "ADO.PARALLEL_JOBS_OVER_PROVISIONED",
+      "surface": "ado",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:d7235265ed0e5c83",
+      "current_sku": null,
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 280.0,
+      "evidence_ref": null,
+      "priority_bucket": "p2",
+      "priority_rationale": "P2 because severity is medium, confidence is high, and the finding has $280.00/mo estimated savings.",
+      "suggested_owner_role": "ado-org-admin",
+      "verification_checklist": [
+        "Confirm the Azure DevOps organisation and project ownership.",
+        "Review work-item, code, pipeline, and Test Plans activity before changing access.",
+        "Verify stakeholder eligibility or parallel-job needs with the ADO admin."
+      ],
+      "followup_questions": [
+        "Is the access level needed for upcoming sprint, test, or release work?",
+        "Are project-level permissions or stakeholder limitations acceptable?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:435593e64c9dc8cb",
+      "source_finding_index": 3,
+      "rule_id": "ADO.TEST_PLANS_UNUSED",
+      "surface": "ado",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:ae691e231b441a77",
+      "current_sku": "ADO.BASIC_TEST",
+      "recommended_sku": "ADO.BASIC",
+      "estimated_monthly_savings_usd": 46.0,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has $46.00/mo estimated savings.",
+      "suggested_owner_role": "ado-org-admin",
+      "verification_checklist": [
+        "Confirm the Azure DevOps organisation and project ownership.",
+        "Review work-item, code, pipeline, and Test Plans activity before changing access.",
+        "Verify stakeholder eligibility or parallel-job needs with the ADO admin."
+      ],
+      "followup_questions": [
+        "Is the access level needed for upcoming sprint, test, or release work?",
+        "Are project-level permissions or stakeholder limitations acceptable?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:eeae27cda8e78372",
+      "source_finding_index": 4,
+      "rule_id": "AZ.IDLE_VM_14D",
+      "surface": "azure",
+      "severity": "high",
+      "confidence": "high",
+      "principal": "sha256:932b9351ef962f3c",
+      "current_sku": "Standard_D4s_v5",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 140.0,
+      "evidence_ref": null,
+      "priority_bucket": "p1",
+      "priority_rationale": "P1 because severity is high, confidence is high, and the finding has $140.00/mo estimated savings.",
+      "suggested_owner_role": "azure-owner",
+      "verification_checklist": [
+        "Confirm the resource is still owned and in scope for optimisation.",
+        "Review recent metrics, tags, and change windows before resizing or stopping.",
+        "Verify reservations, commitments, or environment tags with the FinOps owner."
+      ],
+      "followup_questions": [
+        "Is this workload seasonal, recently deployed, or intentionally kept warm?",
+        "Would a right-size or commitment change affect availability targets?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:6eeac2447b5bbf80",
+      "source_finding_index": 5,
+      "rule_id": "AZ.UNATTACHED_DISK",
+      "surface": "azure",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:23c12f05be25787a",
+      "current_sku": "Premium_LRS_512",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 42.0,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has $42.00/mo estimated savings.",
+      "suggested_owner_role": "azure-owner",
+      "verification_checklist": [
+        "Confirm the resource is still owned and in scope for optimisation.",
+        "Review recent metrics, tags, and change windows before resizing or stopping.",
+        "Verify reservations, commitments, or environment tags with the FinOps owner."
+      ],
+      "followup_questions": [
+        "Is this workload seasonal, recently deployed, or intentionally kept warm?",
+        "Would a right-size or commitment change affect availability targets?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:7f1022fd7fb728d2",
+      "source_finding_index": 6,
+      "rule_id": "AZ.PUBLIC_IP_UNATTACHED",
+      "surface": "azure",
+      "severity": "low",
+      "confidence": "high",
+      "principal": "sha256:ed17f7f143d9b62e",
+      "current_sku": "Standard",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 3.65,
+      "evidence_ref": null,
+      "priority_bucket": "p4",
+      "priority_rationale": "P4 because severity is low, confidence is high, and the finding has $3.65/mo estimated savings.",
+      "suggested_owner_role": "azure-owner",
+      "verification_checklist": [
+        "Confirm the resource is still owned and in scope for optimisation.",
+        "Review recent metrics, tags, and change windows before resizing or stopping.",
+        "Verify reservations, commitments, or environment tags with the FinOps owner."
+      ],
+      "followup_questions": [
+        "Is this workload seasonal, recently deployed, or intentionally kept warm?",
+        "Would a right-size or commitment change affect availability targets?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:54227d49c75378a0",
+      "source_finding_index": 7,
+      "rule_id": "AZ.OVERSIZED_VM",
+      "surface": "azure",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:0cce3820ec705be2",
+      "current_sku": "Standard_D8s_v5",
+      "recommended_sku": "Standard_D4s_v5",
+      "estimated_monthly_savings_usd": null,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has unknown savings.",
+      "suggested_owner_role": "azure-owner",
+      "verification_checklist": [
+        "Confirm the resource is still owned and in scope for optimisation.",
+        "Review recent metrics, tags, and change windows before resizing or stopping.",
+        "Verify reservations, commitments, or environment tags with the FinOps owner."
+      ],
+      "followup_questions": [
+        "Is this workload seasonal, recently deployed, or intentionally kept warm?",
+        "Would a right-size or commitment change affect availability targets?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:cadd58b7016e930e",
+      "source_finding_index": 8,
+      "rule_id": "AZ.RESERVATION_UNDERUTILIZED",
+      "surface": "azure",
+      "severity": "high",
+      "confidence": "high",
+      "principal": "sha256:efb1eb6d0c6c0952",
+      "current_sku": "Standard_D4s_v5",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": null,
+      "evidence_ref": null,
+      "priority_bucket": "p1",
+      "priority_rationale": "P1 because severity is high, confidence is high, and the finding has unknown savings.",
+      "suggested_owner_role": "finops-analyst",
+      "verification_checklist": [
+        "Confirm the resource is still owned and in scope for optimisation.",
+        "Review recent metrics, tags, and change windows before resizing or stopping.",
+        "Verify reservations, commitments, or environment tags with the FinOps owner."
+      ],
+      "followup_questions": [
+        "Is this workload seasonal, recently deployed, or intentionally kept warm?",
+        "Would a right-size or commitment change affect availability targets?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:d5574dbab15eb47f",
+      "source_finding_index": 9,
+      "rule_id": "AZ.LOG_ANALYTICS_OVERINGEST",
+      "surface": "azure",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:eb88542d48a4e0ce",
+      "current_sku": null,
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 384.0,
+      "evidence_ref": null,
+      "priority_bucket": "p2",
+      "priority_rationale": "P2 because severity is medium, confidence is high, and the finding has $384.00/mo estimated savings.",
+      "suggested_owner_role": "finops-analyst",
+      "verification_checklist": [
+        "Confirm the resource is still owned and in scope for optimisation.",
+        "Review recent metrics, tags, and change windows before resizing or stopping.",
+        "Verify reservations, commitments, or environment tags with the FinOps owner."
+      ],
+      "followup_questions": [
+        "Is this workload seasonal, recently deployed, or intentionally kept warm?",
+        "Would a right-size or commitment change affect availability targets?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:0e5e2ba81971a04e",
+      "source_finding_index": 10,
+      "rule_id": "AZ.DEV_TEST_SUB_MISMATCH",
+      "surface": "azure",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:f7ca075ffb272bf1",
+      "current_sku": "Standard_D4s_v3",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": null,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has unknown savings.",
+      "suggested_owner_role": "azure-owner",
+      "verification_checklist": [
+        "Confirm the resource is still owned and in scope for optimisation.",
+        "Review recent metrics, tags, and change windows before resizing or stopping.",
+        "Verify reservations, commitments, or environment tags with the FinOps owner."
+      ],
+      "followup_questions": [
+        "Is this workload seasonal, recently deployed, or intentionally kept warm?",
+        "Would a right-size or commitment change affect availability targets?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:09f2dcc80bce85da",
+      "source_finding_index": 11,
+      "rule_id": "GH.INACTIVE_SEAT_90D",
+      "surface": "github",
+      "severity": "high",
+      "confidence": "high",
+      "principal": "sha256:04b261baa36f3936",
+      "current_sku": "GH.ENTERPRISE",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 21.0,
+      "evidence_ref": null,
+      "priority_bucket": "p1",
+      "priority_rationale": "P1 because severity is high, confidence is high, and the finding has $21.00/mo estimated savings.",
+      "suggested_owner_role": "github-org-admin",
+      "verification_checklist": [
+        "Confirm the seat, org, or repository ownership before changing entitlements.",
+        "Review recent contribution, Copilot, GHAS, and runner usage signals.",
+        "Verify security or release-engineering exceptions with the GitHub admin."
+      ],
+      "followup_questions": [
+        "Is the seat required for a pending project, compliance control, or release window?",
+        "Are repository or runner signals delayed by billing-period timing?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:3ab27a128a74fbd1",
+      "source_finding_index": 12,
+      "rule_id": "GH.COPILOT_INACTIVE_30D",
+      "surface": "github",
+      "severity": "high",
+      "confidence": "high",
+      "principal": "sha256:190ed4a1b3b1b479",
+      "current_sku": "GH.COPILOT_BUSINESS",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 19.0,
+      "evidence_ref": null,
+      "priority_bucket": "p1",
+      "priority_rationale": "P1 because severity is high, confidence is high, and the finding has $19.00/mo estimated savings.",
+      "suggested_owner_role": "github-org-admin",
+      "verification_checklist": [
+        "Confirm the seat, org, or repository ownership before changing entitlements.",
+        "Review recent contribution, Copilot, GHAS, and runner usage signals.",
+        "Verify security or release-engineering exceptions with the GitHub admin."
+      ],
+      "followup_questions": [
+        "Is the seat required for a pending project, compliance control, or release window?",
+        "Are repository or runner signals delayed by billing-period timing?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:75ced20c81dfbb75",
+      "source_finding_index": 13,
+      "rule_id": "GH.GHAS_OVER_PROVISIONED",
+      "surface": "github",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:d7235265ed0e5c83",
+      "current_sku": "GH.GHAS",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": null,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has unknown savings.",
+      "suggested_owner_role": "github-org-admin",
+      "verification_checklist": [
+        "Confirm the seat, org, or repository ownership before changing entitlements.",
+        "Review recent contribution, Copilot, GHAS, and runner usage signals.",
+        "Verify security or release-engineering exceptions with the GitHub admin."
+      ],
+      "followup_questions": [
+        "Is the seat required for a pending project, compliance control, or release window?",
+        "Are repository or runner signals delayed by billing-period timing?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:b3dabb4adfd741cc",
+      "source_finding_index": 14,
+      "rule_id": "GH.RUNNER_TIER_MISMATCH",
+      "surface": "github",
+      "severity": "low",
+      "confidence": "high",
+      "principal": "sha256:d7235265ed0e5c83",
+      "current_sku": "team",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": null,
+      "evidence_ref": null,
+      "priority_bucket": "p4",
+      "priority_rationale": "P4 because severity is low, confidence is high, and the finding has unknown savings.",
+      "suggested_owner_role": "github-org-admin",
+      "verification_checklist": [
+        "Confirm the seat, org, or repository ownership before changing entitlements.",
+        "Review recent contribution, Copilot, GHAS, and runner usage signals.",
+        "Verify security or release-engineering exceptions with the GitHub admin."
+      ],
+      "followup_questions": [
+        "Is the seat required for a pending project, compliance control, or release window?",
+        "Are repository or runner signals delayed by billing-period timing?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:08da895916bb5375",
+      "source_finding_index": 15,
+      "rule_id": "M365.UNUSED_LICENSE_30D",
+      "surface": "m365",
+      "severity": "high",
+      "confidence": "high",
+      "principal": "sha256:405ee3fd5bda4576",
+      "current_sku": "SPE_E3",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 36.0,
+      "evidence_ref": null,
+      "priority_bucket": "p1",
+      "priority_rationale": "P1 because severity is high, confidence is high, and the finding has $36.00/mo estimated savings.",
+      "suggested_owner_role": "license-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:1b5c9215eb1910c7",
+      "source_finding_index": 16,
+      "rule_id": "M365.UNUSED_LICENSE_30D",
+      "surface": "m365",
+      "severity": "high",
+      "confidence": "high",
+      "principal": "sha256:405ee3fd5bda4576",
+      "current_sku": "M365_COPILOT",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 30.0,
+      "evidence_ref": null,
+      "priority_bucket": "p1",
+      "priority_rationale": "P1 because severity is high, confidence is high, and the finding has $30.00/mo estimated savings.",
+      "suggested_owner_role": "license-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:09c068adac99a7ee",
+      "source_finding_index": 17,
+      "rule_id": "M365.UNUSED_LICENSE_30D",
+      "surface": "m365",
+      "severity": "high",
+      "confidence": "high",
+      "principal": "sha256:3498566c1646cc7a",
+      "current_sku": "M365_COPILOT",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 30.0,
+      "evidence_ref": null,
+      "priority_bucket": "p1",
+      "priority_rationale": "P1 because severity is high, confidence is high, and the finding has $30.00/mo estimated savings.",
+      "suggested_owner_role": "license-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:59232e973a7f3457",
+      "source_finding_index": 18,
+      "rule_id": "M365.UNUSED_LICENSE_30D",
+      "surface": "m365",
+      "severity": "high",
+      "confidence": "high",
+      "principal": "sha256:240ece34ff6a9236",
+      "current_sku": "SPE_E3",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 36.0,
+      "evidence_ref": null,
+      "priority_bucket": "p1",
+      "priority_rationale": "P1 because severity is high, confidence is high, and the finding has $36.00/mo estimated savings.",
+      "suggested_owner_role": "license-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:0d588334ef87729b",
+      "source_finding_index": 19,
+      "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
+      "surface": "m365",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:ef73380a88ef4f55",
+      "current_sku": "SPE_E5",
+      "recommended_sku": "SPE_F3",
+      "estimated_monthly_savings_usd": 49.0,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has $49.00/mo estimated savings.",
+      "suggested_owner_role": "license-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:fc028001b9dec374",
+      "source_finding_index": 20,
+      "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
+      "surface": "m365",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:68912ee6976f6653",
+      "current_sku": "SPE_E5",
+      "recommended_sku": "O365_BUSINESS_PREMIUM",
+      "estimated_monthly_savings_usd": 44.5,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has $44.50/mo estimated savings.",
+      "suggested_owner_role": "license-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:ce81c27bf0994d34",
+      "source_finding_index": 21,
+      "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
+      "surface": "m365",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:405ee3fd5bda4576",
+      "current_sku": "SPE_E3",
+      "recommended_sku": "O365_BUSINESS_PREMIUM",
+      "estimated_monthly_savings_usd": 23.5,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has $23.50/mo estimated savings.",
+      "suggested_owner_role": "license-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:632cd89946cc711a",
+      "source_finding_index": 22,
+      "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
+      "surface": "m365",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:3498566c1646cc7a",
+      "current_sku": "SPE_E3",
+      "recommended_sku": "O365_BUSINESS_ESSENTIALS",
+      "estimated_monthly_savings_usd": 30.0,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has $30.00/mo estimated savings.",
+      "suggested_owner_role": "license-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:3c952bf445337c05",
+      "source_finding_index": 23,
+      "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
+      "surface": "m365",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:b18bee93a260c831",
+      "current_sku": "SPE_E3",
+      "recommended_sku": "O365_BUSINESS_PREMIUM",
+      "estimated_monthly_savings_usd": 23.5,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has $23.50/mo estimated savings.",
+      "suggested_owner_role": "license-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:2f5f5958ab7ee79d",
+      "source_finding_index": 24,
+      "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
+      "surface": "m365",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:4eee514e4174de62",
+      "current_sku": "SPE_E5",
+      "recommended_sku": "O365_BUSINESS_PREMIUM",
+      "estimated_monthly_savings_usd": 44.5,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has $44.50/mo estimated savings.",
+      "suggested_owner_role": "license-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:6313dbb92cc2989a",
+      "source_finding_index": 25,
+      "rule_id": "M365.DUPLICATE_BUNDLE",
+      "surface": "m365",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:cb7859dadf6104a6",
+      "current_sku": "SPE_E3",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 10.0,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has $10.00/mo estimated savings.",
+      "suggested_owner_role": "license-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:2a7ff6c41044e94b",
+      "source_finding_index": 26,
+      "rule_id": "M365.DISABLED_USER_LICENSED",
+      "surface": "m365",
+      "severity": "high",
+      "confidence": "high",
+      "principal": "sha256:405ee3fd5bda4576",
+      "current_sku": "SPE_E3",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 36.0,
+      "evidence_ref": null,
+      "priority_bucket": "p1",
+      "priority_rationale": "P1 because severity is high, confidence is high, and the finding has $36.00/mo estimated savings.",
+      "suggested_owner_role": "identity-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:df970d167caba76b",
+      "source_finding_index": 27,
+      "rule_id": "M365.DISABLED_USER_LICENSED",
+      "surface": "m365",
+      "severity": "high",
+      "confidence": "high",
+      "principal": "sha256:405ee3fd5bda4576",
+      "current_sku": "M365_COPILOT",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 30.0,
+      "evidence_ref": null,
+      "priority_bucket": "p1",
+      "priority_rationale": "P1 because severity is high, confidence is high, and the finding has $30.00/mo estimated savings.",
+      "suggested_owner_role": "identity-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:e8997598fd88789e",
+      "source_finding_index": 28,
+      "rule_id": "M365.SHARED_MAILBOX_LICENSED",
+      "surface": "m365",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:909667c749d6ebb9",
+      "current_sku": "EXCHANGESTANDARD",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 4.0,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has $4.00/mo estimated savings.",
+      "suggested_owner_role": "license-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:ac31439ea8ff84c9",
+      "source_finding_index": 29,
+      "rule_id": "M365.GUEST_PREMIUM_LICENSED",
+      "surface": "m365",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:240ece34ff6a9236",
+      "current_sku": "SPE_E3",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 36.0,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has $36.00/mo estimated savings.",
+      "suggested_owner_role": "identity-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:73ce3e924451fd6b",
+      "source_finding_index": 30,
+      "rule_id": "M365.COPILOT_INACTIVE_60D",
+      "surface": "m365",
+      "severity": "high",
+      "confidence": "high",
+      "principal": "sha256:405ee3fd5bda4576",
+      "current_sku": "M365_COPILOT",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 30.0,
+      "evidence_ref": null,
+      "priority_bucket": "p1",
+      "priority_rationale": "P1 because severity is high, confidence is high, and the finding has $30.00/mo estimated savings.",
+      "suggested_owner_role": "license-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:badf5199c285f1ce",
+      "source_finding_index": 31,
+      "rule_id": "M365.COPILOT_INACTIVE_60D",
+      "surface": "m365",
+      "severity": "high",
+      "confidence": "high",
+      "principal": "sha256:3498566c1646cc7a",
+      "current_sku": "M365_COPILOT",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 30.0,
+      "evidence_ref": null,
+      "priority_bucket": "p1",
+      "priority_rationale": "P1 because severity is high, confidence is high, and the finding has $30.00/mo estimated savings.",
+      "suggested_owner_role": "license-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:becc9148c01bc57a",
+      "source_finding_index": 32,
+      "rule_id": "M365.E5_FEATURES_UNUSED",
+      "surface": "m365",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:ef73380a88ef4f55",
+      "current_sku": "SPE_E5",
+      "recommended_sku": "SPE_E3",
+      "estimated_monthly_savings_usd": 21.0,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has $21.00/mo estimated savings.",
+      "suggested_owner_role": "license-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:e35e0e49114e35ec",
+      "source_finding_index": 33,
+      "rule_id": "M365.E5_FEATURES_UNUSED",
+      "surface": "m365",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:4eee514e4174de62",
+      "current_sku": "SPE_E5",
+      "recommended_sku": "SPE_E3",
+      "estimated_monthly_savings_usd": 21.0,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has $21.00/mo estimated savings.",
+      "suggested_owner_role": "license-admin",
+      "verification_checklist": [
+        "Confirm the assigned persona and business exception with the license owner.",
+        "Review recent sign-in and workload activity before changing any license.",
+        "Verify compliance, mailbox, guest, or break-glass exceptions are not present."
+      ],
+      "followup_questions": [
+        "Is the principal covered by a legal hold, eDiscovery, shared-mailbox, or service-account exception?",
+        "Does the persona assignment match the user's current role?"
+      ],
+      "advisory": true
+    }
+  ]
+}

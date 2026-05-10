@@ -63,6 +63,9 @@ finops-assess run --input ./samples --output ./report.json --format both
 # Emit a flat CSV of findings for pivoting in Excel or Sheets.
 finops-assess run --input ./samples --format csv --csv-output ./findings.csv
 
+# Build an advisory analyst triage pack from an existing JSON report.
+finops-assess triage --input ./report.json --output-dir ./triage
+
 # Run against your CSVs and emit JSON, HTML, CSV, and PDF together
 # (the PDF step needs the optional [pdf] extra; see "PDF reports" below).
 finops-assess run --input ./samples --output ./report.json --format all \
@@ -142,6 +145,9 @@ PR (`.github/workflows/docs.yml` fails the build on drift):
   deterministic output of `finops-assess demo` against the bundled
   synthetic tenant. Rendered with `SOURCE_DATE_EPOCH=0` and a fixed
   redaction salt so the bytes are stable across CI runs.
+- [`examples/demo-triage.json`](examples/demo-triage.json),
+  [`examples/demo-triage.csv`](examples/demo-triage.csv): advisory triage
+  artefacts derived from the demo JSON report.
 
 ## Contributing
 

@@ -143,6 +143,35 @@ examples.
 What this gives you: infrastructure and seat recommendations in one report,
 with consistent severity, confidence, savings, and evidence fields.
 
+## Advisory triage pack
+
+After a JSON report exists, generate a schema-versioned analyst queue:
+
+```console
+$ finops-assess triage --input demo-report/demo-report.json --output-dir ./triage
+OK — wrote advisory triage JSON to triage/triage.json
+OK — wrote advisory triage CSV to triage/triage.csv
+Advisory triage items: 34
+```
+
+The triage pack preserves the source report's PII posture. If the report used
+default redaction, principals remain salted hashes; if an operator explicitly
+ran with `--no-pii-redaction`, triage passes that through and records
+`pii_redaction: false`.
+
+The command is template-based and makes no network calls by default. Teams
+with GitHub Copilot can explicitly opt in to helper discovery:
+
+```console
+$ finops-assess triage --input report.json --enable-copilot-helper
+```
+
+This follows the azure-analyzer pattern: Copilot assistance is optional,
+disabled by default, and must not be used to take remediation actions, request
+write scopes, or de-redact principals. The current implementation records the
+available helper mode (`sdk`, `cli`, or `unavailable`) while still emitting the
+stable local JSON/CSV artefact. Analysts remain responsible for verification.
+
 ## Under-licensed cases: current boundary
 
 The current v0.1 ruleset is cost-right-sizing focused. It detects
@@ -188,10 +217,11 @@ For the authoritative current list, use [`docs/rules.md`](rules.md).
 - It does **not** remediate, remove, downgrade, or mutate anything.
 - It does **not** request write scopes or document write-scope credentials.
 - It does **not** yet provide GitHub Copilot-assisted triage for customer
-  findings; today it assesses GitHub Copilot seat usage and reports inactive
-  seats.
-- It does **not** yet connect findings to FinOps Hubs. That follow-up is
-  planned in [`docs/plan.md`](plan.md#10-open-questions-and-future-plan).
+  findings beyond the opt-in local helper-discovery scaffold; today the triage
+  pack is deterministic and template-based.
+- It does **not** yet connect findings to FinOps Hubs. The triage JSON/CSV
+  contract is stable for downstream workflows, but no compatibility claim or
+  connector ships yet.
 - It does **not** audit non-Microsoft SaaS, on-prem CALs, or perpetual licensing.
 - It does **not** redistribute third-party diagrams or proprietary pricing tables.
 

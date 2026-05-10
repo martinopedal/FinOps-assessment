@@ -13,6 +13,10 @@ release.
   with report previews, CLI visuals, worked over-licensed examples drawn from
   the deterministic demo report, and an explicit note on current under-licensed
   scope.
+- `finops-assess triage`, an advisory subcommand that reads an existing
+  read-only JSON report and emits stable triage JSON/CSV artefacts while
+  preserving source PII redaction. GitHub Copilot SDK/CLI helper discovery is
+  explicit opt-in and gracefully skips when unavailable.
 - Future-plan docs for GitHub Copilot-assisted triage and optional FinOps Hubs
   linkage, plus contributor guidance requiring docs updates with every PR.
 

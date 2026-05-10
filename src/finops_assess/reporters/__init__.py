@@ -16,9 +16,15 @@ from finops_assess.reporters.pdf_reporter import (
     build_pdf_report,
     write_pdf_report,
 )
+from finops_assess.reporters.triage_reporter import (
+    TRIAGE_CSV_COLUMNS,
+    write_triage_csv,
+    write_triage_json,
+)
 
 __all__ = [
     "CSV_COLUMNS",
+    "TRIAGE_CSV_COLUMNS",
     "Branding",
     "build_html_report",
     "build_pdf_html",
@@ -27,4 +33,6 @@ __all__ = [
     "write_html_report",
     "write_json_report",
     "write_pdf_report",
+    "write_triage_csv",
+    "write_triage_json",
 ]

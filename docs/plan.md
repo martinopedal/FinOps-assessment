@@ -288,31 +288,41 @@ Copilot and FinOps Hubs.
   `GH.COPILOT_INACTIVE_30D`.
 - Microsoft 365 Copilot is currently assessed via
   `M365.COPILOT_INACTIVE_60D`.
-- The product does **not** yet provide customer-facing Copilot-assisted
-  triage, natural-language finding explanations, or FinOps Hubs
-  integration.
+- The product now provides a deterministic `finops-assess triage` advisory
+  JSON/CSV artefact derived from existing findings. GitHub Copilot SDK/CLI
+  helper discovery is explicit opt-in and disabled by default; no finding data
+  is sent to Copilot by the default command path.
+- The product does **not** yet provide live Copilot natural-language
+  enrichment or FinOps Hubs integration.
 
 ### Next-PR checklist
 
-1. Define a read-only triage contract that takes existing `Finding`
+1. ✅ Define a read-only triage contract that takes existing `Finding`
    records plus redacted evidence and emits analyst-facing triage
    metadata: priority rationale, suggested owner, verification checklist,
    and recommended follow-up questions.
-2. Add a documentation-only UX contract first: GitHub Copilot may assist
+2. ✅ Add a UX contract first: GitHub Copilot may assist
    analysts in understanding and grouping findings, but it must not take
    remediation actions, request write scopes, or expose unredacted PII by
-   default.
-3. Add a FinOps Hubs export/import design that treats FinOps Hubs as an
+   default. The first shipped step mirrors the azure-analyzer pattern:
+   optional helper discovery is behind an explicit opt-in flag and gracefully
+   skips when the SDK/CLI is unavailable.
+3. ⏭️ Add a FinOps Hubs export/import design that treats FinOps Hubs as an
    optional integration surface: customers with both tools can correlate
    Azure cost context, commitment data, and `finops-assess` findings,
    while customers without FinOps Hubs keep the existing offline workflow.
-4. Keep the first implementation small: emit a stable JSON/CSV artefact
+4. ✅ Keep the first implementation small: emit a stable JSON/CSV artefact
    that FinOps Hubs workflows or GitHub Copilot prompts can consume before
    adding any live connector.
-5. Add tests around redaction, schema stability, and the guarantee that
+5. ✅ Add tests around redaction, schema stability, and the guarantee that
    triage/export paths remain read-only and advisory.
-6. Update user docs, schema docs, generated examples, and changelog in
+6. ✅ Update user docs, schema docs, generated examples, and changelog in
    the same PR that ships the implementation.
+
+FinOps Hubs compatibility is **not claimed** by the first triage artefact.
+The shipped contract is a stable JSON/CSV shape, versioned by
+`TRIAGE_SCHEMA_VERSION`, that downstream Hubs workflows may consume before a
+dedicated connector is designed.
 
 ### Acceptance criteria
 

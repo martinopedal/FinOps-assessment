@@ -43,7 +43,13 @@ def test_regenerate_examples_is_deterministic(tmp_path: Path) -> None:
     module.regenerate_examples(out_a)
     module.regenerate_examples(out_b)
 
-    for name in ("demo-report.json", "demo-report.html", "demo-report.csv"):
+    for name in (
+        "demo-report.json",
+        "demo-report.html",
+        "demo-report.csv",
+        "demo-triage.json",
+        "demo-triage.csv",
+    ):
         assert (out_a / name).read_bytes() == (out_b / name).read_bytes(), (
             f"{name} differs between two regenerations — determinism is broken"
         )

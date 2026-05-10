@@ -1,4 +1,4 @@
-"""Regenerate `docs/rules.md` and `examples/demo-report.{json,html,csv}`.
+"""Regenerate `docs/rules.md` and committed example reports.
 
 Single source of truth for two committed artefacts that would otherwise
 drift from the codebase:
@@ -8,9 +8,11 @@ drift from the codebase:
   has a registered Python implementation in
   ``src/finops_assess/rules_impl/``.
 * ``examples/demo-report.{json,html,csv}``: the deterministic output of
-  ``finops-assess demo`` against the bundled synthetic tenant, used as a
-  preview for prospective users without requiring them to install the
-  tool.
+   ``finops-assess demo`` against the bundled synthetic tenant, used as a
+   preview for prospective users without requiring them to install the
+   tool.
+* ``examples/demo-triage.{json,csv}``: the deterministic advisory triage
+  artefacts built from ``examples/demo-report.json``.
 
 Determinism
 -----------
@@ -53,14 +55,18 @@ from finops_assess.reporters import (
     write_csv_report,
     write_html_report,
     write_json_report,
+    write_triage_csv,
+    write_triage_json,
 )
 from finops_assess.reporters.json_reporter import build_report
 from finops_assess.rules import load_personas, load_rules
+from finops_assess.triage import build_triage
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DOCS_RULES_PATH = REPO_ROOT / "docs" / "rules.md"
 EXAMPLES_DIR = REPO_ROOT / "examples"
 EXAMPLE_BASENAME = "demo-report"
+TRIAGE_BASENAME = "demo-triage"
 
 # A fixed, non-secret salt. The synthetic tenant has no real PII so the
 # salt's only role here is to make the redacted principals stable across
@@ -145,6 +151,49 @@ def render_rules_markdown() -> str:
         out.append(f"_Surfaces declared but with no rules yet: {', '.join(missing)}._")
         out.append("")
 
+    out.append("## Advisory triage defaults")
+    out.append("")
+    out.append(
+        "The `finops-assess triage` command derives these owner roles and verification "
+        "checklists from each rule's surface. The artefact is advisory and does not "
+        "perform remediation."
+    )
+    out.append("")
+    out.append("| Rule ID | Suggested owner role | Verification checklist |")
+    out.append("|---------|----------------------|-------------------------|")
+    for rule in sorted(rules, key=lambda r: r.id):
+        triage = build_triage(
+            {
+                "run": {
+                    "tool": "finops-assess",
+                    "version": "0.1.0",
+                    "schema_version": "1.0",
+                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "pii_redaction": True,
+                    "mode": "read-only",
+                },
+                "findings": [
+                    {
+                        "rule_id": rule.id,
+                        "surface": rule.surface,
+                        "severity": rule.severity,
+                        "principal": "sha256:example",
+                        "current_sku": None,
+                        "recommended_sku": None,
+                        "estimated_monthly_savings_usd": None,
+                        "recommendation": rule.summary,
+                        "evidence_ref": None,
+                        "confidence": "high",
+                        "evidence": {},
+                    }
+                ],
+            }
+        )
+        item = triage.items[0]
+        checklist = "<br>".join(step.replace("|", "\\|") for step in item.verification_checklist)
+        out.append(f"| `{rule.id}` | {item.suggested_owner_role} | {checklist} |")
+    out.append("")
+
     return "\n".join(out)
 
 
@@ -188,6 +237,13 @@ def regenerate_examples(target_dir: Path) -> None:
         write_json_report(report, target_dir / f"{EXAMPLE_BASENAME}.json")
         write_html_report(report, target_dir / f"{EXAMPLE_BASENAME}.html")
         write_csv_report(report, target_dir / f"{EXAMPLE_BASENAME}.csv")
+        triage_report = build_triage(
+            report,
+            source_path=Path(f"{EXAMPLE_BASENAME}.json"),
+            copilot_helper="disabled",
+        )
+        write_triage_json(triage_report, target_dir / f"{TRIAGE_BASENAME}.json")
+        write_triage_csv(triage_report, target_dir / f"{TRIAGE_BASENAME}.csv")
     finally:
         if previous_epoch is None:
             os.environ.pop("SOURCE_DATE_EPOCH", None)
@@ -275,7 +331,10 @@ def main(argv: list[str] | None = None) -> int:
     print(
         f"Wrote {DOCS_RULES_PATH.relative_to(REPO_ROOT)} ({'changed' if rules_changed else 'unchanged'})"
     )
-    print(f"Wrote {EXAMPLES_DIR.relative_to(REPO_ROOT)}/{EXAMPLE_BASENAME}.{{json,html,csv}}")
+    print(
+        f"Wrote {EXAMPLES_DIR.relative_to(REPO_ROOT)}/"
+        f"{EXAMPLE_BASENAME}.{{json,html,csv}} and {TRIAGE_BASENAME}.{{json,csv}}"
+    )
     return 0
 
 

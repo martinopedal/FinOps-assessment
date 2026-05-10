@@ -28,9 +28,12 @@ from finops_assess.reporters import (
     write_html_report,
     write_json_report,
     write_pdf_report,
+    write_triage_csv,
+    write_triage_json,
 )
 from finops_assess.reporters.json_reporter import build_report
 from finops_assess.rules import load_personas, load_rules
+from finops_assess.triage import CopilotHelperMode, build_triage, resolve_copilot_helper
 
 
 def _execute_assessment(
@@ -106,6 +109,80 @@ def info() -> None:
     click.echo(f"finops-assess {__version__}")
     click.echo("Surfaces: M365 · Azure · GitHub · Azure DevOps")
     click.echo("Mode: read-only")
+
+
+@main.command()
+@click.option(
+    "--input",
+    "input_path",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
+    required=True,
+    help="Existing finops-assess JSON report to convert into advisory triage artefacts.",
+)
+@click.option(
+    "--output-dir",
+    "output_dir",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=Path("./triage-output"),
+    show_default=True,
+    help="Directory to write triage.json and/or triage.csv.",
+)
+@click.option(
+    "--format",
+    "fmt",
+    type=click.Choice(["json", "csv", "both"]),
+    default="both",
+    show_default=True,
+    help="Triage artefact format(s) to emit.",
+)
+@click.option(
+    "--enable-copilot-helper",
+    is_flag=True,
+    default=False,
+    help="Opt in to GitHub Copilot helper discovery. No data is sent unless this flag is used.",
+)
+@click.option(
+    "--copilot-helper",
+    type=click.Choice(["auto", "sdk", "cli"]),
+    default="auto",
+    show_default=True,
+    help="Preferred GitHub Copilot helper when --enable-copilot-helper is set.",
+)
+def triage(
+    input_path: Path,
+    output_dir: Path,
+    fmt: str,
+    enable_copilot_helper: bool,
+    copilot_helper: str,
+) -> None:
+    """Emit a read-only advisory triage pack from an existing report."""
+    payload = json.loads(input_path.read_text(encoding="utf-8"))
+    run = payload.get("run") or {}
+    if run.get("tool") != "finops-assess" or run.get("mode") != "read-only":
+        raise click.ClickException("Input must be a finops-assess read-only JSON report.")
+
+    helper_mode: CopilotHelperMode = "disabled"
+    if enable_copilot_helper:
+        helper_mode = resolve_copilot_helper(copilot_helper)  # type: ignore[arg-type]
+        if helper_mode == "unavailable":
+            click.echo(
+                "Warning: GitHub Copilot helper was requested but no supported SDK or gh CLI "
+                "helper was detected; emitting template-based triage only."
+            )
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    triage_report = build_triage(payload, source_path=input_path, copilot_helper=helper_mode)
+
+    if fmt in ("json", "both"):
+        json_path = output_dir / "triage.json"
+        write_triage_json(triage_report, json_path)
+        click.echo(f"OK — wrote advisory triage JSON to {json_path}")
+    if fmt in ("csv", "both"):
+        csv_path = output_dir / "triage.csv"
+        write_triage_csv(triage_report, csv_path)
+        click.echo(f"OK — wrote advisory triage CSV to {csv_path}")
+    click.echo(f"Advisory triage items: {len(triage_report.items)}")
 
 
 @main.command()
