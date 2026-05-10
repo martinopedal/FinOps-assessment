@@ -172,6 +172,20 @@ write scopes, or de-redact principals. The current implementation records the
 available helper mode (`sdk`, `cli`, or `unavailable`) while still emitting the
 stable local JSON/CSV artefact. Analysts remain responsible for verification.
 
+### Using triage artefacts with FinOps Hubs
+
+The triage JSON/CSV files are intentionally file-based, so teams that already
+operate FinOps Hubs can review them locally and then place approved artefacts in
+their own Hubs landing zone or ingestion workflow. Useful correlation fields
+include `finding_ref`, `rule_id`, `surface`, redacted `principal`,
+`current_sku`, `recommended_sku`, `estimated_monthly_savings_usd`, and the
+source report's run metadata.
+
+This is an export/import design boundary, not a connector. `finops-assess` does
+not upload to FinOps Hubs, deploy pipelines, mutate storage, or require Hubs to
+run. Any future live connector should be tracked as a separate reviewed change
+with explicit data-flow documentation.
+
 ## Under-licensed cases: current boundary
 
 The current v0.1 ruleset is cost-right-sizing focused. It detects
@@ -220,8 +234,8 @@ For the authoritative current list, use [`docs/rules.md`](rules.md).
   findings beyond the opt-in local helper-discovery scaffold; today the triage
   pack is deterministic and template-based.
 - It does **not** yet connect findings to FinOps Hubs. The triage JSON/CSV
-  contract is stable for downstream workflows, but no compatibility claim or
-  connector ships yet.
+  contract is stable for downstream file-based workflows, but no compatibility
+  claim, upload path, or connector ships yet.
 - It does **not** audit non-Microsoft SaaS, on-prem CALs, or perpetual licensing.
 - It does **not** redistribute third-party diagrams or proprietary pricing tables.
 

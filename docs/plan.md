@@ -307,7 +307,7 @@ Copilot and FinOps Hubs.
    default. The first shipped step mirrors the azure-analyzer pattern:
    optional helper discovery is behind an explicit opt-in flag and gracefully
    skips when the SDK/CLI is unavailable.
-3. ⏭️ Add a FinOps Hubs export/import design that treats FinOps Hubs as an
+3. ✅ Add a FinOps Hubs export/import design that treats FinOps Hubs as an
    optional integration surface: customers with both tools can correlate
    Azure cost context, commitment data, and `finops-assess` findings,
    while customers without FinOps Hubs keep the existing offline workflow.
@@ -323,6 +323,33 @@ FinOps Hubs compatibility is **not claimed** by the first triage artefact.
 The shipped contract is a stable JSON/CSV shape, versioned by
 `TRIAGE_SCHEMA_VERSION`, that downstream Hubs workflows may consume before a
 dedicated connector is designed.
+
+### FinOps Hubs export/import design
+
+FinOps Hubs remains an optional downstream surface, not a required runtime
+dependency. The current integration boundary is:
+
+1. `finops-assess` continues to emit local JSON, CSV, and advisory triage
+   artefacts only. It does not call FinOps Hubs APIs, provision storage,
+   deploy Data Factory pipelines, or write to a customer's FinOps Hubs
+   environment.
+2. Handoff is file-based and operator controlled. A customer may place
+   `demo-report.json`, `demo-report.csv`, `triage.json`, or `triage.csv` in
+   their own FinOps Hubs landing zone after local review. The tool should
+   document the file contract but must not automate upload or mutation in v1.
+3. Correlation keys are intentionally conservative: `run.generated_at`,
+   `run.schema_version`, `finding_ref`, `rule_id`, `surface`, redacted
+   `principal`, `current_sku`, `recommended_sku`, and
+   `estimated_monthly_savings_usd`. These let FinOps Hubs users join
+   findings to Azure cost and commitment exports without requiring raw PII.
+4. Any future connector must be a new, reviewed capability with an issue,
+   explicit read-only or customer-local storage semantics, tests proving PII
+   redaction remains on by default, and docs that state how data leaves the
+   local machine.
+
+This means customers with FinOps Hubs can build their own ingestion around the
+stable report and triage files today, while customers without Hubs keep the same
+offline workflow and outputs.
 
 ### Acceptance criteria
 

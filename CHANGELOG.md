@@ -19,6 +19,9 @@ release.
   explicit opt-in and gracefully skips when unavailable.
 - Future-plan docs for GitHub Copilot-assisted triage and optional FinOps Hubs
   linkage, plus contributor guidance requiring docs updates with every PR.
+- A read-only FinOps Hubs export/import design boundary that keeps Hubs
+  optional, file-based, and operator controlled until a separate connector is
+  reviewed.
 
 ## Shipped milestones
 
