@@ -25,7 +25,7 @@ existing rule engine.
 
 | Epic | Status | First implementation slice | Guardrails |
 |---|---|---|---|
-| FinOps Toolkit / FOCUS / Hubs alignment | exploratory | Document a file-based mapping from current findings to FOCUS-style correlation fields. | Target FOCUS 1.2 unless later research updates it; Hubs is consume/export-file only, never deploy/upload. |
+| FinOps Toolkit / FOCUS / Hubs alignment | exploratory | Document a file-based mapping from current findings to FOCUS-style correlation fields ([`focus-mapping.md`](focus-mapping.md)). | Target FOCUS 1.2 unless later research updates it; Hubs is consume/export-file only, never deploy/upload. |
 | Azure region price comparisons | exploratory | Add a future normalized region-price observation contract before rules. | Use Azure Retail Prices API or customer-supplied exports; do not copy pricing tables. |
 | Agreement types and discounts | exploratory | Add a future pricing profile input that can express list, EA, MCA, CSP, MOSP, and negotiated multipliers. | Default to public list price; tenant-specific discounts must be customer-supplied and never hard-coded. |
 | RI and Savings Plans | exploratory | Expand commitment data around coverage, utilization, scope, renewal, and eligible on-demand spend. | Findings must say “consider” or “verify and then”; no commitment purchase/exchange automation. |

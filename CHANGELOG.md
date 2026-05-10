@@ -26,6 +26,10 @@ release.
   Azure pricing intelligence, agreement discounts, commitments, SKU-mix reviews,
   data-collection frontiers, practice-review outputs, optional Copilot / Azure
   MCP assistance, and draft local operator skills.
+- Exploratory FOCUS 1.2 correlation mapping (`docs/roadmap/focus-mapping.md`)
+  documenting how today's `Finding` and `run` fields line up with FOCUS columns
+  for operator-side correlation against an existing FinOps Toolkit / Hubs
+  dataset. Docs-only; no exporter, schema, or collector changes.
 
 ## Shipped milestones
 
