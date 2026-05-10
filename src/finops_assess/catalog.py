@@ -44,7 +44,7 @@ def load_catalog(root: DataRoot | None = None) -> list[CatalogEntry]:
     seen_ids: set[str] = set()
 
     for path in _iter_yaml_files(root):
-        with path.open("r", encoding="utf-8") as fh:
+        with path.open(encoding="utf-8") as fh:
             doc = yaml.safe_load(fh) or []
         if not isinstance(doc, list):
             raise ValueError(f"{path}: top-level YAML must be a list")

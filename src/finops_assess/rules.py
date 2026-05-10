@@ -34,7 +34,7 @@ def _default_rules_dir() -> DataRoot:
 def load_personas(path: DataRoot | None = None) -> list[Persona]:
     """Load and validate the persona YAML file."""
     path = path or _default_personas_file()
-    with path.open("r", encoding="utf-8") as fh:
+    with path.open(encoding="utf-8") as fh:
         doc = yaml.safe_load(fh) or []
     if not isinstance(doc, list):
         raise ValueError(f"{path}: top-level YAML must be a list")
@@ -65,7 +65,7 @@ def load_rules(root: DataRoot | None = None) -> list[Rule]:
     rules: list[Rule] = []
     seen: set[str] = set()
     for path in _iter_rule_files(root):
-        with path.open("r", encoding="utf-8") as fh:
+        with path.open(encoding="utf-8") as fh:
             doc = yaml.safe_load(fh) or []
         if not isinstance(doc, list):
             raise ValueError(f"{path}: top-level YAML must be a list")

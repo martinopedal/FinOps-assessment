@@ -86,10 +86,10 @@ def test_built_wheel_can_validate_and_run_demo(tmp_path: Path) -> None:
     assert len(wheels) == 1
 
     venv_dir = tmp_path / "venv"
-    venv.EnvBuilder(with_pip=True, system_site_packages=True).create(venv_dir)
+    venv.EnvBuilder(with_pip=True, system_site_packages=False).create(venv_dir)
     python = _venv_python(venv_dir)
     subprocess.run(
-        [str(python), "-m", "pip", "install", "--no-deps", "--force-reinstall", str(wheels[0])],
+        [str(python), "-m", "pip", "install", "--force-reinstall", str(wheels[0])],
         check=True,
         cwd=tmp_path,
     )
