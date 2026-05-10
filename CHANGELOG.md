@@ -22,6 +22,10 @@ release.
 - A read-only FinOps Hubs export/import design boundary that keeps Hubs
   optional, file-based, and operator controlled until a separate connector is
   reviewed.
+- Exploratory frontier roadmap docs for FinOps Toolkit / FOCUS / Hubs alignment,
+  Azure pricing intelligence, agreement discounts, commitments, SKU-mix reviews,
+  data-collection frontiers, practice-review outputs, optional Copilot / Azure
+  MCP assistance, and draft local operator skills.
 
 ## Shipped milestones
 
