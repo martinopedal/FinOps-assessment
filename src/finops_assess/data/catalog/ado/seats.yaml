@@ -1,0 +1,54 @@
+# Azure DevOps access-level / add-on SKUs.
+
+- id: ADO.STAKEHOLDER
+  display_name: Azure DevOps Stakeholder
+  family: ado_seat
+  cloud: ado
+  list_price_usd_month: 0.00
+  source_url: https://azure.microsoft.com/en-us/pricing/details/devops/azure-devops-services/
+  features:
+    - ado.boards.read
+    - ado.work_items.basic
+
+- id: ADO.BASIC
+  display_name: Azure DevOps Basic
+  family: ado_seat
+  cloud: ado
+  list_price_usd_month: 6.00
+  source_url: https://azure.microsoft.com/en-us/pricing/details/devops/azure-devops-services/
+  features:
+    - ado.boards.full
+    - ado.repos.full
+    - ado.pipelines.full
+  successor_of: [ADO.STAKEHOLDER]
+
+- id: ADO.BASIC_TEST
+  display_name: Azure DevOps Basic + Test Plans
+  family: ado_seat
+  cloud: ado
+  list_price_usd_month: 52.00
+  source_url: https://azure.microsoft.com/en-us/pricing/details/devops/azure-devops-services/
+  features:
+    - ado.boards.full
+    - ado.repos.full
+    - ado.pipelines.full
+    - ado.test_plans
+  successor_of: [ADO.BASIC]
+
+- id: ADO.PARALLEL_JOB_HOSTED
+  display_name: Azure Pipelines — Microsoft-hosted parallel job
+  family: ado_pipelines
+  cloud: ado
+  list_price_usd_month: 40.00
+  source_url: https://azure.microsoft.com/en-us/pricing/details/devops/azure-devops-services/
+  features:
+    - ado.pipelines.parallel.hosted
+
+- id: ADO.PARALLEL_JOB_SELFHOSTED
+  display_name: Azure Pipelines — self-hosted parallel job
+  family: ado_pipelines
+  cloud: ado
+  list_price_usd_month: 15.00
+  source_url: https://azure.microsoft.com/en-us/pricing/details/devops/azure-devops-services/
+  features:
+    - ado.pipelines.parallel.selfhosted

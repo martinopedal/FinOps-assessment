@@ -37,7 +37,8 @@ from urllib.request import url2pathname
 
 import yaml
 
-from finops_assess.catalog import DEFAULT_CATALOG_ROOT, load_catalog
+from finops_assess.catalog import load_catalog
+from finops_assess.data_paths import checkout_data_root
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,18 @@ DEFAULT_SOURCE_URL = (
 DEFAULT_DOC_URL = (
     "https://learn.microsoft.com/en-us/entra/identity/users/licensing-service-plan-reference"
 )
-AUTOGEN_FILE = DEFAULT_CATALOG_ROOT / "m365" / "_autogen_unmapped.yaml"
+
+
+def _default_autogen_file() -> Path:
+    """Return the source-checkout path for generated M365 catalogue stubs."""
+    data_root = checkout_data_root()
+    if data_root is None:
+        raise RuntimeError(
+            "catalog refresh --write requires a source checkout; run from the repository "
+            "to add generated stubs to data/catalog/m365/_autogen_unmapped.yaml."
+        )
+    return data_root / "catalog" / "m365" / "_autogen_unmapped.yaml"
+
 
 _USER_AGENT = "finops-assess/catalog-refresh (read-only)"
 _FETCH_TIMEOUT_SECONDS = 60
@@ -289,7 +301,7 @@ def write_autogen(
     """Write the unmapped-SKU stubs to disk; returns the path or ``None`` if no gap."""
     if not coverage.missing:
         return None
-    target = target or AUTOGEN_FILE
+    target = target or _default_autogen_file()
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(render_autogen_yaml(coverage.missing, doc_url=doc_url), encoding="utf-8")
     return target

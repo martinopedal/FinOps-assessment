@@ -8,25 +8,41 @@ Run as a module to validate the on-disk catalog:
 from __future__ import annotations
 
 import sys
-from collections.abc import Iterable
+from importlib.resources.abc import Traversable
 from pathlib import Path
 
 import yaml
 from pydantic import ValidationError
 
+from finops_assess.data_paths import DataRoot, default_data_root
 from finops_assess.models import CatalogEntry
 
 DEFAULT_CATALOG_ROOT = Path(__file__).resolve().parents[2] / "data" / "catalog"
 
 
-def _iter_yaml_files(root: Path) -> Iterable[Path]:
-    yield from sorted(root.rglob("*.yaml"))
-    yield from sorted(root.rglob("*.yml"))
+def _yaml_files(root: DataRoot) -> list[Path | Traversable]:
+    if isinstance(root, Path):
+        return [*root.rglob("*.yaml"), *root.rglob("*.yml")]
+    files: list[Path | Traversable] = []
+    for child in root.iterdir():
+        if child.is_dir():
+            files.extend(_yaml_files(child))
+        elif child.is_file() and child.name.endswith((".yaml", ".yml")):
+            files.append(child)
+    return files
 
 
-def load_catalog(root: Path | None = None) -> list[CatalogEntry]:
+def _iter_yaml_files(root: DataRoot) -> list[Path | Traversable]:
+    return sorted(_yaml_files(root), key=lambda item: str(item))
+
+
+def _default_catalog_root() -> DataRoot:
+    return default_data_root().joinpath("catalog")
+
+
+def load_catalog(root: DataRoot | None = None) -> list[CatalogEntry]:
     """Load and validate every catalog YAML file under ``root``."""
-    root = root or DEFAULT_CATALOG_ROOT
+    root = root or _default_catalog_root()
     entries: list[CatalogEntry] = []
     seen_ids: set[str] = set()
 

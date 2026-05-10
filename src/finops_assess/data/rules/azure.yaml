@@ -1,0 +1,65 @@
+# Azure savings-rule skeletons. See docs/plan.md §6.
+
+- id: AZ.IDLE_VM_14D
+  surface: azure
+  severity: high
+  summary: VM with <5% CPU and minimal network for 14 days.
+  recommendation_template: >
+    Virtual machine {principal} has averaged {avg_cpu_pct}% CPU and
+    {avg_net_kbps} KB/s network over 14 days. Stop or deallocate the
+    VM, or right-size to a smaller SKU.
+  inactivity_days: 14
+
+- id: AZ.UNATTACHED_DISK
+  surface: azure
+  severity: medium
+  summary: Managed disk not attached for 7+ days.
+  recommendation_template: >
+    Disk {principal} ({disk_size_gb} GB, {disk_sku}) has been
+    unattached since {last_attached_at}. Delete or snapshot-and-delete.
+  inactivity_days: 7
+
+- id: AZ.PUBLIC_IP_UNATTACHED
+  surface: azure
+  severity: low
+  summary: Standard public IP is not associated with any resource.
+  recommendation_template: >
+    Public IP {principal} is unattached and accruing reservation
+    charges. Release it.
+
+- id: AZ.OVERSIZED_VM
+  surface: azure
+  severity: medium
+  summary: VM whose P95 CPU and memory both stay below 40% for 14 days.
+  recommendation_template: >
+    {principal} ({current_sku}) shows P95 CPU {p95_cpu_pct}% and
+    P95 memory {p95_mem_pct}%. Resize to {recommended_sku} in the
+    same family.
+
+- id: AZ.RESERVATION_UNDERUTILIZED
+  surface: azure
+  severity: high
+  summary: Reservation / Savings Plan utilization below 80% for 30 days.
+  recommendation_template: >
+    Reservation {principal} averaged {utilization_pct}% utilization
+    over 30 days. Exchange or shrink the commitment at next renewal.
+  inactivity_days: 30
+
+- id: AZ.LOG_ANALYTICS_OVERINGEST
+  surface: azure
+  severity: medium
+  summary: Log Analytics workspace ingest above commitment-tier sweet spot.
+  recommendation_template: >
+    Workspace {principal} ingested {daily_gb} GB/day on average. Move
+    to commitment tier {recommended_tier} for ~{est_savings_pct}%
+    list-price reduction.
+
+- id: AZ.DEV_TEST_SUB_MISMATCH
+  surface: azure
+  severity: medium
+  summary: Workload tag and subscription offer disagree (prod-in-devtest or vice-versa).
+  recommendation_template: >
+    Resource {principal} is tagged env={env_tag} but lives in
+    subscription {subscription_id} ({subscription_offer}). Move the
+    workload to a subscription with the matching offer to avoid
+    mispricing or compliance risk.

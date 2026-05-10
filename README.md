@@ -24,6 +24,7 @@ right-sizing and cost-saving recommendations.
 ```
 docs/plan.md              # comprehensive plan (M365 + Azure + GitHub + ADO)
 src/finops_assess/        # Python package (models, catalog, rules, CLI)
+  data/                   # packaged mirror of data/ for non-editable installs
 data/
   catalog/                # SKU catalogue YAML (~50 entries, M0)
     m365/   azure/   github/   ado/
@@ -34,6 +35,10 @@ tests/                    # pytest loader + CLI smoke tests
 .squad/                   # Squad multi-agent team (charters, routing, decisions)
 .github/ISSUE_TEMPLATE/   # roadmap-milestone & squad-task issue forms
 ```
+
+Edit catalogue, persona, and rule YAML under the repo-root `data/` tree. The
+`src/finops_assess/data/` mirror is shipped in wheels so installed CLIs can run
+without a checkout; tests fail if the two trees drift.
 
 ## Squad — multi-agent delivery
 

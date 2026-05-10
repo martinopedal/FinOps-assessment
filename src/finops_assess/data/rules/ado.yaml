@@ -1,0 +1,37 @@
+# Azure DevOps savings-rule skeletons. See docs/plan.md §6.
+
+- id: ADO.INACTIVE_BASIC_90D
+  surface: ado
+  severity: high
+  summary: Basic seat with no work-item or repo activity in 90 days.
+  recommendation_template: >
+    {principal} holds an ADO Basic seat but shows no work-item,
+    code, or pipeline activity in 90 days. Reclaim the seat.
+  inactivity_days: 90
+
+- id: ADO.STAKEHOLDER_ELIGIBLE
+  surface: ado
+  severity: medium
+  summary: Basic seat whose only activity is reading boards / commenting.
+  recommendation_template: >
+    {principal}'s only ADO activity in 90 days is reading boards
+    and commenting. Step them down to the free Stakeholder access
+    level.
+
+- id: ADO.PARALLEL_JOBS_OVER_PROVISIONED
+  surface: ado
+  severity: medium
+  summary: Purchased Microsoft-hosted parallel jobs exceed P95 concurrent usage.
+  recommendation_template: >
+    The organization owns {purchased_parallel_jobs} Microsoft-hosted
+    parallel jobs but P95 concurrent usage was
+    {p95_concurrent_jobs}. Reduce the purchased count.
+
+- id: ADO.TEST_PLANS_UNUSED
+  surface: ado
+  severity: medium
+  summary: Basic+Test Plans seat with no Test Plans activity in 60 days.
+  recommendation_template: >
+    {principal} holds a Basic + Test Plans seat but has not opened
+    or modified a Test Plan in 60 days. Step down to Basic.
+  inactivity_days: 60
