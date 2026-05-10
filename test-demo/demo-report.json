@@ -1,0 +1,816 @@
+{
+  "run": {
+    "tool": "finops-assess",
+    "version": "0.1.0",
+    "generated_at": "2026-05-10T03:44:31+00:00",
+    "input": "<redacted>/finops-demo-gy_ue667",
+    "pii_redaction": true,
+    "mode": "read-only"
+  },
+  "summary": {
+    "rule_counts": {
+      "ADO.INACTIVE_BASIC_90D": 1,
+      "ADO.STAKEHOLDER_ELIGIBLE": 1,
+      "ADO.PARALLEL_JOBS_OVER_PROVISIONED": 1,
+      "ADO.TEST_PLANS_UNUSED": 1,
+      "AZ.IDLE_VM_14D": 1,
+      "AZ.UNATTACHED_DISK": 1,
+      "AZ.PUBLIC_IP_UNATTACHED": 1,
+      "AZ.OVERSIZED_VM": 1,
+      "AZ.RESERVATION_UNDERUTILIZED": 1,
+      "AZ.LOG_ANALYTICS_OVERINGEST": 1,
+      "AZ.DEV_TEST_SUB_MISMATCH": 1,
+      "GH.INACTIVE_SEAT_90D": 1,
+      "GH.COPILOT_INACTIVE_30D": 1,
+      "GH.GHAS_OVER_PROVISIONED": 1,
+      "GH.RUNNER_TIER_MISMATCH": 1,
+      "M365.UNUSED_LICENSE_30D": 4,
+      "M365.OVER_LICENSED_VS_PERSONA": 6,
+      "M365.DUPLICATE_BUNDLE": 1,
+      "M365.DISABLED_USER_LICENSED": 2,
+      "M365.SHARED_MAILBOX_LICENSED": 1,
+      "M365.GUEST_PREMIUM_LICENSED": 1,
+      "M365.COPILOT_INACTIVE_60D": 2,
+      "M365.E5_FEATURES_UNUSED": 2
+    },
+    "rules_skipped_no_impl": [],
+    "total_findings": 34,
+    "principals_evaluated": 11,
+    "assignments_evaluated": 13,
+    "azure_resources_evaluated": 5,
+    "persona_distribution": {
+      "frontline_worker": 1,
+      "information_worker": 4,
+      "power_user_secure": 2,
+      "developer": 1,
+      "guest": 1,
+      "service_account": 2
+    }
+  },
+  "findings": [
+    {
+      "rule_id": "ADO.INACTIVE_BASIC_90D",
+      "surface": "ado",
+      "severity": "high",
+      "principal": "sha256:692a05b4bb7b0f8f",
+      "current_sku": "ADO.BASIC",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 6.0,
+      "recommendation": "sha256:692a05b4bb7b0f8f holds an ADO Basic seat but shows no work-item, code, or pipeline activity in 90 days. Reclaim the seat.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "org": "contoso",
+        "seat_type": "basic",
+        "last_activity_days": 120,
+        "window_days": 90
+      }
+    },
+    {
+      "rule_id": "ADO.STAKEHOLDER_ELIGIBLE",
+      "surface": "ado",
+      "severity": "medium",
+      "principal": "sha256:c69947dae3969f83",
+      "current_sku": "ADO.BASIC",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 6.0,
+      "recommendation": "sha256:c69947dae3969f83's only ADO activity in 90 days is reading boards and commenting. Step them down to the free Stakeholder access level.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "org": "contoso",
+        "seat_type": "basic",
+        "only_stakeholder_activity": true,
+        "last_activity_days": 5
+      }
+    },
+    {
+      "rule_id": "ADO.PARALLEL_JOBS_OVER_PROVISIONED",
+      "surface": "ado",
+      "severity": "medium",
+      "principal": "sha256:db63a98dbc9fd5e4",
+      "current_sku": null,
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 280.0,
+      "recommendation": "The organization owns 10 Microsoft-hosted parallel jobs but P95 concurrent usage was 3. Reduce the purchased count.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "purchased_parallel_jobs": 10,
+        "p95_concurrent_jobs": 3,
+        "surplus_jobs": 7
+      }
+    },
+    {
+      "rule_id": "ADO.TEST_PLANS_UNUSED",
+      "surface": "ado",
+      "severity": "medium",
+      "principal": "sha256:46398cf4409b80ee",
+      "current_sku": "ADO.BASIC_TEST",
+      "recommended_sku": "ADO.BASIC",
+      "estimated_monthly_savings_usd": 46.0,
+      "recommendation": "sha256:46398cf4409b80ee holds a Basic + Test Plans seat but has not opened or modified a Test Plan in 60 days. Step down to Basic.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "org": "contoso",
+        "seat_type": "basic_plus_test",
+        "last_test_plan_days": 90,
+        "window_days": 60
+      }
+    },
+    {
+      "rule_id": "AZ.IDLE_VM_14D",
+      "surface": "azure",
+      "severity": "high",
+      "principal": "sha256:35503092a245ccea",
+      "current_sku": "Standard_D4s_v5",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 140.0,
+      "recommendation": "Virtual machine sha256:35503092a245ccea has averaged 2.0% CPU and 8.0 KB/s network over 14 days. Stop or deallocate the VM, or right-size to a smaller SKU.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "avg_cpu_pct": 2.0,
+        "avg_net_kbps": 8.0,
+        "window_days": 14,
+        "location": "eastus"
+      }
+    },
+    {
+      "rule_id": "AZ.UNATTACHED_DISK",
+      "surface": "azure",
+      "severity": "medium",
+      "principal": "sha256:7f93798250c48ebf",
+      "current_sku": "Premium_LRS_512",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 42.0,
+      "recommendation": "Disk sha256:7f93798250c48ebf (? GB, Premium_LRS_512) has been unattached since 30 days ago. Delete or snapshot-and-delete.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "attached": false,
+        "days_inactive": 30,
+        "location": "eastus"
+      }
+    },
+    {
+      "rule_id": "AZ.PUBLIC_IP_UNATTACHED",
+      "surface": "azure",
+      "severity": "low",
+      "principal": "sha256:916ae52e61992b67",
+      "current_sku": "Standard",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 3.65,
+      "recommendation": "Public IP sha256:916ae52e61992b67 is unattached and accruing reservation charges. Release it.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "associated": false,
+        "location": "eastus"
+      }
+    },
+    {
+      "rule_id": "AZ.OVERSIZED_VM",
+      "surface": "azure",
+      "severity": "medium",
+      "principal": "sha256:6b3f6c71b229a607",
+      "current_sku": "Standard_D8s_v5",
+      "recommended_sku": "Standard_D4s_v5",
+      "estimated_monthly_savings_usd": null,
+      "recommendation": "sha256:6b3f6c71b229a607 (Standard_D8s_v5) shows P95 CPU 25.0% and P95 memory 30.0%. Resize to Standard_D4s_v5 in the same family.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "p95_cpu_pct": 25.0,
+        "p95_mem_pct": 30.0,
+        "location": "eastus"
+      }
+    },
+    {
+      "rule_id": "AZ.RESERVATION_UNDERUTILIZED",
+      "surface": "azure",
+      "severity": "high",
+      "principal": "sha256:69165b1cac4b792b",
+      "current_sku": "Standard_D4s_v5",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": null,
+      "recommendation": "Reservation sha256:69165b1cac4b792b averaged 45.0% utilization over 30 days. Exchange or shrink the commitment at next renewal.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "reservation_name": "RI-VM-D4s-EastUS",
+        "sku": "Standard_D4s_v5",
+        "scope": "shared",
+        "utilization_pct": 45.0,
+        "monthly_cost_usd": 500.0
+      }
+    },
+    {
+      "rule_id": "AZ.LOG_ANALYTICS_OVERINGEST",
+      "surface": "azure",
+      "severity": "medium",
+      "principal": "sha256:e363a28346968a6f",
+      "current_sku": null,
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 384.0,
+      "recommendation": "Workspace sha256:e363a28346968a6f ingested 120.0 GB/day on average. Move to commitment tier 100gb_per_day_commitment for ~32.0% list-price reduction.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "workspace_name": "law-main",
+        "daily_gb": 120.0,
+        "commitment_tier_gb": null,
+        "recommended_tier": "100gb_per_day_commitment",
+        "est_savings_pct": 32.0
+      }
+    },
+    {
+      "rule_id": "AZ.DEV_TEST_SUB_MISMATCH",
+      "surface": "azure",
+      "severity": "medium",
+      "principal": "sha256:16e7cac1a6303d87",
+      "current_sku": "Standard_D4s_v3",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": null,
+      "recommendation": "Resource sha256:16e7cac1a6303d87 is tagged env=prod but lives in subscription 11111111 (Dev/Test). Move the workload to a subscription with the matching offer to avoid mispricing or compliance risk.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "env_tag": "prod",
+        "subscription_id": "11111111",
+        "subscription_offer": "Dev/Test",
+        "location": "westus"
+      }
+    },
+    {
+      "rule_id": "GH.INACTIVE_SEAT_90D",
+      "surface": "github",
+      "severity": "high",
+      "principal": "sha256:8396a38c67f42ddb",
+      "current_sku": "GH.ENTERPRISE",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 21.0,
+      "recommendation": "sha256:8396a38c67f42ddb has had no commits, reviews, issue activity, or sign-ins in 90 days. Reclaim the GH.ENTERPRISE seat.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "org": "contoso",
+        "seat_type": "enterprise",
+        "last_activity_days": 180,
+        "window_days": 90
+      }
+    },
+    {
+      "rule_id": "GH.COPILOT_INACTIVE_30D",
+      "surface": "github",
+      "severity": "high",
+      "principal": "sha256:fe41047bfff08cbe",
+      "current_sku": "GH.COPILOT_BUSINESS",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 19.0,
+      "recommendation": "sha256:fe41047bfff08cbe holds a Copilot seat but has accepted zero suggestions in 30 days. Reassign or remove the seat.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "org": "contoso",
+        "seat_type": "copilot_business",
+        "copilot_acceptances_30d": 0,
+        "last_activity_days": 45,
+        "window_days": 30
+      }
+    },
+    {
+      "rule_id": "GH.GHAS_OVER_PROVISIONED",
+      "surface": "github",
+      "severity": "medium",
+      "principal": "sha256:db63a98dbc9fd5e4",
+      "current_sku": "GH.GHAS",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": null,
+      "recommendation": "GHAS is enabled on 40 repositories with 55 unique committers in the last 90 days, but only 12 repos have produced an alert. Disable GHAS on inactive repos to reduce billable committers.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "ghas_repo_count": 40,
+        "actively_scanned_repos": 12,
+        "active_committers": 55
+      }
+    },
+    {
+      "rule_id": "GH.RUNNER_TIER_MISMATCH",
+      "surface": "github",
+      "severity": "low",
+      "principal": "sha256:db63a98dbc9fd5e4",
+      "current_sku": "team",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": null,
+      "recommendation": "The org consumed 12000 runner-minutes in the last billing period against 50000 included minutes. Consumption is 76% below the team tier's included quota; verify whether a lower-tier bundle would still cover peak months.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "runner_tier": "team",
+        "runner_minutes_used": 12000,
+        "runner_minutes_included": 50000,
+        "delta_pct": 76.0
+      }
+    },
+    {
+      "rule_id": "M365.UNUSED_LICENSE_30D",
+      "surface": "m365",
+      "severity": "high",
+      "principal": "sha256:3e1532f052025c3c",
+      "current_sku": "SPE_E3",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 36.0,
+      "recommendation": "Remove the SPE_E3 assignment from sha256:3e1532f052025c3c or step down to a lower-cost SKU. No covered service has recorded activity in the last 30 days.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "inactivity_window_days": 30,
+        "checked_signals": [
+          "entra",
+          "exchange",
+          "intune",
+          "office",
+          "sharepoint",
+          "teams"
+        ],
+        "last_activity_days": {
+          "entra": null,
+          "exchange": null,
+          "intune": null,
+          "office": null,
+          "sharepoint": null,
+          "teams": null
+        }
+      }
+    },
+    {
+      "rule_id": "M365.UNUSED_LICENSE_30D",
+      "surface": "m365",
+      "severity": "high",
+      "principal": "sha256:3e1532f052025c3c",
+      "current_sku": "M365_COPILOT",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 30.0,
+      "recommendation": "Remove the M365_COPILOT assignment from sha256:3e1532f052025c3c or step down to a lower-cost SKU. No covered service has recorded activity in the last 30 days.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "inactivity_window_days": 30,
+        "checked_signals": [
+          "copilot"
+        ],
+        "last_activity_days": {
+          "copilot": null
+        }
+      }
+    },
+    {
+      "rule_id": "M365.UNUSED_LICENSE_30D",
+      "surface": "m365",
+      "severity": "high",
+      "principal": "sha256:797e50824991e606",
+      "current_sku": "M365_COPILOT",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 30.0,
+      "recommendation": "Remove the M365_COPILOT assignment from sha256:797e50824991e606 or step down to a lower-cost SKU. No covered service has recorded activity in the last 30 days.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "inactivity_window_days": 30,
+        "checked_signals": [
+          "copilot"
+        ],
+        "last_activity_days": {
+          "copilot": null
+        }
+      }
+    },
+    {
+      "rule_id": "M365.UNUSED_LICENSE_30D",
+      "surface": "m365",
+      "severity": "high",
+      "principal": "sha256:ad061d6a7b9b1119",
+      "current_sku": "SPE_E3",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 36.0,
+      "recommendation": "Remove the SPE_E3 assignment from sha256:ad061d6a7b9b1119 or step down to a lower-cost SKU. No covered service has recorded activity in the last 30 days.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "inactivity_window_days": 30,
+        "checked_signals": [
+          "entra",
+          "exchange",
+          "intune",
+          "office",
+          "sharepoint",
+          "teams"
+        ],
+        "last_activity_days": {
+          "entra": null,
+          "exchange": null,
+          "intune": null,
+          "office": null,
+          "sharepoint": null,
+          "teams": null
+        }
+      }
+    },
+    {
+      "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
+      "surface": "m365",
+      "severity": "medium",
+      "principal": "sha256:df54f36a000f7ffe",
+      "current_sku": "SPE_E5",
+      "recommended_sku": "SPE_F3",
+      "estimated_monthly_savings_usd": 49.0,
+      "recommendation": "sha256:df54f36a000f7ffe is classified as persona 'frontline_worker'. Their current SKU SPE_E5 provides features beyond what this persona requires. Consider SPE_F3.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "persona": "frontline_worker",
+        "persona_required_features": [
+          "intune.mam",
+          "mailbox.2gb",
+          "office.web",
+          "teams.basic"
+        ],
+        "current_features": [
+          "defender.o365.p1",
+          "defender.o365.p2",
+          "entra.p1",
+          "entra.p2",
+          "intune.mam",
+          "intune.mdm",
+          "mailbox.100gb",
+          "mailbox.2gb",
+          "mailbox.50gb",
+          "office.desktop",
+          "office.web",
+          "purview.dlp",
+          "purview.records",
+          "sharepoint.advanced",
+          "sharepoint.full",
+          "sharepoint.read",
+          "teams.basic",
+          "teams.full"
+        ]
+      }
+    },
+    {
+      "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
+      "surface": "m365",
+      "severity": "medium",
+      "principal": "sha256:e51d0d96f57613d1",
+      "current_sku": "SPE_E5",
+      "recommended_sku": "O365_BUSINESS_PREMIUM",
+      "estimated_monthly_savings_usd": 44.5,
+      "recommendation": "sha256:e51d0d96f57613d1 is classified as persona 'information_worker'. Their current SKU SPE_E5 provides features beyond what this persona requires. Consider O365_BUSINESS_PREMIUM.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "persona": "information_worker",
+        "persona_required_features": [
+          "mailbox.50gb",
+          "office.desktop",
+          "sharepoint.full",
+          "teams.full"
+        ],
+        "current_features": [
+          "defender.o365.p1",
+          "defender.o365.p2",
+          "entra.p1",
+          "entra.p2",
+          "intune.mam",
+          "intune.mdm",
+          "mailbox.100gb",
+          "mailbox.2gb",
+          "mailbox.50gb",
+          "office.desktop",
+          "office.web",
+          "purview.dlp",
+          "purview.records",
+          "sharepoint.advanced",
+          "sharepoint.full",
+          "sharepoint.read",
+          "teams.basic",
+          "teams.full"
+        ]
+      }
+    },
+    {
+      "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
+      "surface": "m365",
+      "severity": "medium",
+      "principal": "sha256:3e1532f052025c3c",
+      "current_sku": "SPE_E3",
+      "recommended_sku": "O365_BUSINESS_PREMIUM",
+      "estimated_monthly_savings_usd": 23.5,
+      "recommendation": "sha256:3e1532f052025c3c is classified as persona 'information_worker'. Their current SKU SPE_E3 provides features beyond what this persona requires. Consider O365_BUSINESS_PREMIUM.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "persona": "information_worker",
+        "persona_required_features": [
+          "mailbox.50gb",
+          "office.desktop",
+          "sharepoint.full",
+          "teams.full"
+        ],
+        "current_features": [
+          "entra.p1",
+          "intune.mam",
+          "intune.mdm",
+          "mailbox.100gb",
+          "mailbox.2gb",
+          "mailbox.50gb",
+          "office.desktop",
+          "office.web",
+          "sharepoint.advanced",
+          "sharepoint.full",
+          "sharepoint.read",
+          "teams.basic",
+          "teams.full"
+        ]
+      }
+    },
+    {
+      "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
+      "surface": "m365",
+      "severity": "medium",
+      "principal": "sha256:797e50824991e606",
+      "current_sku": "SPE_E3",
+      "recommended_sku": "O365_BUSINESS_ESSENTIALS",
+      "estimated_monthly_savings_usd": 30.0,
+      "recommendation": "sha256:797e50824991e606 is classified as persona 'developer'. Their current SKU SPE_E3 provides features beyond what this persona requires. Consider O365_BUSINESS_ESSENTIALS.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "persona": "developer",
+        "persona_required_features": [
+          "mailbox.50gb",
+          "office.web",
+          "teams.full"
+        ],
+        "current_features": [
+          "entra.p1",
+          "intune.mam",
+          "intune.mdm",
+          "mailbox.100gb",
+          "mailbox.2gb",
+          "mailbox.50gb",
+          "office.desktop",
+          "office.web",
+          "sharepoint.advanced",
+          "sharepoint.full",
+          "sharepoint.read",
+          "teams.basic",
+          "teams.full"
+        ]
+      }
+    },
+    {
+      "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
+      "surface": "m365",
+      "severity": "medium",
+      "principal": "sha256:89f5b20f26d70f9d",
+      "current_sku": "SPE_E3",
+      "recommended_sku": "O365_BUSINESS_PREMIUM",
+      "estimated_monthly_savings_usd": 23.5,
+      "recommendation": "sha256:89f5b20f26d70f9d is classified as persona 'information_worker'. Their current SKU SPE_E3 provides features beyond what this persona requires. Consider O365_BUSINESS_PREMIUM.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "persona": "information_worker",
+        "persona_required_features": [
+          "mailbox.50gb",
+          "office.desktop",
+          "sharepoint.full",
+          "teams.full"
+        ],
+        "current_features": [
+          "entra.p1",
+          "intune.mam",
+          "intune.mdm",
+          "mailbox.100gb",
+          "mailbox.2gb",
+          "mailbox.50gb",
+          "office.desktop",
+          "office.web",
+          "sharepoint.advanced",
+          "sharepoint.full",
+          "sharepoint.read",
+          "teams.basic",
+          "teams.full"
+        ]
+      }
+    },
+    {
+      "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
+      "surface": "m365",
+      "severity": "medium",
+      "principal": "sha256:a8804c56900cfa2b",
+      "current_sku": "SPE_E5",
+      "recommended_sku": "O365_BUSINESS_PREMIUM",
+      "estimated_monthly_savings_usd": 44.5,
+      "recommendation": "sha256:a8804c56900cfa2b is classified as persona 'information_worker'. Their current SKU SPE_E5 provides features beyond what this persona requires. Consider O365_BUSINESS_PREMIUM.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "persona": "information_worker",
+        "persona_required_features": [
+          "mailbox.50gb",
+          "office.desktop",
+          "sharepoint.full",
+          "teams.full"
+        ],
+        "current_features": [
+          "defender.o365.p1",
+          "defender.o365.p2",
+          "entra.p1",
+          "entra.p2",
+          "intune.mam",
+          "intune.mdm",
+          "mailbox.100gb",
+          "mailbox.2gb",
+          "mailbox.50gb",
+          "office.desktop",
+          "office.web",
+          "purview.dlp",
+          "purview.records",
+          "sharepoint.advanced",
+          "sharepoint.full",
+          "sharepoint.read",
+          "teams.basic",
+          "teams.full"
+        ]
+      }
+    },
+    {
+      "rule_id": "M365.DUPLICATE_BUNDLE",
+      "surface": "m365",
+      "severity": "medium",
+      "principal": "sha256:eb6737acfe7be799",
+      "current_sku": "SPE_E3",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 10.0,
+      "recommendation": "sha256:eb6737acfe7be799 has SPE_E3 which already includes the capabilities of the additionally-assigned SHAREPOINTENTERPRISE. Remove SHAREPOINTENTERPRISE.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "bundle": "SPE_E3",
+        "duplicate_sku": "SHAREPOINTENTERPRISE",
+        "all_assignments": [
+          "SHAREPOINTENTERPRISE",
+          "SPE_E3"
+        ]
+      }
+    },
+    {
+      "rule_id": "M365.DISABLED_USER_LICENSED",
+      "surface": "m365",
+      "severity": "high",
+      "principal": "sha256:3e1532f052025c3c",
+      "current_sku": "SPE_E3",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 36.0,
+      "recommendation": "sha256:3e1532f052025c3c (accountEnabled = false) still has SPE_E3 assigned. Reclaim the license.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "account_enabled": false
+      }
+    },
+    {
+      "rule_id": "M365.DISABLED_USER_LICENSED",
+      "surface": "m365",
+      "severity": "high",
+      "principal": "sha256:3e1532f052025c3c",
+      "current_sku": "M365_COPILOT",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 30.0,
+      "recommendation": "sha256:3e1532f052025c3c (accountEnabled = false) still has M365_COPILOT assigned. Reclaim the license.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "account_enabled": false
+      }
+    },
+    {
+      "rule_id": "M365.SHARED_MAILBOX_LICENSED",
+      "surface": "m365",
+      "severity": "medium",
+      "principal": "sha256:3825490ac5e4c0d1",
+      "current_sku": "EXCHANGESTANDARD",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 4.0,
+      "recommendation": "Shared mailbox sha256:3825490ac5e4c0d1 (9.5 GB) does not need a paid Exchange license below the 50 GB threshold. Remove EXCHANGESTANDARD.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "mailbox_size_gb": 9.5,
+        "user_type": "shared_mailbox"
+      }
+    },
+    {
+      "rule_id": "M365.GUEST_PREMIUM_LICENSED",
+      "surface": "m365",
+      "severity": "medium",
+      "principal": "sha256:ad061d6a7b9b1119",
+      "current_sku": "SPE_E3",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 36.0,
+      "recommendation": "Guest user sha256:ad061d6a7b9b1119 has SPE_E3 assigned. Guests should rely on the host tenant's resources; remove the assignment unless explicitly justified.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "user_type": "guest"
+      }
+    },
+    {
+      "rule_id": "M365.COPILOT_INACTIVE_60D",
+      "surface": "m365",
+      "severity": "high",
+      "principal": "sha256:3e1532f052025c3c",
+      "current_sku": "M365_COPILOT",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 30.0,
+      "recommendation": "sha256:3e1532f052025c3c has Copilot for M365 assigned but no Copilot interactions in the last 60 days. Reassign the seat.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "copilot_last_activity_days": null,
+        "window_days": 60
+      }
+    },
+    {
+      "rule_id": "M365.COPILOT_INACTIVE_60D",
+      "surface": "m365",
+      "severity": "high",
+      "principal": "sha256:797e50824991e606",
+      "current_sku": "M365_COPILOT",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 30.0,
+      "recommendation": "sha256:797e50824991e606 has Copilot for M365 assigned but no Copilot interactions in the last 60 days. Reassign the seat.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "copilot_last_activity_days": null,
+        "window_days": 60
+      }
+    },
+    {
+      "rule_id": "M365.E5_FEATURES_UNUSED",
+      "surface": "m365",
+      "severity": "medium",
+      "principal": "sha256:df54f36a000f7ffe",
+      "current_sku": "SPE_E5",
+      "recommended_sku": "SPE_E3",
+      "estimated_monthly_savings_usd": 21.0,
+      "recommendation": "sha256:df54f36a000f7ffe is on E5 but none of the E5-exclusive capabilities (Defender for O365 P2, Purview DLP/IP, Entra P2 risk policies) have been exercised in 90 days. Consider stepping down to E3 plus targeted add-ons.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "checked_signals": [
+          "defender_o365",
+          "purview_dlp",
+          "entra_p2"
+        ],
+        "last_activity_days": {
+          "defender_o365": null,
+          "purview_dlp": null,
+          "entra_p2": null
+        },
+        "window_days": 90
+      }
+    },
+    {
+      "rule_id": "M365.E5_FEATURES_UNUSED",
+      "surface": "m365",
+      "severity": "medium",
+      "principal": "sha256:a8804c56900cfa2b",
+      "current_sku": "SPE_E5",
+      "recommended_sku": "SPE_E3",
+      "estimated_monthly_savings_usd": 21.0,
+      "recommendation": "sha256:a8804c56900cfa2b is on E5 but none of the E5-exclusive capabilities (Defender for O365 P2, Purview DLP/IP, Entra P2 risk policies) have been exercised in 90 days. Consider stepping down to E3 plus targeted add-ons.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "checked_signals": [
+          "defender_o365",
+          "purview_dlp",
+          "entra_p2"
+        ],
+        "last_activity_days": {
+          "defender_o365": null,
+          "purview_dlp": null,
+          "entra_p2": null
+        },
+        "window_days": 90
+      }
+    }
+  ]
+}
