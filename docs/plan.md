@@ -373,6 +373,20 @@ offline workflow and outputs.
    **Copilot Studio** in the same report without confusing the reader?
    *Group under a single "Copilot" report section with sub-tables.*
 
+### Frontier roadmap index
+
+The next frontier is documented as **exploratory**, not shipped scope, in
+[`docs/roadmap/README.md`](roadmap/README.md). It records guardrails and future
+thin-slice PRs for FinOps Toolkit / FOCUS / Hubs alignment, Azure region price
+comparisons, agreement discount profiles, RI and Savings Plan reviews, M365 /
+Entra / Copilot / security / GSA SKU-mix reviews, data-collection frontiers,
+practice-review outputs, and optional GitHub Copilot / Azure MCP assistance.
+
+Local operator skill and runbook ideas are indexed in
+[`docs/skills/README.md`](skills/README.md). They are draft documentation only:
+no command, rule, collector, schema, pricing profile, Hubs connector, or MCP
+integration is shipped until a later PR completes the §11 loop for that slice.
+
 ---
 
 ## 11. Per-step delivery process (multi-agent)

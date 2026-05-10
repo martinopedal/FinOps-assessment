@@ -148,6 +148,12 @@ PR (`.github/workflows/docs.yml` fails the build on drift):
 - [`examples/demo-triage.json`](examples/demo-triage.json),
   [`examples/demo-triage.csv`](examples/demo-triage.csv): advisory triage
   artefacts derived from the demo JSON report.
+- [`docs/roadmap/README.md`](docs/roadmap/README.md): exploratory frontier
+  roadmap for FinOps Toolkit / FOCUS / Hubs alignment, pricing intelligence,
+  commitments, SKU mix, practice-review outputs, and optional assist tooling.
+- [`docs/skills/README.md`](docs/skills/README.md): draft local operator
+  skills/runbook inventory; these are documentation guardrails, not executable
+  automation.
 
 ## Contributing
 
