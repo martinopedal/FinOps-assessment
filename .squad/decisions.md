@@ -252,6 +252,39 @@ Until that PATCH lands, this PR itself still requires one final `enforce_admins`
 
 ---
 
+## 2026-05-13  ,  Wave: Docs-voice SKILL adopted
+
+### 2026-05-13  ,  Docs-voice scope: emoji + em-dash + AI-language + skill location (issue #53, PR #55)
+
+**By:** Maya (Lead), encoding the four scope decisions Martin set on issue #53 before PR #55 opened.
+
+**Decisions:**
+
+1. **Emoji policy: pragmatic, keep role badges.** Permitted across docs of record: ✅ and ❌ for binary status; squad role badges (🏗️ ⚛️ 🔧 🧪 📋 🔄) because they are functional UI in routing tables and rosters; capability traffic-lights (🟢 🟡 🔴) only inside `.squad/team.md`, `.squad/routing.md`, and the capability columns they feed. Strip every other emoji.
+
+2. **Em-dash policy: full sweep, except historical logs.** Remove every em-dash and en-dash from docs of record. Replace with a comma, a period, or "and" per the news-fetcher rule. Skip `.squad/orchestration-log/` and `.squad/log/` because rewriting historical artifacts rewrites history.
+
+3. **AI-language scope: full news-fetcher blacklist.** Apply the full blacklist (leverage, unlock, comprehensive, robust, seamless, holistic, cutting-edge, journey, delve, empower, streamline, furthermore, moreover, additionally, on the other hand, in conclusion, in today's world, it is worth noting, and the rest of the list inside the SKILL). The four hits found during audit were a starting point, not the whole scope. Replace abstract verbs and vague qualifiers with concrete nouns and specific verbs.
+
+4. **Voice profile location: skill only.** The anonymized voice profile lives only at `.squad/skills/docs-voice/SKILL.md`. No duplicate at `docs/voice/`, no copy in `docs/style.md`. The SKILL is the canonical source; agents auto-read it through the normal skill-loading path.
+
+**Scope of "docs of record":** all `.md` files under `.github/`, `docs/`, `.squad/` (except `orchestration-log/` and `log/` subfolders), the project README and CHANGELOG, AND the catalogue YAML `summary` and `recommendation_template` fields under `data/catalog/` and `data/rules/`. Those YAML prose fields render verbatim into `docs/rules.md` (via `scripts/generate_docs.py`) and into every JSON / HTML / CSV / PDF report, so they ARE docs of record.
+
+**Operational consequence (from PR #55 follow-up fix):** When a `summary` or `recommendation_template` in `data/rules/{surface}.yaml` changes, the docs-voice SKILL applies. Re-run `python scripts/generate_docs.py` to regenerate `docs/rules.md` and `examples/demo-report.{json,html,csv}`, and commit those alongside the YAML in the same PR. Forgetting this trips both the docs-freshness gate (`tests/test_generate_docs.py::test_check_mode_passes_for_committed_artifacts`) and the SKILL contract. PR #55 caught one such miss (`additionally-assigned` in `M365.DUPLICATE_BUNDLE`) on the post-merge sweep at commit `f54177a`; the fix was to edit the YAML, regenerate, and re-push.
+
+**Trade-offs considered:**
+
+- **Voice page in `docs/`** vs skill: rejected. Docs of record describe the product. The voice rule belongs to the agent system that produces the docs, not the docs themselves.
+- **Soft em-dash policy** (allow in long-form prose): rejected. Operators of an enterprise FinOps tool read in scan-mode; a comma reads cleanly there and an em-dash is the strongest single-character "this was generated" signal in our corpus.
+- **Emoji-zero policy:** rejected because role badges and ✅/❌ are functional UI in routing tables and status surfaces, not decoration.
+- **Strip catalogue YAML prose from scope:** rejected. The fields render unchanged into reports; exempting them would mean the docs-voice contract dies at the first regenerate.
+
+**Related:** issue #53, PR #55, `.squad/skills/docs-voice/SKILL.md`, the `M365.DUPLICATE_BUNDLE` follow-up fix in commit `f54177a`.
+
+**Scope:** Binding on every PR that touches docs of record OR catalogue YAML prose fields. Stage-4 reviewer (Noor) checks both.
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus
