@@ -2,6 +2,53 @@
 
 ## Active Decisions
 
+### 2026-05-12T10:51Z — User directive — local-spawn preference when repo is open (Coordinator)
+
+**By:** martinopedal (via Squad Coordinator)
+
+**Decision:** When the local checkout is active and the user is at the keyboard, default to **local squad-member spawns** for follow-up work, not `@copilot`-direct bot routing. The `@copilot`-direct posture applies to **async/cloud/away-from-keyboard** work. Multi-agent fan-out stays on-request.
+
+**Why:** Martin observed that routing #44 to @copilot when the local checkout was already open added GitHub round-trip latency and bot-cooking time without saving cost — we'd rubric-review the bot's PR anyway, so we may as well spawn the right squad member locally and ship faster.
+
+**Routing matrix update:**
+
+| Context | Default routing |
+|---------|----------------|
+| User at local keyboard, repo open | Local squad spawn (Lightweight/Standard mode) |
+| Async / cloud / away-from-keyboard | `@copilot`-direct (rubric review on PR) |
+| Frontier-epic kickoff (architecture, security audit) | Multi-agent fan-out (on-request exception) |
+| Routine work, no local session | `@copilot`-direct (rubric review on PR) |
+
+**Supersedes/refines:** The 2026-05-12 rubric reframe entry (issue #25). The reframe still stands; this clarifies the trigger for local vs bot routing within the rubric posture.
+
+### 2026-05-12 — Squad-PR auto-approve workflow for Noor-verdict comments (issue #47, PR #48)
+
+**By:** Maya & Coordinator (design + implementation)
+
+**Decision:** Squad PRs on `main` no longer require the `enforce_admins` toggle dance to bypass branch protection. Implement `.github/workflows/squad-approve.yml` that listens for the Stage-4 verdict comment (Noor's **`VERDICT: APPROVE`** line with the **`Stage-4 Marker`** tag). When both are present, the workflow submits a `github-actions[bot]` approval, satisfying branch protection's review-count rule.
+
+**Design choice:** **Option A — Workflow approval via `github-actions[bot]`** (implemented in #48).
+- Trigger: PR comment by repo owner matching the verdict pattern.
+- Action: Workflow runs, parses the comment, posts `github-actions` as a 2nd approver.
+- Pros: Lightweight, no additional secrets, uses GitHub Actions permissions already granted, decouples verdict logic from GitHub API calls.
+- Cons: Adds one more workflow file to the CI/CD surface; requires comment text discipline.
+
+**Rejected alternatives (with one-line reasons):**
+- **Option B — Separate `noor-bot` GitHub App/PAT identity.** Highest-fidelity presentation (review genuinely shows under "Noor"), but requires creating + rotating a second identity. Deferred; A is async-friendly today with zero new credentials.
+- **Option C — Carve `squad/*` branches out of protection.** Rejected — squad PRs are *more* sensitive, not less. Large security hole.
+- **Option D — Rulesets with owner-bypass.** Still requires manual owner action per merge; only marginally less janky than the toggle dance.
+- **Option E — Document the toggle dance as the official protocol.** Legitimises the workaround instead of fixing it; not async-friendly.
+
+**Trust model gates:**
+- Workflow triggers only on **exact match** of Noor's verdict marker (case-sensitive, full string).
+- Approval is **only** submitted by `github-actions[bot]` (no human bot account).
+- Comment author **must** be the repo owner (Martin) or admin.
+- Workflow is **read-only** on the GitHub API — only creates an approval, never closes/cancels PRs or modifies other resources.
+
+**Rollback path:** If `github-actions[bot]` approval doesn't satisfy `required_approving_review_count` in practice (e.g. counted as same identity as Coordinator, or disallowed by org policy), pivot to **Option B (separate `noor-bot` identity)** and file a follow-up issue. Workflow is idempotent; no data loss.
+
+**Status:** Merged in PR #48. Coordinator followed up with `fix(squad): restore main's line endings` to correct Maya's editor (LF → CRLF) so the diff is clean.
+
 ### 2026-05-12 — Squad-memory bootstrap & label-drift cleanup (issue #23)
 
 **Decision:** Land the 🟢-trivial squad-state cleanup from Maya's gap analysis (`.squad/decisions/inbox/maya-gap-analysis-2026-05-12.md`, §C) in a single PR closing #23, after Noor's stage-4 sign-off (`.squad/decisions/inbox/noor-stage4-2026-05-12.md`).

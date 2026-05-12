@@ -1,16 +1,18 @@
 ---
-updated_at: 2026-05-12T18:42:00.000Z
-focus_area: Local clear of 7 issues complete — falsification data captured
+updated_at: 2026-05-12T18:52:00.000Z
+focus_area: Follow-up batch wrapped — local-spawn directive + auto-approve workflow shipped
 active_issues: []
 ---
 
 # What We're Focused On
 
-**Local clear of issues #27–#35 + bot collision #36 complete.** All 7 open backlog issues merged via on-request multi-agent exception. Falsification-test evidence captured in `decisions.md`: rubric reframe stands as default; on-request multi-agent exception validated for frontier-epic kickoffs. 3 decision-inbox entries promoted (Diego pricing contract, Priya M365 aggregate posture, Maya derived-report-views principle).
+**Follow-up batch wrapped** (2026-05-12). PRs #46 (Yuki test-env fix) and #48 (Maya auto-approve workflow) merged.
 
-**Next workflow:** Frontier epics #27–#30 shipped; continue with `@copilot`-direct §11 in PR bodies (default). Multi-agent stage-3/stage-4 spawns remain available on request for genuinely non-trivial PRs (architecture proposals, security audits, frontier-epic kickoffs). Rubric reframe stays in place — no re-open of #25.
+**Directive promoted:** User directive clarifying local-spawn preference when repo is open + keyboard active (Coordinator's 2026-05-12T10:51Z note → decisions.md).
 
-**Falsification trip-wires still active** (full text in `decisions.md`): two consecutive frontier-epic PRs ship with substantive defects a stage-4 spawn would have caught; a single PR accumulates >5 review cycles before merge; or a squad member's domain expertise is consistently absent from PRs in their surface. Any fire → re-open #25.
+**Workflow shipped:** Squad PRs no longer require `enforce_admins` toggle dance. `.github/workflows/squad-approve.yml` now auto-approves when Coordinator posts Noor's `VERDICT: APPROVE` comment with Stage-4 marker. This was the last toggle-dance; future squad PRs use the new workflow.
 
-Scribe wrap session, 2026-05-12.
+**Outstanding:** 24 orphan `copilot/*` branches on origin (NOT swept this session — flag for next batch); governance drift on `squad.agent.md v0.8.25+local` is intentional per Sam's audit (no action).
+
+**Next entry point:** Frontier epics D.5+ or backlog work. Local-spawn directive active for keyboard sessions. Auto-approve workflow tested and live for squad PRs.
 
