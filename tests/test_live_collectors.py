@@ -11,6 +11,11 @@ the collector:
 
 from __future__ import annotations
 
+import pytest
+
+# Skip all tests if requests is not installed (requires [live] extras)
+pytest.importorskip("requests", reason="Live collectors require [live] extras: pip install -e .[live]")
+
 import csv
 import io
 import os
