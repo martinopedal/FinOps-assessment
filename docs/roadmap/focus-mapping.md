@@ -10,6 +10,14 @@
 > **FOCUS target version:** 1.2. If later research updates the target, this
 > document and the roadmap index move together in the same PR.
 
+> ⚠️ **Non-contract notice.** This document is exploratory and advisory.
+> Nothing here commits the project to ship a FOCUS exporter, a Hubs
+> connector, or any specific CLI surface, and nothing here freezes the
+> current `Finding` or `run` field set. If a future PR renames or removes
+> a field cited below, this document moves with it in the same PR. The
+> FOCUS specification and FinOps Toolkit / Hubs documentation remain with
+> their owners — see *Sources* below for the authoritative references.
+
 ## Why this exists
 
 `finops-assess` emits **advisory savings findings**, not billing rows. A
