@@ -64,3 +64,33 @@ jobs:
         run: python -m finops_assess.catalog validate
       - name: Validate personas + rules
         run: python -m finops_assess.rules validate
+
+  required-checks:
+    # Single summary check published as the literal context
+    # `required-checks`. Branch protection on `main` requires this one
+    # context (see issue #51); decoupling protection from matrix
+    # dimensions means adding/removing OS or Python versions in
+    # `lint-and-test` does not break protection. When a new top-level
+    # job is added to this workflow it MUST be appended to `needs:`
+    # below, otherwise the summary will pass while the new job runs
+    # ungated.
+    name: required-checks
+    runs-on: ubuntu-latest
+    needs: [lint-and-test, catalog-validation]
+    if: always()
+    steps:
+      - name: Assert all required jobs succeeded
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const needs = ${{ toJSON(needs) }};
+            const failed = Object.entries(needs)
+              .filter(([, job]) => job.result !== 'success')
+              .map(([name, job]) => `${name}=${job.result}`);
+            if (failed.length > 0) {
+              core.setFailed(
+                `Required upstream jobs did not all succeed: ${failed.join(', ')}`
+              );
+            } else {
+              core.info('All required upstream jobs succeeded.');
+            }

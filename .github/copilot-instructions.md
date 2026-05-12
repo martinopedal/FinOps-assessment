@@ -241,7 +241,10 @@ delivered through the five-stage loop documented in `docs/plan.md`
    APPROVE` line; `.github/workflows/squad-approve.yml` then submits a
    `github-actions[bot]` approval so branch protection's review-count
    rule is satisfied without an `enforce_admins` toggle dance (see
-   issue #47).
+   issue #47). Branch protection on `main` requires the single
+   `required-checks` summary context published by `ci.yml` (see issue
+   #51); any new top-level CI job must be added to that summary's
+   `needs:` list or it will run ungated.
 5. **Implement** (`general-purpose`, Sonnet by default; Opus 4.7 if the
    plan calls for it; `task` Haiku for narrow mechanical edits).
    Code/data/doc changes + tests + a `parallel_validation` gate (code
