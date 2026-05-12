@@ -7,6 +7,10 @@ the collector:
 1. Makes the expected HTTP requests.
 2. Writes well-formed CSV files that the CSV collector can read back.
 3. Produces the correct ``NormalizedDataset`` rows when re-ingested.
+
+Note: this file requires the ``[live]`` extras (``requests``, ``azure-identity``).
+When those extras are not installed (e.g. ``pip install -e .[dev]`` only),
+the entire module is skipped automatically by the ``importorskip`` call below.
 """
 
 from __future__ import annotations
@@ -19,6 +23,9 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+# Skip the entire module when [live] extras are not installed.
+pytest.importorskip("requests")
 
 from finops_assess.collectors.csv_collector import collect_from_directory
 
