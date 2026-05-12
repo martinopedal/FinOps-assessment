@@ -612,54 +612,92 @@ def test_commitment_dataset_forbid_extra() -> None:
 
 
 def test_commitment_language_guardrail() -> None:
-    """Commitment models must NOT contain prohibited action verbs in docstrings."""
+    """Commitment models must NOT contain prohibited action verbs in docstrings, field descriptions, or Literal values.
+
+    This test iterates every commitment-related model defined in pricing.py and checks:
+    - Class docstrings
+    - Every Field(..., description="...") literal string
+    - Every Literal[...] enum value used in field annotations
+
+    Prohibited verbs are imperative action verbs that would violate the read-only posture:
+    purchase, buy, exchange, modify (as imperative actions, with word boundaries).
+
+    Past-tense forms like "purchased" are descriptive and allowed.
+    """
+    import re
+    import typing
+    from typing import get_args, get_origin
+
     from finops_assess.pricing import (
+        AzureCommitmentDataset,
         AzureCommitmentObservation,
         SavingsPlanEligibleSpendObservation,
     )
 
-    # Prohibited action verbs (as standalone words, not as parts of "purchased")
-    prohibited_verbs = ["purchase", "buy", "exchange", "modify"]
+    # Prohibited action verbs (as standalone words)
+    prohibited_patterns = [
+        r"\bpurchase\b",
+        r"\bbuy\b",
+        r"\bexchange\b",
+        r"\bmodify\b",
+    ]
 
-    # Check AzureCommitmentObservation docstring
-    commitment_doc = AzureCommitmentObservation.__doc__ or ""
-    for verb in prohibited_verbs:
-        # Check for the verb as a standalone word (not as part of "purchased")
-        # Use word boundaries to avoid false positives
-        import re
+    def _extract_literal_values(annotation: typing.Any) -> list[str]:
+        """Walk Annotated/Optional/Union wrappers to find Literal[...] values."""
+        if get_origin(annotation) is typing.Literal:
+            return [str(v) for v in get_args(annotation)]
+        args = get_args(annotation)
+        out = []
+        for a in args:
+            out.extend(_extract_literal_values(a))
+        return out
 
-        pattern = r"\b" + verb + r"\b"
-        matches = re.findall(pattern, commitment_doc, re.IGNORECASE)
-        # Filter out "purchased" (past tense is descriptive, not imperative)
-        matches = [
-            m
-            for m in matches
-            if not commitment_doc[
-                max(0, commitment_doc.lower().find(m.lower()) - 3) : commitment_doc.lower().find(
-                    m.lower()
+    def _check_text_for_prohibited_verbs(
+        text: str, model_name: str, surface: str, prohibited_patterns: list[str]
+    ) -> None:
+        """Check a text surface for prohibited verbs, excluding past-tense 'purchased'."""
+        for pattern in prohibited_patterns:
+            matches = list(re.finditer(pattern, text, re.IGNORECASE))
+            # Filter out "purchased" (past tense is descriptive, not imperative)
+            for match in matches:
+                verb = match.group()
+                start = max(0, match.start() - 3)
+                end = match.end() + 2
+                context = text[start:end].lower()
+                # Allow "purchased" (past tense), but reject imperative "purchase"
+                if verb.lower() == "purchase" and "purchased" in context:
+                    continue
+                # If we get here, it's a prohibited verb in imperative form
+                raise AssertionError(
+                    f"Prohibited verb '{verb}' found in {model_name}.{surface}: "
+                    f"violates read-only posture (context: '{text[max(0, match.start() - 20) : match.end() + 20]}')"
                 )
-                + len(m)
-                + 1
-            ].startswith("pur")
-        ]
-        assert len(matches) == 0, (
-            f"Prohibited verb '{verb}' found in AzureCommitmentObservation docstring (as action verb, not descriptive past tense)"
-        )
 
-    # Check SavingsPlanEligibleSpendObservation docstring
-    eligible_spend_doc = SavingsPlanEligibleSpendObservation.__doc__ or ""
-    for verb in prohibited_verbs:
-        pattern = r"\b" + verb + r"\b"
-        matches = re.findall(pattern, eligible_spend_doc, re.IGNORECASE)
-        matches = [
-            m
-            for m in matches
-            if not eligible_spend_doc[
-                max(
-                    0, eligible_spend_doc.lower().find(m.lower()) - 3
-                ) : eligible_spend_doc.lower().find(m.lower()) + len(m) + 1
-            ].startswith("pur")
-        ]
-        assert len(matches) == 0, (
-            f"Prohibited verb '{verb}' found in SavingsPlanEligibleSpendObservation docstring"
-        )
+    # Models to check
+    commitment_models = [
+        AzureCommitmentObservation,
+        SavingsPlanEligibleSpendObservation,
+        AzureCommitmentDataset,
+    ]
+
+    for model_cls in commitment_models:
+        model_name = model_cls.__name__
+
+        # Check class docstring
+        class_doc = model_cls.__doc__ or ""
+        _check_text_for_prohibited_verbs(class_doc, model_name, "__doc__", prohibited_patterns)
+
+        # Check every field's description
+        for field_name, field_info in model_cls.model_fields.items():
+            field_description = field_info.description or ""
+            if field_description:
+                _check_text_for_prohibited_verbs(
+                    field_description, model_name, f"{field_name}.description", prohibited_patterns
+                )
+
+            # Check every Literal value in the field's annotation
+            literal_values = _extract_literal_values(field_info.annotation)
+            for literal_value in literal_values:
+                _check_text_for_prohibited_verbs(
+                    literal_value, model_name, f"{field_name}.Literal", prohibited_patterns
+                )
