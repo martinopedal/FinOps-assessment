@@ -12,12 +12,12 @@
 
 | Name | Role | Charter | Status | Issue label |
 |------|------|---------|--------|-------------|
-| Maya | Lead / FinOps PM (triage, planning, consensus) | `.squad/agents/lead/charter.md` | Active | `squad:lead` |
-| Priya | M365 / Entra / Power Platform specialist | `.squad/agents/m365-specialist/charter.md` | Active | `squad:m365-specialist` |
-| Diego | Azure compute / storage / SQL / Cost Mgmt specialist | `.squad/agents/azure-specialist/charter.md` | Active | `squad:azure-specialist` |
-| Sam | GitHub & Azure DevOps specialist | `.squad/agents/devsurfaces-specialist/charter.md` | Active | `squad:devsurfaces-specialist` |
-| Noor | Security & compliance reviewer (adversarial pass) | `.squad/agents/security-reviewer/charter.md` | Active | `squad:security-reviewer` |
-| Yuki | Tester / quality / CI matrix owner | `.squad/agents/tester/charter.md` | Active | `squad:tester` |
+| Maya | Lead / FinOps PM (triage, planning, consensus) | `.squad/agents/lead/charter.md` | Active | `squad:maya` |
+| Priya | M365 / Entra / Power Platform specialist | `.squad/agents/m365-specialist/charter.md` | Active | `squad:priya` |
+| Diego | Azure compute / storage / SQL / Cost Mgmt specialist | `.squad/agents/azure-specialist/charter.md` | Active | `squad:diego` |
+| Sam | GitHub & Azure DevOps specialist | `.squad/agents/devsurfaces-specialist/charter.md` | Active | `squad:sam` |
+| Noor | Security & compliance reviewer (adversarial pass) | `.squad/agents/security-reviewer/charter.md` | Active | `squad:noor` |
+| Yuki | Tester / quality / CI matrix owner | `.squad/agents/tester/charter.md` | Active | `squad:yuki` |
 | Scribe | Documentation, history, decisions log | `.squad/agents/scribe/charter.md` | Active | (auto, never routed) |
 
 ## Coding Agent — `@copilot`
@@ -38,5 +38,6 @@ label is applied by the Lead. Auto-assignment is enabled via
 
 - **Project:** FinOps-assessment
 - **Created:** 2026-05-04
-- **Roadmap:** `docs/plan.md` §2 (M0–M7).
-- **Delivery loop:** `docs/plan.md` §11 (research → rubberduck → plan → consensus → implement). Squad members map to stages: `lead` owns stages 3–4; surface specialists own stages 1–2 and stage 5 implementation in their domain; `security-reviewer` owns the stage-4 adversarial pass; `tester` owns stage-5 test authoring; `scribe` records decisions across all stages.
+- **Last activity:** 2026-05-12 (squad-memory bootstrap; first stage-3/stage-4 cycle)
+- **Roadmap:** `CHANGELOG.md` (M0–M7 + Bonus shipped) + `docs/roadmap/README.md` (frontier epics, exploratory).
+- **Delivery loop:** `docs/plan.md` §11 (research → rubberduck → plan → consensus → implement). Squad members map to stages: `maya` owns stages 3–4; surface specialists (`priya`, `diego`, `sam`) own stages 1–2 and stage-5 implementation in their domain; `noor` owns the stage-4 adversarial pass; `yuki` owns stage-5 test authoring; `Scribe` records decisions across all stages.

@@ -7,12 +7,12 @@ How to decide who handles what. The Lead (Maya) triages every
 
 | Work Type | Route To | Examples |
 |-----------|----------|----------|
-| Roadmap, milestone exit criteria, plan/§11 stage-3 sign-off | `squad:lead` (Maya) | Update `docs/plan.md`, edit milestone status, decide between two competing rules. |
-| M365 / Entra / EMS / Defender / Purview / Power Platform | `squad:m365-specialist` (Priya) | New SKU in `data/catalog/m365/`, persona tweak, M365 rule, M4 Graph collector. |
-| Azure compute / storage / SQL / network / Cost Management | `squad:azure-specialist` (Diego) | New SKU in `data/catalog/azure/`, Azure rule, M5 ARM/CostMgmt collector. |
-| GitHub Enterprise / Copilot / GHAS / Azure DevOps seats / runners | `squad:devsurfaces-specialist` (Sam) | New SKU in `data/catalog/{github,ado}/`, GH/ADO rule, M6 collector. |
-| Read-only scope review, secrets/PII/copyright review, repo hardening, §11 stage-4 adversarial pass | `squad:security-reviewer` (Noor) | New collector PR, anything touching auth, CodeQL findings triage. |
-| Tests, fixtures, CI matrix, mypy/ruff config, M3 synthetic tenant | `squad:tester` (Yuki) | New `tests/` file, golden-file test for a rule, CI matrix tweak. |
+| Roadmap, milestone exit criteria, plan/§11 stage-3 sign-off | `squad:maya` | Update `docs/plan.md`, edit milestone status, decide between two competing rules. |
+| M365 / Entra / EMS / Defender / Purview / Power Platform | `squad:priya` | New SKU in `data/catalog/m365/`, persona tweak, M365 rule, M4 Graph collector. |
+| Azure compute / storage / SQL / network / Cost Management | `squad:diego` | New SKU in `data/catalog/azure/`, Azure rule, M5 ARM/CostMgmt collector. |
+| GitHub Enterprise / Copilot / GHAS / Azure DevOps seats / runners | `squad:sam` | New SKU in `data/catalog/{github,ado}/`, GH/ADO rule, M6 collector. |
+| Read-only scope review, secrets/PII/copyright review, repo hardening, §11 stage-4 adversarial pass | `squad:noor` | New collector PR, anything touching auth, CodeQL findings triage. |
+| Tests, fixtures, CI matrix, mypy/ruff config, M3 synthetic tenant | `squad:yuki` | New `tests/` file, golden-file test for a rule, CI matrix tweak. |
 | Async, well-defined, bounded tasks (🟢 in `team.md`) | `squad:copilot` (`@copilot` 🤖) | Doc polish, mechanical refactor, fixture add, schema-typo fix. |
 | Session logging, decisions merge | `Scribe` | Automatic — never needs routing. |
 
@@ -23,7 +23,8 @@ How to decide who handles what. The Lead (Maya) triages every
 | `squad` | Triage: analyze issue, evaluate `@copilot` fit, assign `squad:{member}` label | Maya (Lead) |
 | `squad:{name}` | Pick up issue and complete the work | Named member |
 | `squad:copilot` | Assign to `@copilot` for autonomous work | `@copilot` 🤖 |
-| `milestone:M1` … `milestone:M7` | Roadmap bucket — orthogonal to the routing label, applied by Maya at triage | (label only) |
+| `release:v0.4.0` … `release:v1.0.0` | Release bucket — orthogonal to the routing label, applied by Maya at triage for work targeting a shipped or imminent release | (label only) |
+| `release:backlog` | Backlog bucket — applied by Maya at triage for work that is not yet scheduled into a release | (label only) |
 
 ### How Issue Assignment Works
 
