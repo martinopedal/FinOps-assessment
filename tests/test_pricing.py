@@ -270,3 +270,396 @@ def test_observation_all_sources_valid() -> None:
             source=src,  # type: ignore[arg-type]
         )
         assert obs.source == src
+
+
+# ---------------------------------------------------------------------------
+# Azure commitment observation tests
+# ---------------------------------------------------------------------------
+
+
+def test_commitment_observation_round_trip() -> None:
+    """Minimal commitment observation serializes and deserializes correctly."""
+    from finops_assess.pricing import AzureCommitmentObservation
+
+    obs = AzureCommitmentObservation(
+        commitment_id="abc-123",
+        commitment_type="reserved_instance",
+        scope="single_subscription",
+        observed_at="2026-05-12",
+        source="cost_management_api",
+    )
+    data = obs.model_dump()
+    obs2 = AzureCommitmentObservation.model_validate(data)
+    assert obs2.commitment_id == "abc-123"
+    assert obs2.commitment_type == "reserved_instance"
+    assert obs2.scope == "single_subscription"
+    assert obs2.observed_at == "2026-05-12"
+    assert obs2.source == "cost_management_api"
+    assert obs2.commitment_name is None
+    assert obs2.sku_id is None
+    assert obs2.region is None
+    assert obs2.utilization_pct is None
+    assert obs2.coverage_pct is None
+
+
+def test_commitment_observation_all_fields() -> None:
+    """Commitment observation with all optional fields populated."""
+    from finops_assess.pricing import AzureCommitmentObservation
+
+    obs = AzureCommitmentObservation(
+        commitment_id="ri-d2s-v3-001",
+        commitment_name="Production VM RI",
+        commitment_type="reserved_instance",
+        sku_id="Standard_D2s_v3",
+        region="eastus",
+        scope="shared_subscription",
+        utilization_pct=85.5,
+        utilization_window_days=30,
+        coverage_pct=72.3,
+        coverage_window_days=30,
+        monthly_cost_usd=1234.56,
+        expiry_date="2027-05-12",
+        observed_at="2026-05-12",
+        source="reservation_summaries_api",
+        notes="High utilization, consider renewal",
+    )
+    assert obs.commitment_name == "Production VM RI"
+    assert obs.sku_id == "Standard_D2s_v3"
+    assert obs.region == "eastus"
+    assert obs.utilization_pct == 85.5
+    assert obs.utilization_window_days == 30
+    assert obs.coverage_pct == 72.3
+    assert obs.coverage_window_days == 30
+    assert obs.monthly_cost_usd == 1234.56
+    assert obs.expiry_date == "2027-05-12"
+    assert obs.notes == "High utilization, consider renewal"
+
+
+def test_commitment_observation_forbid_extra() -> None:
+    """Extra fields in commitment observation are rejected (extra='forbid')."""
+    from finops_assess.pricing import AzureCommitmentObservation
+
+    with pytest.raises(ValidationError) as exc_info:
+        AzureCommitmentObservation(
+            commitment_id="abc-123",
+            commitment_type="reserved_instance",
+            scope="single_subscription",
+            observed_at="2026-05-12",
+            source="cost_management_api",
+            extra_field="should_fail",  # type: ignore[call-arg]
+        )
+    assert "extra_field" in str(exc_info.value).lower()
+
+
+def test_commitment_observation_validation_bounds() -> None:
+    """Commitment observation validation: utilization/coverage in [0, 100], cost >= 0."""
+    from finops_assess.pricing import AzureCommitmentObservation
+
+    # utilization_pct > 100 rejected
+    with pytest.raises(ValidationError):
+        AzureCommitmentObservation(
+            commitment_id="abc-123",
+            commitment_type="reserved_instance",
+            scope="single_subscription",
+            utilization_pct=150.0,
+            observed_at="2026-05-12",
+            source="cost_management_api",
+        )
+
+    # coverage_pct < 0 rejected
+    with pytest.raises(ValidationError):
+        AzureCommitmentObservation(
+            commitment_id="abc-123",
+            commitment_type="reserved_instance",
+            scope="single_subscription",
+            coverage_pct=-10.0,
+            observed_at="2026-05-12",
+            source="cost_management_api",
+        )
+
+    # monthly_cost_usd < 0 rejected
+    with pytest.raises(ValidationError):
+        AzureCommitmentObservation(
+            commitment_id="abc-123",
+            commitment_type="reserved_instance",
+            scope="single_subscription",
+            monthly_cost_usd=-100.0,
+            observed_at="2026-05-12",
+            source="cost_management_api",
+        )
+
+    # zero cost allowed
+    obs = AzureCommitmentObservation(
+        commitment_id="abc-123",
+        commitment_type="reserved_instance",
+        scope="single_subscription",
+        monthly_cost_usd=0.0,
+        observed_at="2026-05-12",
+        source="customer_supplied",
+    )
+    assert obs.monthly_cost_usd == 0.0
+
+
+def test_commitment_observation_enum_literals() -> None:
+    """Invalid commitment_type, scope, source are rejected."""
+    from finops_assess.pricing import AzureCommitmentObservation
+
+    # Invalid commitment_type
+    with pytest.raises(ValidationError):
+        AzureCommitmentObservation(
+            commitment_id="abc-123",
+            commitment_type="invalid_type",  # type: ignore[arg-type]
+            scope="single_subscription",
+            observed_at="2026-05-12",
+            source="cost_management_api",
+        )
+
+    # Invalid scope
+    with pytest.raises(ValidationError):
+        AzureCommitmentObservation(
+            commitment_id="abc-123",
+            commitment_type="reserved_instance",
+            scope="invalid_scope",  # type: ignore[arg-type]
+            observed_at="2026-05-12",
+            source="cost_management_api",
+        )
+
+    # Invalid source
+    with pytest.raises(ValidationError):
+        AzureCommitmentObservation(
+            commitment_id="abc-123",
+            commitment_type="reserved_instance",
+            scope="single_subscription",
+            observed_at="2026-05-12",
+            source="invalid_source",  # type: ignore[arg-type]
+        )
+
+
+def test_commitment_observation_expiry_date_format() -> None:
+    """Expiry_date must be exactly 10 characters (YYYY-MM-DD)."""
+    from finops_assess.pricing import AzureCommitmentObservation
+
+    # ISO 8601 timestamp rejected (too long)
+    with pytest.raises(ValidationError):
+        AzureCommitmentObservation(
+            commitment_id="abc-123",
+            commitment_type="reserved_instance",
+            scope="single_subscription",
+            expiry_date="2027-05-12T00:00:00Z",
+            observed_at="2026-05-12",
+            source="cost_management_api",
+        )
+
+    # Short date rejected
+    with pytest.raises(ValidationError):
+        AzureCommitmentObservation(
+            commitment_id="abc-123",
+            commitment_type="reserved_instance",
+            scope="single_subscription",
+            expiry_date="2027-05",
+            observed_at="2026-05-12",
+            source="cost_management_api",
+        )
+
+    # Valid YYYY-MM-DD accepted
+    obs = AzureCommitmentObservation(
+        commitment_id="abc-123",
+        commitment_type="reserved_instance",
+        scope="single_subscription",
+        expiry_date="2027-05-12",
+        observed_at="2026-05-12",
+        source="cost_management_api",
+    )
+    assert obs.expiry_date == "2027-05-12"
+
+
+def test_eligible_spend_observation_round_trip() -> None:
+    """Minimal eligible spend observation serializes and deserializes correctly."""
+    from finops_assess.pricing import SavingsPlanEligibleSpendObservation
+
+    obs = SavingsPlanEligibleSpendObservation(
+        resource_type="virtualMachine",
+        eligible_spend_usd=5000.0,
+        window_days=30,
+        observed_at="2026-05-12",
+        source="cost_management_api",
+    )
+    data = obs.model_dump()
+    obs2 = SavingsPlanEligibleSpendObservation.model_validate(data)
+    assert obs2.resource_type == "virtualMachine"
+    assert obs2.eligible_spend_usd == 5000.0
+    assert obs2.window_days == 30
+    assert obs2.observed_at == "2026-05-12"
+    assert obs2.source == "cost_management_api"
+    assert obs2.region is None
+    assert obs2.notes is None
+
+
+def test_eligible_spend_observation_forbid_extra() -> None:
+    """Extra fields in eligible spend observation are rejected (extra='forbid')."""
+    from finops_assess.pricing import SavingsPlanEligibleSpendObservation
+
+    with pytest.raises(ValidationError) as exc_info:
+        SavingsPlanEligibleSpendObservation(
+            resource_type="virtualMachine",
+            eligible_spend_usd=5000.0,
+            window_days=30,
+            observed_at="2026-05-12",
+            source="cost_management_api",
+            extra_field="should_fail",  # type: ignore[call-arg]
+        )
+    assert "extra_field" in str(exc_info.value).lower()
+
+
+def test_eligible_spend_observation_validation_bounds() -> None:
+    """Eligible spend observation validation: spend >= 0."""
+    from finops_assess.pricing import SavingsPlanEligibleSpendObservation
+
+    # negative spend rejected
+    with pytest.raises(ValidationError):
+        SavingsPlanEligibleSpendObservation(
+            resource_type="virtualMachine",
+            eligible_spend_usd=-1000.0,
+            window_days=30,
+            observed_at="2026-05-12",
+            source="cost_management_api",
+        )
+
+    # zero spend allowed
+    obs = SavingsPlanEligibleSpendObservation(
+        resource_type="virtualMachine",
+        eligible_spend_usd=0.0,
+        window_days=30,
+        observed_at="2026-05-12",
+        source="customer_supplied",
+    )
+    assert obs.eligible_spend_usd == 0.0
+
+
+def test_commitment_dataset_round_trip() -> None:
+    """Dataset with commitment and eligible spend observations serializes/deserializes correctly."""
+    from finops_assess.pricing import (
+        AzureCommitmentDataset,
+        AzureCommitmentObservation,
+        SavingsPlanEligibleSpendObservation,
+    )
+
+    dataset = AzureCommitmentDataset(
+        commitments=[
+            AzureCommitmentObservation(
+                commitment_id="ri-001",
+                commitment_type="reserved_instance",
+                scope="shared_subscription",
+                utilization_pct=80.0,
+                observed_at="2026-05-12",
+                source="cost_management_api",
+            ),
+            AzureCommitmentObservation(
+                commitment_id="sp-001",
+                commitment_type="savings_plan_compute",
+                scope="management_group",
+                coverage_pct=65.0,
+                observed_at="2026-05-12",
+                source="reservation_summaries_api",
+            ),
+        ],
+        eligible_spend_observations=[
+            SavingsPlanEligibleSpendObservation(
+                resource_type="virtualMachine",
+                eligible_spend_usd=10000.0,
+                window_days=30,
+                observed_at="2026-05-12",
+                source="cost_management_api",
+            ),
+        ],
+        dataset_generated_at="2026-05-12T10:00:00Z",
+        dataset_version="1.0",
+        notes="Monthly commitment review",
+    )
+    data = dataset.model_dump()
+    dataset2 = AzureCommitmentDataset.model_validate(data)
+    assert len(dataset2.commitments) == 2
+    assert len(dataset2.eligible_spend_observations) == 1
+    assert dataset2.commitments[0].commitment_id == "ri-001"
+    assert dataset2.commitments[1].commitment_id == "sp-001"
+    assert dataset2.eligible_spend_observations[0].resource_type == "virtualMachine"
+    assert dataset2.dataset_generated_at == "2026-05-12T10:00:00Z"
+    assert dataset2.dataset_version == "1.0"
+
+
+def test_commitment_dataset_empty() -> None:
+    """Empty commitment dataset is valid."""
+    from finops_assess.pricing import AzureCommitmentDataset
+
+    dataset = AzureCommitmentDataset()
+    assert dataset.commitments == []
+    assert dataset.eligible_spend_observations == []
+    assert dataset.dataset_generated_at is None
+    assert dataset.dataset_version is None
+    assert dataset.notes is None
+
+
+def test_commitment_dataset_forbid_extra() -> None:
+    """Extra fields in commitment dataset are rejected (extra='forbid')."""
+    from finops_assess.pricing import AzureCommitmentDataset
+
+    with pytest.raises(ValidationError) as exc_info:
+        AzureCommitmentDataset(
+            commitments=[],
+            extra_field="should_fail",  # type: ignore[call-arg]
+        )
+    assert "extra_field" in str(exc_info.value).lower()
+
+
+def test_commitment_language_guardrail() -> None:
+    """Commitment models must NOT contain prohibited action verbs in docstrings."""
+    from finops_assess.pricing import (
+        AzureCommitmentObservation,
+        SavingsPlanEligibleSpendObservation,
+    )
+
+    # Prohibited action verbs (as standalone words, not as parts of "purchased")
+    prohibited_verbs = ["purchase", "buy", "exchange", "modify"]
+
+    # Check AzureCommitmentObservation docstring
+    commitment_doc = AzureCommitmentObservation.__doc__ or ""
+    for verb in prohibited_verbs:
+        # Check for the verb as a standalone word (not as part of "purchased")
+        # Use word boundaries to avoid false positives
+        import re
+
+        pattern = r"\b" + verb + r"\b"
+        matches = re.findall(pattern, commitment_doc, re.IGNORECASE)
+        # Filter out "purchased" (past tense is descriptive, not imperative)
+        matches = [
+            m
+            for m in matches
+            if not commitment_doc[
+                max(0, commitment_doc.lower().find(m.lower()) - 3) : commitment_doc.lower().find(
+                    m.lower()
+                )
+                + len(m)
+                + 1
+            ].startswith("pur")
+        ]
+        assert len(matches) == 0, (
+            f"Prohibited verb '{verb}' found in AzureCommitmentObservation docstring (as action verb, not descriptive past tense)"
+        )
+
+    # Check SavingsPlanEligibleSpendObservation docstring
+    eligible_spend_doc = SavingsPlanEligibleSpendObservation.__doc__ or ""
+    for verb in prohibited_verbs:
+        pattern = r"\b" + verb + r"\b"
+        matches = re.findall(pattern, eligible_spend_doc, re.IGNORECASE)
+        matches = [
+            m
+            for m in matches
+            if not eligible_spend_doc[
+                max(
+                    0, eligible_spend_doc.lower().find(m.lower()) - 3
+                ) : eligible_spend_doc.lower().find(m.lower()) + len(m) + 1
+            ].startswith("pur")
+        ]
+        assert len(matches) == 0, (
+            f"Prohibited verb '{verb}' found in SavingsPlanEligibleSpendObservation docstring"
+        )
