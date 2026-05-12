@@ -13,4 +13,4 @@ Agent azure-specialist initialized for the FinOps-assessment squad. See `.squad/
 
 ## Learnings
 
-None yet — pick up the first `squad:azure-specialist` issue to start.
+- **2026-05-12** — Issues #27 (D.4: Azure pricing intelligence—Noor's recommended pilot), #28 (D.5: CapEx/OpEx commitments), #30 (D.7: agreement-types triage) now in backlog. Pre-commit to OIDC-only auth in issue bodies per stage-4 review so hard rule 2 is not re-litigated in collector PR.
