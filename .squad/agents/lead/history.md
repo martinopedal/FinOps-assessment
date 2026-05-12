@@ -21,3 +21,5 @@ Agent lead initialized for the FinOps-assessment squad. See `.squad/agents/lead/
 - **PR #22 is the model §11-in-PR-body artefact.** Body documents stages 1–4 and the consensus call inline. If we keep the copilot-direct path, this is the template to lean on. If we move to Squad, that artefact moves to `.squad/decisions/inbox/`.
 - **The repo's load-bearing invariant is read-only posture**, repeated verbatim across `plan.md` §1, `copilot-instructions.md` hard rules, every roadmap epic guardrail column, and the Hubs/FOCUS/triage boundary docs. Any proposal that touches scopes, secrets, schemas, or third-party diagrams hits 🔴 by default and must route to Noor.
 - **`.squad/skills/project-conventions/SKILL.md` is still the placeholder template** despite `.github/copilot-instructions.md` being a rich, authoritative source. That's a 1-PR fix (route to Yuki) and it materially improves what every future agent reads at session start.
+- 2026-05-12T08:26Z — Backlog batch complete: #24 (Yuki, SKILL.md rewrite, PR #34 merged) and #26 (Sam, squad-cli audit, closed with intentional-drift verdict). Next gate is D.2 pilot (#25) before frontier epics D.4–D.7 proceed.
+

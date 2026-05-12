@@ -46,6 +46,20 @@
 
 **Status:** Pending Martin's input on D.2 (the meta-spike). Until then, the `@copilot`-direct path remains the workflow that's actually shipping.
 
+### 2026-05-12 — squad-cli upstream audit (issue #26)
+
+**Verdict:** Local `.github/agents/squad.agent.md` stamps v0.8.25; upstream npm latest is v0.9.4 (2 minor versions ahead). **Do NOT wholesale re-align.** The ~7.4 KB of local divergence is intentional and justified:
+- Inlined skill content (vs upstream's delegated pattern) — keeps coordinator self-contained
+- Removed TypeScript SDK Mode — project doesn't use the SDK
+- Removed Azure DevOps support — project is GitHub-only  
+- Added local `squad-pr-route.yml` — fills a gap upstream didn't have at v0.8.25
+
+Workflow drift (4 of 5 core workflows modified) is intentional, not re-aligned. **Instead:** File separate issues to evaluate upstream improvements *worth* adopting — e.g., routing enforcement refusal rule from upstream PR #890 (v0.9.4).
+
+**Meta-finding:** Coordinator session-start governance stamps v0.9.1, but on-disk `.github/agents/squad.agent.md` stamps v0.8.25. Third installation channel (likely user-level `~/.copilot/` or CLI-bundled copy) exists beyond what local repo pins. This is not a contradiction — the on-disk repo file is project governance; the session-start governance is the active runtime. They drift independently. Future agents should know the difference.
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus
