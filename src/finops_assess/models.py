@@ -124,6 +124,65 @@ class UsageSignal(BaseModel):
     last_activity_days: int | None = Field(default=None, ge=0)
 
 
+# ---------------------------------------------------------------------------
+# M365 SKU-mix and family-level summary models (D.6 frontier epic).
+# These aggregate per-family coverage and usage signals to support
+# SKU-mix fragmentation, Entra P2 unused, security add-on overlap,
+# Copilot SKU-mix review, and GSA unused-or-overlap rules.
+#
+# Family taxonomy paraphrased from M365 Maps (https://m365maps.com/);
+# linked as reference, never copied (hard rule 3).
+# ---------------------------------------------------------------------------
+
+M365FamilyName = Literal[
+    "m365_e1_tier",
+    "m365_e3_tier",
+    "m365_e5_tier",
+    "office365",
+    "entra_p1",
+    "entra_p2",
+    "ems_e3",
+    "ems_e5",
+    "defender_o365_p1",
+    "defender_o365_p2",
+    "defender_cloud_apps",
+    "copilot_m365",
+    "copilot_pro",
+    "copilot_studio",
+    "gsa",
+]
+
+
+class M365FamilySummary(BaseModel):
+    """Aggregate M365/Entra/security/Copilot/GSA family-level coverage.
+
+    Supports SKU-mix fragmentation, Entra P2 unused, security add-on overlap,
+    Copilot SKU-mix review, and GSA unused-or-overlap rules. NO per-principal
+    fields—only aggregate counts. NO tenant IDs or subscription IDs (Noor's
+    sovereign-cloud catch: default PII redaction does not protect against
+    tenant-id leakage in GSA scenarios).
+
+    ``total_assigned`` counts all SKU assignments in this family (a user with
+    2 SKUs from the same family contributes 2). ``distinct_users_with_assignment``
+    counts unique principals. ``distinct_active_users`` and
+    ``distinct_inactive_users`` partition principals by sign-in activity.
+
+    ``feature_usage_signals`` is optional and family-specific: e.g., for
+    ``entra_p2`` family, might include ``{"pim_assignments": 5,
+    "identity_protection_policies": 3}``—aggregate counts only, NO user lists.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    family_name: M365FamilyName
+    total_assigned: int = Field(default=0, ge=0)
+    distinct_users_with_assignment: int = Field(default=0, ge=0)
+    distinct_active_users: int = Field(default=0, ge=0)
+    distinct_inactive_users: int = Field(default=0, ge=0)
+    feature_usage_signals: dict[str, int] = Field(default_factory=dict)
+    coverage_note: str | None = None
+
+
 class AzureResource(BaseModel):
     """A normalised Azure resource snapshot used by the M2 Azure rules."""
 
@@ -300,6 +359,7 @@ class NormalizedDataset(BaseModel):
     users: list[UserRecord] = Field(default_factory=list)
     assignments: list[LicenseAssignment] = Field(default_factory=list)
     usage: list[UsageSignal] = Field(default_factory=list)
+    m365_family_summaries: list[M365FamilySummary] = Field(default_factory=list)
     azure_resources: list[AzureResource] = Field(default_factory=list)
     azure_reservations: list[AzureReservation] = Field(default_factory=list)
     azure_log_workspaces: list[AzureLogWorkspace] = Field(default_factory=list)
