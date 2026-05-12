@@ -58,6 +58,28 @@ Workflow drift (4 of 5 core workflows modified) is intentional, not re-aligned. 
 
 **Meta-finding:** Coordinator session-start governance stamps v0.9.1, but on-disk `.github/agents/squad.agent.md` stamps v0.8.25. Third installation channel (likely user-level `~/.copilot/` or CLI-bundled copy) exists beyond what local repo pins. This is not a contradiction — the on-disk repo file is project governance; the session-start governance is the active runtime. They drift independently. Future agents should know the difference.
 
+### 2026-05-12 — Squad reframed as review rubric (issue #25)
+
+**Decision:** The squad-orchestrated §11 pilot on a frontier epic (proposed in the *Pilot frontier epic D.4* decision above) is **not** being run. Instead, the squad scaffold is reframed as a **review rubric**: the workflow that ships work remains `@copilot`-direct with §11 stages documented in the PR body — the same workflow that shipped M0–M7 across PRs #4–#22. The roster in `.squad/team.md` documents whose voice a reviewer should channel adversarially when reading any PR.
+
+**Why:** 22 of 22 shipped PRs since project bootstrap have used the `@copilot`-direct path. Two squad-orchestrated batches this session — the bootstrap PR #33 (Maya stage-3 + Noor stage-4) and the followup batch (Yuki on #24, Sam on #26 in parallel) — produced quality results. But every productive moment was either a single-agent task with full ceremony or Coordinator-as-router; the promised value of multi-agent fan-out on a real epic was never tested. Falsification criterion (2) from the D.4 pilot decision — *no multi-author signal in shipped work* — was already true before the pilot started. The squad scaffold's value lives in the *rubric* (Maya's gap analyses and Noor's adversarial passes — both real wins) and in the per-agent voices, not in formal orchestration.
+
+**Implications:**
+- Frontier epics #27–#30 (D.4–D.7) ship via `@copilot`-direct with §11 in the PR body. No formal squad-orchestrated stage-3/stage-4 spawns.
+- Multi-agent stage-3/stage-4 spawns remain available on request for genuinely non-trivial PRs (architecture proposals, security audits, frontier-epic kickoffs) but are not the default.
+- `.squad/team.md` gains a Posture section (this PR) making the rubric framing explicit.
+- The squad workflows (`squad-triage`, `squad-pr-route`, `squad-issue-assign`) stay in place because they are cheap, useful for label routing, and channel the rubric automatically.
+- `.squad/decisions.md`, `wisdom.md`, and agent histories continue to accumulate — the rubric still produces and consumes squad memory.
+
+**Falsification — re-open issue #25 if any of these fire:**
+1. Two consecutive frontier-epic PRs (D.4–D.7) ship with substantive defects that a stage-4 adversarial spawn would have caught.
+2. Reviewer fatigue: a single `@copilot`-direct PR accumulates more than five review cycles before merge.
+3. A squad member's domain expertise is consistently absent from PRs in their surface — the rubric voices are not actually being channeled.
+
+If any fire, re-run issue #25 with fresh evidence and re-evaluate the pilot.
+
+**Status:** Closes #25.
+
 ---
 
 ## Governance
