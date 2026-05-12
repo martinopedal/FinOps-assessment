@@ -154,6 +154,11 @@ PR (`.github/workflows/docs.yml` fails the build on drift):
 - [`docs/skills/README.md`](docs/skills/README.md): draft local operator
   skills/runbook inventory; these are documentation guardrails, not executable
   automation.
+- [`docs/agentic-finops.md`](docs/agentic-finops.md): operator-facing
+  architecture guide for using `finops-assess` as the read-only base of
+  an agentic FinOps program (audit half + remediation-PR-against-IaC-repo
+  add-on). The binding agent contract lives at
+  [`.squad/skills/agentic-finops/SKILL.md`](.squad/skills/agentic-finops/SKILL.md).
 
 ## Contributing
 

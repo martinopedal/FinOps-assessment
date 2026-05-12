@@ -9,6 +9,25 @@ release.
 
 ### Added
 
+- Operator-facing agentic-FinOps architecture guide (`docs/agentic-finops.md`)
+  explaining how the tool's read-only audit half plus an operator-controlled
+  remediation-PR-against-IaC-repo add-on form a clean base for an agentic
+  FinOps program. Answers the recurring "is this a good base for opening
+  PRs on findings?" question without changing posture.
+- Binding agent contract for any future feature that takes action OUTSIDE
+  the tool's process boundary based on a finding
+  (`.squad/skills/agentic-finops/SKILL.md`). Codifies the nine hard rules
+  the remediation-PR drafter (issue #63) and other agentic features must
+  satisfy: never write to the audited tenant; PR drafts to operator's own
+  IaC repo only; drafts only, never auto-merge; mandatory PR-body schema;
+  PII redaction at PR-render time; per-rule `allow_pr: false` opt-in;
+  idempotency, rate limit, kill switch; drift handling.
+- Strategic backlog epic (issue #57) capturing 16 prioritised items from
+  the FinOps Foundation Framework + FOCUS spec + agentic + MCP research
+  pass, with 6 child issues filed (#58 FOCUS export, #59 commitment-discount
+  rule suite, #60 MCP server, #61 playbook reporter, #62 unit-economics
+  card, #63 remediation-PR drafter).
+
 - User-facing guide (`docs/user-guide.md`) showing what the tool delivers,
   with report previews, CLI visuals, worked over-licensed examples drawn from
   the deterministic demo report, and an explicit note on current under-licensed
