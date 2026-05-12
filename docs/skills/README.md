@@ -17,7 +17,7 @@ changes.
 | Skill / runbook | Status | Intended scope |
 |---|---|---|
 | Prepare CSV inputs | exploratory | Explain normalized CSV files, required columns, and data-quality checks. |
-| Run assessment | exploratory | Walk through `finops-assess validate`, `demo`, `run`, `collect`, and `triage`. |
+| [Run assessment](run-assessment.md) | 🟢 runbook | Walk through `finops-assess validate`, `demo`, `run`, `collect`, and `triage`. |
 | Interpret M365 SKU mix | exploratory | Review M365, Entra, Copilot, security, and GSA mix findings once shipped. |
 | Interpret Azure commitments | exploratory | Review RI/Savings Plan coverage and utilization once shipped. |
 | Use Copilot safely | exploratory | Explain optional local assistance with redacted data and default-off helper discovery. |
