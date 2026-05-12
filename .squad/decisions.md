@@ -34,10 +34,10 @@
 - Cons: Adds one more workflow file to the CI/CD surface; requires comment text discipline.
 
 **Rejected alternatives (with one-line reasons):**
-- **Option B:** Admin API token in `GITHUB_TOKEN` secret — violates hard rule 2 (no long-lived tokens); requires org-level secret rotation.
-- **Option C:** Coordinator bot account (pre-approved) — requires a second GitHub user, unclear custody model, not available on all GitHub Free plans.
-- **Option D:** Conditional branch protection (whitelist `@github-actions[bot]` as bypass) — puts logic in branch-protection config instead of source; harder to audit.
-- **Option E:** Revert to toggle dance for squad PRs — works but re-introduces coordination overhead Noor raised; no improvement over status quo.
+- **Option B — Separate `noor-bot` GitHub App/PAT identity.** Highest-fidelity presentation (review genuinely shows under "Noor"), but requires creating + rotating a second identity. Deferred; A is async-friendly today with zero new credentials.
+- **Option C — Carve `squad/*` branches out of protection.** Rejected — squad PRs are *more* sensitive, not less. Large security hole.
+- **Option D — Rulesets with owner-bypass.** Still requires manual owner action per merge; only marginally less janky than the toggle dance.
+- **Option E — Document the toggle dance as the official protocol.** Legitimises the workaround instead of fixing it; not async-friendly.
 
 **Trust model gates:**
 - Workflow triggers only on **exact match** of Noor's verdict marker (case-sensitive, full string).
@@ -45,7 +45,7 @@
 - Comment author **must** be the repo owner (Martin) or admin.
 - Workflow is **read-only** on the GitHub API — only creates an approval, never closes/cancels PRs or modifies other resources.
 
-**Rollback path:** If integration fails on the next squad PR (e.g., the workflow doesn't fire, or the approval is rejected by branch protection), revert to Option B (toggle dance) and file a follow-up issue to debug. No data loss; workflow is idempotent (re-runs are harmless).
+**Rollback path:** If `github-actions[bot]` approval doesn't satisfy `required_approving_review_count` in practice (e.g. counted as same identity as Coordinator, or disallowed by org policy), pivot to **Option B (separate `noor-bot` identity)** and file a follow-up issue. Workflow is idempotent; no data loss.
 
 **Status:** Merged in PR #48. Coordinator followed up with `fix(squad): restore main's line endings` to correct Maya's editor (LF → CRLF) so the diff is clean.
 
