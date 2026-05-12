@@ -14,6 +14,8 @@ from typing import Any
 
 from jinja2 import Environment, FunctionLoader, select_autoescape
 
+from finops_assess.reporters.practice_review import render_practice_review_section
+
 # Severity ordering: highest impact first in the rendered tables.
 _SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2, "info": 3}
 
@@ -77,6 +79,7 @@ def build_html_report(report: dict[str, Any]) -> str:
         rules_fired_count=rules_fired_count,
         total_estimated_savings=total_estimated_savings,
         surface_labels=_SURFACE_LABELS,
+        practice_review_html=render_practice_review_section(report),
     )
 
 
