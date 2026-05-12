@@ -344,3 +344,86 @@ class AzureCommitmentDataset(BaseModel):
         default=None, description="Optional version identifier for this dataset"
     )
     notes: str | None = Field(default=None, description="Human-readable notes about this dataset")
+
+
+# ---------------------------------------------------------------------------
+# Pricing profile (agreement-type discounts) models
+# ---------------------------------------------------------------------------
+
+# Agreement type distinguishes list from negotiated discount mechanisms.
+AgreementType = Literal["list", "ea", "mca", "csp", "mosp", "negotiated"]
+
+# Scope indicates what the pricing profile applies to.
+PricingProfileScope = Literal["azure", "m365", "github", "ado"]
+
+# Source distinguishes default-list from customer-supplied.
+PricingProfileSource = Literal["default_list", "customer_supplied"]
+
+
+class PricingProfile(BaseModel):
+    """A pricing profile representing agreement-type discounts.
+
+    This model represents customer-specific agreement discounts (EA/MCA/CSP/MOSP/
+    negotiated) as multipliers applied to list-price observations. It does NOT
+    contain pricing data itself; it contains the multiplier and metadata needed
+    to compute effective rates.
+
+    **Default posture:** discount_multiplier=1.0 (list price), source="default_list".
+    Rules can distinguish "no customer discount data" from "customer explicitly
+    provided 1.0".
+
+    **Currency matching:** Rules must verify `profile.currency == observation.currency`
+    before applying the multiplier. Cross-currency application is undefined behavior.
+
+    **Temporal validity:** Rules must verify `observation.observed_at` falls within
+    `[effective_from, effective_to]` if those fields are provided. The model does
+    not enforce temporal validation — rules are responsible for checking date ranges.
+
+    **Scope:** Profiles are scoped to a surface (azure/m365/github/ado). Rules filter
+    profiles by scope before applying. A customer with multiple agreements (EA for
+    Azure, CSP for M365) supplies multiple profiles.
+
+    **Out of scope (intentional design choices):**
+    - No hardcoded tenant-specific discount values anywhere in this model or its
+      defaults. The model REQUIRES customer-supplied data OR defaults to 1.0 (list).
+    - No auto-conversion of currencies. If profile.currency != observation.currency,
+      rules must reject the pairing or log a warning.
+    - No agreement-to-observation mapping logic. Rules join observations with profiles;
+      this model only defines the profile schema.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    agreement_type: AgreementType = Field(
+        ..., description="Agreement type (list, ea, mca, csp, mosp, negotiated)"
+    )
+    discount_multiplier: float = Field(
+        default=1.0,
+        ge=0.0,
+        le=1.0,
+        description="Discount multiplier applied to list price (0.0=free, 1.0=list, 0.85=15% discount)",
+    )
+    currency: Literal["USD"] = Field(
+        default="USD",
+        description="Currency for this pricing profile (must match observation currency)",
+    )
+    scope: PricingProfileScope = Field(
+        ..., description="What this profile applies to (azure, m365, github, ado)"
+    )
+    effective_from: str | None = Field(
+        default=None,
+        min_length=10,
+        max_length=10,
+        description="Profile effective start date (ISO 8601 YYYY-MM-DD)",
+    )
+    effective_to: str | None = Field(
+        default=None,
+        min_length=10,
+        max_length=10,
+        description="Profile effective end date (ISO 8601 YYYY-MM-DD)",
+    )
+    source: PricingProfileSource = Field(
+        default="default_list",
+        description="Provenance: default_list (no customer data) or customer_supplied",
+    )
+    notes: str | None = Field(default=None, description="Optional notes about this pricing profile")

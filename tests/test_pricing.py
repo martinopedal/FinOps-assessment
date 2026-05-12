@@ -631,6 +631,7 @@ def test_commitment_language_guardrail() -> None:
     from finops_assess.pricing import (
         AzureCommitmentDataset,
         AzureCommitmentObservation,
+        PricingProfile,
         SavingsPlanEligibleSpendObservation,
     )
 
@@ -675,11 +676,12 @@ def test_commitment_language_guardrail() -> None:
                     f"violates read-only posture (context: '{text[max(0, match.start() - 20) : match.end() + 20]}')"
                 )
 
-    # Models to check
+    # Models to check (commitment + pricing profile families)
     commitment_models = [
         AzureCommitmentObservation,
         SavingsPlanEligibleSpendObservation,
         AzureCommitmentDataset,
+        PricingProfile,
     ]
 
     for model_cls in commitment_models:
@@ -719,3 +721,242 @@ def test_commitment_language_guardrail() -> None:
     assert not _pattern_matches("backup", prohibited_patterns), (
         "Regex should NOT catch 'backup' (no prohibited verb)"
     )
+
+
+# ---------------------------------------------------------------------------
+# Pricing profile (agreement-type discounts) tests
+# ---------------------------------------------------------------------------
+
+
+def test_pricing_profile_round_trip() -> None:
+    """Minimal pricing profile serializes and deserializes correctly."""
+    from finops_assess.pricing import PricingProfile
+
+    profile = PricingProfile(
+        agreement_type="list",
+        scope="azure",
+    )
+    data = profile.model_dump()
+    profile2 = PricingProfile.model_validate(data)
+    assert profile2.agreement_type == "list"
+    assert profile2.discount_multiplier == 1.0
+    assert profile2.currency == "USD"
+    assert profile2.scope == "azure"
+    assert profile2.source == "default_list"
+    assert profile2.effective_from is None
+    assert profile2.effective_to is None
+    assert profile2.notes is None
+
+
+def test_pricing_profile_all_fields() -> None:
+    """Pricing profile with all optional fields populated."""
+    from finops_assess.pricing import PricingProfile
+
+    profile = PricingProfile(
+        agreement_type="ea",
+        discount_multiplier=0.85,
+        currency="USD",
+        scope="azure",
+        effective_from="2026-01-01",
+        effective_to="2026-12-31",
+        source="customer_supplied",
+        notes="Enterprise Agreement discount for FY2026",
+    )
+    assert profile.agreement_type == "ea"
+    assert profile.discount_multiplier == 0.85
+    assert profile.currency == "USD"
+    assert profile.scope == "azure"
+    assert profile.effective_from == "2026-01-01"
+    assert profile.effective_to == "2026-12-31"
+    assert profile.source == "customer_supplied"
+    assert profile.notes == "Enterprise Agreement discount for FY2026"
+
+
+def test_pricing_profile_forbid_extra() -> None:
+    """Extra fields in pricing profile are rejected (extra='forbid')."""
+    from finops_assess.pricing import PricingProfile
+
+    with pytest.raises(ValidationError) as exc_info:
+        PricingProfile(
+            agreement_type="list",
+            scope="azure",
+            extra_field="should_fail",  # type: ignore[call-arg]
+        )
+    assert "extra_field" in str(exc_info.value).lower()
+
+
+def test_pricing_profile_defaults() -> None:
+    """Pricing profile defaults: multiplier=1.0, source=default_list, currency=USD."""
+    from finops_assess.pricing import PricingProfile
+
+    profile = PricingProfile(
+        agreement_type="list",
+        scope="m365",
+    )
+    assert profile.discount_multiplier == 1.0
+    assert profile.source == "default_list"
+    assert profile.currency == "USD"
+
+
+def test_pricing_profile_multiplier_bounds() -> None:
+    """Pricing profile multiplier bounds: 0.0 <= multiplier <= 1.0."""
+    from finops_assess.pricing import PricingProfile
+
+    # multiplier < 0.0 rejected
+    with pytest.raises(ValidationError):
+        PricingProfile(
+            agreement_type="negotiated",
+            discount_multiplier=-0.1,
+            scope="azure",
+        )
+
+    # multiplier > 1.0 rejected
+    with pytest.raises(ValidationError):
+        PricingProfile(
+            agreement_type="negotiated",
+            discount_multiplier=1.5,
+            scope="azure",
+        )
+
+    # multiplier = 0.0 allowed (free tier)
+    profile_free = PricingProfile(
+        agreement_type="negotiated",
+        discount_multiplier=0.0,
+        scope="github",
+        source="customer_supplied",
+    )
+    assert profile_free.discount_multiplier == 0.0
+
+    # multiplier = 1.0 allowed (list price)
+    profile_list = PricingProfile(
+        agreement_type="list",
+        discount_multiplier=1.0,
+        scope="ado",
+    )
+    assert profile_list.discount_multiplier == 1.0
+
+    # multiplier in (0.0, 1.0) allowed
+    profile_discount = PricingProfile(
+        agreement_type="csp",
+        discount_multiplier=0.92,
+        scope="azure",
+        source="customer_supplied",
+    )
+    assert profile_discount.discount_multiplier == 0.92
+
+
+def test_pricing_profile_agreement_type_literals() -> None:
+    """Invalid agreement_type literals are rejected."""
+    from finops_assess.pricing import PricingProfile
+
+    # Valid agreement types
+    valid_types = ["list", "ea", "mca", "csp", "mosp", "negotiated"]
+    for agreement_type in valid_types:
+        profile = PricingProfile(
+            agreement_type=agreement_type,  # type: ignore[arg-type]
+            scope="azure",
+        )
+        assert profile.agreement_type == agreement_type
+
+    # Invalid agreement_type rejected
+    with pytest.raises(ValidationError):
+        PricingProfile(
+            agreement_type="invalid_type",  # type: ignore[arg-type]
+            scope="azure",
+        )
+
+
+def test_pricing_profile_scope_literals() -> None:
+    """Invalid scope literals are rejected."""
+    from finops_assess.pricing import PricingProfile
+
+    # Valid scopes
+    valid_scopes = ["azure", "m365", "github", "ado"]
+    for scope in valid_scopes:
+        profile = PricingProfile(
+            agreement_type="list",
+            scope=scope,  # type: ignore[arg-type]
+        )
+        assert profile.scope == scope
+
+    # Invalid scope rejected
+    with pytest.raises(ValidationError):
+        PricingProfile(
+            agreement_type="list",
+            scope="invalid_scope",  # type: ignore[arg-type]
+        )
+
+
+def test_pricing_profile_source_literals() -> None:
+    """Invalid source literals are rejected."""
+    from finops_assess.pricing import PricingProfile
+
+    # Valid sources
+    valid_sources = ["default_list", "customer_supplied"]
+    for source in valid_sources:
+        profile = PricingProfile(
+            agreement_type="list",
+            scope="azure",
+            source=source,  # type: ignore[arg-type]
+        )
+        assert profile.source == source
+
+    # Invalid source rejected
+    with pytest.raises(ValidationError):
+        PricingProfile(
+            agreement_type="list",
+            scope="azure",
+            source="invalid_source",  # type: ignore[arg-type]
+        )
+
+
+def test_pricing_profile_effective_date_format() -> None:
+    """Effective dates must be exactly 10 characters (YYYY-MM-DD)."""
+    from finops_assess.pricing import PricingProfile
+
+    # ISO 8601 timestamp rejected (too long)
+    with pytest.raises(ValidationError):
+        PricingProfile(
+            agreement_type="ea",
+            scope="azure",
+            effective_from="2026-01-01T00:00:00Z",
+        )
+
+    # Short date rejected
+    with pytest.raises(ValidationError):
+        PricingProfile(
+            agreement_type="ea",
+            scope="azure",
+            effective_from="2026-01",
+        )
+
+    # Valid YYYY-MM-DD accepted
+    profile = PricingProfile(
+        agreement_type="ea",
+        scope="azure",
+        effective_from="2026-01-01",
+        effective_to="2026-12-31",
+    )
+    assert profile.effective_from == "2026-01-01"
+    assert profile.effective_to == "2026-12-31"
+
+
+def test_pricing_profile_currency_non_usd_rejected() -> None:
+    """Non-USD currency is rejected (Literal['USD'])."""
+    from finops_assess.pricing import PricingProfile
+
+    # USD is accepted (default)
+    profile_usd = PricingProfile(
+        agreement_type="list",
+        scope="azure",
+        currency="USD",
+    )
+    assert profile_usd.currency == "USD"
+
+    # Non-USD currency rejected
+    with pytest.raises(ValidationError):
+        PricingProfile(
+            agreement_type="ea",
+            scope="azure",
+            currency="EUR",  # type: ignore[arg-type]
+        )

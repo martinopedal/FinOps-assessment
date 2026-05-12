@@ -364,9 +364,7 @@ offline workflow and outputs.
 
 ### Open questions
 
-1. Should the catalogue carry **EA / CSP discount tiers** as multipliers,
-   or assume list price and document the gap? *Proposed: list price in
-   v1, multiplier file once Cost Management ingest is in place.*
+1. **RESOLVED (PR #30):** Pricing profiles are customer-supplied inputs, NOT catalogue constants. Default posture is list price (multiplier=1.0, source=default_list). Agreement discounts (EA/MCA/CSP/MOSP/negotiated) are modeled as optional `PricingProfile` inputs with explicit currency, scope, and temporal bounds. Rules join observations with profiles; the model enforces no tenant-specific rate cards in the repo.
 2. Persona inference confidence, surface as a column? *Yes; rules with
    confidence < 0.7 are downgraded to "advisory".*
 3. How to handle **per-user Copilot for M365** vs **GitHub Copilot** vs
