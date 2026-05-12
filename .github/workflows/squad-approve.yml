@@ -1,0 +1,149 @@
+name: Squad Auto-Approve
+
+# Auto-approves a squad PR when the repository owner posts Noor's Stage-4
+# adversarial verdict as a PR comment. The `github-actions[bot]` review
+# this workflow submits counts as a separate review identity for branch
+# protection's `required_approving_review_count`, so the owner no longer
+# needs to toggle `enforce_admins` off to merge routine squad PRs.
+#
+# Trust model
+# -----------
+# Branch protection's review-count rule exists to prevent self-merge of
+# un-reviewed PRs. Noor (claude-opus-4.7) genuinely performs the §11
+# Stage-4 adversarial review; this workflow simply lets the Coordinator's
+# posted verdict count mechanically. Gating (all must hold):
+#
+#   1. Event is `issue_comment.created` (NOT `.edited` — prevents
+#      retroactive approval forging by editing an old comment).
+#   2. The comment is on a pull request (not a plain issue).
+#   3. The comment author is the repository owner. Forged "VERDICT:
+#      APPROVE" comments from non-owners are ignored.
+#   4. The PR carries at least one `squad:*` label. Non-squad PRs are
+#      out of scope for this mechanism.
+#   5. The comment body contains the Stage-4 marker (`Stage-4
+#      Adversarial Review` + `Noor`) AND the verdict line resolves to
+#      exactly `APPROVE` (REQUEST_CHANGES / BLOCK / REJECT / anything
+#      else → no-op).
+#
+# Scope limits
+# ------------
+# This workflow only ever calls `pulls.createReview` with `event:
+# APPROVE`. It never pushes commits, modifies files, closes issues, or
+# merges PRs. It only approves; merge remains a Coordinator action.
+# See issue #47 for the design discussion and alternatives (B–E).
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  auto-approve:
+    # Cheap pre-filter so the job is skipped entirely for issue comments
+    # that aren't on a PR or aren't authored by the repo owner. The
+    # in-script gates below are the authoritative check.
+    if: >-
+      github.event.issue.pull_request != null &&
+      github.event.comment.user.login == github.event.repository.owner.login
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate verdict and approve if eligible
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const prNumber = context.payload.issue.number;
+            const comment = context.payload.comment;
+            const body = comment.body || '';
+
+            // Re-assert owner gate inside the script (defence in depth —
+            // the `if:` already checked, but keep this explicit so the
+            // logs show why we proceeded).
+            const repoOwner = context.payload.repository.owner.login;
+            if (comment.user.login !== repoOwner) {
+              core.info(`Comment author ${comment.user.login} is not repo owner ${repoOwner}; skipping.`);
+              return;
+            }
+
+            // Stage-4 marker: both phrases must appear. We check them
+            // independently so the em-dash glyph between them is not
+            // load-bearing.
+            const hasStage4Marker =
+              /Stage-4 Adversarial Review/i.test(body) && /\bNoor\b/.test(body);
+            if (!hasStage4Marker) {
+              core.info('Comment does not contain the Stage-4 / Noor marker; skipping.');
+              return;
+            }
+
+            // Verdict extraction. Accepts `VERDICT: APPROVE`, `VERDICT:
+            // **APPROVE**`, surrounding whitespace, mixed case. Rejects
+            // anything that resolves to a non-APPROVE token
+            // (REQUEST_CHANGES, BLOCK, REJECT, ...).
+            const verdictMatch = body.match(/VERDICT:\s*\**\s*([A-Za-z_]+)\s*\**/);
+            if (!verdictMatch) {
+              core.info('No VERDICT: line found; skipping.');
+              return;
+            }
+            const verdict = verdictMatch[1].toUpperCase();
+            if (verdict !== 'APPROVE') {
+              core.info(`Verdict is "${verdict}", not APPROVE; skipping.`);
+              return;
+            }
+
+            // Fetch the PR to check labels and head-repo (fork guard).
+            const { data: pr } = await github.rest.pulls.get({
+              owner, repo, pull_number: prNumber,
+            });
+
+            const hasSquadLabel = (pr.labels || []).some(l =>
+              typeof l.name === 'string' && l.name.startsWith('squad:')
+            );
+            if (!hasSquadLabel) {
+              core.info('PR has no squad:* label; skipping.');
+              return;
+            }
+
+            // Fork guard: squad PRs are intra-repo by convention. If a
+            // PR ever arrives from a fork, GITHUB_TOKEN cannot approve
+            // it anyway — log and exit gracefully rather than 403'ing.
+            if (pr.head.repo && pr.head.repo.full_name !== `${owner}/${repo}`) {
+              core.warning(
+                `PR head is from fork ${pr.head.repo.full_name}; ` +
+                `GITHUB_TOKEN cannot approve cross-repo PRs. Skipping.`
+              );
+              return;
+            }
+
+            // Idempotency: if github-actions[bot] has already approved
+            // this PR, don't stack a second review.
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner, repo, pull_number: prNumber,
+            });
+            const alreadyApproved = reviews.some(r =>
+              r.user && r.user.login === 'github-actions[bot]' && r.state === 'APPROVED'
+            );
+            if (alreadyApproved) {
+              core.info('github-actions[bot] has already approved this PR; skipping.');
+              return;
+            }
+
+            const reviewBody = [
+              `Auto-approved by \`.github/workflows/squad-approve.yml\` on behalf of Noor's Stage-4 verdict.`,
+              ``,
+              `- Triggering comment: ${comment.html_url}`,
+              `- Verdict: \`APPROVE\``,
+              `- Squad label: \`${(pr.labels.find(l => l.name.startsWith('squad:')) || {}).name}\``,
+              ``,
+              `See issue #47 for the design rationale. The owner-posted Noor verdict is the human-reviewed signal; this approval lets it satisfy branch protection mechanically.`,
+            ].join('\n');
+
+            await github.rest.pulls.createReview({
+              owner, repo, pull_number: prNumber,
+              event: 'APPROVE',
+              body: reviewBody,
+            });
+            core.info(`Approved PR #${prNumber} on behalf of Noor's verdict.`);
