@@ -192,6 +192,29 @@ class AzureLogWorkspace(BaseModel):
     monthly_cost_usd: float | None = Field(default=None, ge=0)
 
 
+class AzureRegionPriceObservation(BaseModel):
+    """A point-in-time Azure regional price observation for one SKU/meter.
+
+    These rows are volatile observations from sources such as the Azure
+    Retail Prices API or a customer export. They are intentionally separate
+    from the static SKU catalogue under ``data/catalog/``.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    region: str = Field(..., min_length=1)
+    sku_name: str = Field(..., min_length=1)
+    meter_id: str = Field(..., min_length=1)
+    unit_price: float = Field(..., ge=0)
+    source: Literal["azure_retail_prices_api", "customer_export"] = "azure_retail_prices_api"
+    observed_at: str | None = None
+    meter_name: str | None = None
+    arm_sku_name: str | None = None
+    unit_of_measure: str | None = None
+    currency_code: str = Field(default="USD", min_length=3, max_length=3)
+    retail_price: float | None = Field(default=None, ge=0)
+
+
 GitHubSeatType = Literal[
     "enterprise",
     "team",
@@ -303,6 +326,7 @@ class NormalizedDataset(BaseModel):
     azure_resources: list[AzureResource] = Field(default_factory=list)
     azure_reservations: list[AzureReservation] = Field(default_factory=list)
     azure_log_workspaces: list[AzureLogWorkspace] = Field(default_factory=list)
+    azure_region_prices: list[AzureRegionPriceObservation] = Field(default_factory=list)
     github_seats: list[GitHubSeat] = Field(default_factory=list)
     github_orgs: list[GitHubOrg] = Field(default_factory=list)
     ado_seats: list[AdoSeat] = Field(default_factory=list)

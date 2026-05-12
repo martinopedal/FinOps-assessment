@@ -34,6 +34,7 @@ def test_collect_handles_missing_files(tmp_path: Path) -> None:
     assert dataset.azure_resources == []
     assert dataset.azure_reservations == []
     assert dataset.azure_log_workspaces == []
+    assert dataset.azure_region_prices == []
     assert dataset.github_seats == []
     assert dataset.github_orgs == []
     assert dataset.ado_seats == []
@@ -70,6 +71,34 @@ def test_collect_parses_lists_via_pipe_separator(tmp_path: Path) -> None:
     )
     dataset = collect_from_directory(tmp_path)
     assert dataset.users[0].groups == ["sales", "all-staff"]
+
+
+def test_collect_parses_azure_region_price_observation_with_defaults(tmp_path: Path) -> None:
+    (tmp_path / "azure_region_prices.csv").write_text(
+        "region,sku_name,meter_id,unit_price\n"
+        "westeurope,Standard_D2s_v5,11111111-1111-1111-1111-111111111111,0.12\n",
+        encoding="utf-8",
+    )
+    dataset = collect_from_directory(tmp_path)
+    observation = dataset.azure_region_prices[0]
+
+    assert observation.region == "westeurope"
+    assert observation.sku_name == "Standard_D2s_v5"
+    assert observation.meter_id == "11111111-1111-1111-1111-111111111111"
+    assert observation.unit_price == pytest.approx(0.12)
+    assert observation.source == "azure_retail_prices_api"
+    assert observation.currency_code == "USD"
+    assert observation.retail_price is None
+
+
+def test_collect_rejects_unknown_azure_region_price_columns(tmp_path: Path) -> None:
+    (tmp_path / "azure_region_prices.csv").write_text(
+        "region,sku_name,meter_id,unit_price,unexpected\n"
+        "westeurope,Standard_D2s_v5,11111111-1111-1111-1111-111111111111,0.12,oops\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="unknown CSV column"):
+        collect_from_directory(tmp_path)
 
 
 def test_collect_rejects_rows_with_extra_cells(tmp_path: Path) -> None:

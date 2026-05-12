@@ -192,7 +192,7 @@ def triage(
     type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
     required=True,
     help="Directory containing normalised CSV files (users.csv, license_assignments.csv, "
-    "usage.csv, azure_resources.csv) and an optional overrides.yaml.",
+    "usage.csv, azure_resources.csv, azure_region_prices.csv) and an optional overrides.yaml.",
 )
 @click.option(
     "--output",

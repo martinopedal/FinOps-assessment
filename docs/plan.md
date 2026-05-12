@@ -381,6 +381,9 @@ thin-slice PRs for FinOps Toolkit / FOCUS / Hubs alignment, Azure region price
 comparisons, agreement discount profiles, RI and Savings Plan reviews, M365 /
 Entra / Copilot / security / GSA SKU-mix reviews, data-collection frontiers,
 practice-review outputs, and optional GitHub Copilot / Azure MCP assistance.
+The first Azure pricing-intelligence contract is now defined as optional
+`azure_region_prices.csv` observations (see `docs/schema.md`) and remains
+separate from static catalogue entries under `data/catalog/`.
 
 Local operator skill and runbook ideas are indexed in
 [`docs/skills/README.md`](skills/README.md). They are draft documentation only:

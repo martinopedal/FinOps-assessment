@@ -188,6 +188,26 @@ rule engine reads). Every live collector (`graph`, `arm`, `github`,
 | `est_savings_pct` | `float \| null` | Estimated savings if moved to the recommended tier |
 | `monthly_cost_usd` | `float \| null` | Current monthly workspace cost |
 
+### `AzureRegionPriceObservation`: `azure_region_prices.csv` (optional)
+
+This contract captures **volatile pricing observations** (for example, Azure
+Retail Prices API snapshots), not catalogue constants. Keep these rows outside
+`data/catalog/`.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `region` | `str` | Public Azure region name (for example, `westeurope`) |
+| `sku_name` | `str` | Human-facing SKU label seen in the source |
+| `meter_id` | `str` | Source meter identifier |
+| `unit_price` | `float` | Observed unit price for the row |
+| `source` | `"azure_retail_prices_api" \| "customer_export"` | Default `"azure_retail_prices_api"` |
+| `observed_at` | `str \| null` | Optional observation timestamp |
+| `meter_name` | `str \| null` | Source meter name |
+| `arm_sku_name` | `str \| null` | ARM SKU label when available |
+| `unit_of_measure` | `str \| null` | Unit (for example, `1 Hour`) |
+| `currency_code` | `str` | Default `"USD"` |
+| `retail_price` | `float \| null` | Optional list/retail comparison value |
+
 ### `GitHubSeat`: `samples/github_seats.csv`
 
 | Column | Type | Notes |
@@ -246,6 +266,7 @@ rule engine.
 | `azure_resources` | `list[AzureResource]` | `azure_resources.csv` |
 | `azure_reservations` | `list[AzureReservation]` | `azure_reservations.csv` |
 | `azure_log_workspaces` | `list[AzureLogWorkspace]` | `azure_log_workspaces.csv` |
+| `azure_region_prices` | `list[AzureRegionPriceObservation]` | `azure_region_prices.csv` |
 | `github_seats` | `list[GitHubSeat]` | `github_seats.csv` |
 | `github_orgs` | `list[GitHubOrg]` | `github_orgs.csv` |
 | `ado_seats` | `list[AdoSeat]` | `ado_seats.csv` |
