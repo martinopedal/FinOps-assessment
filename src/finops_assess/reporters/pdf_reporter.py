@@ -41,6 +41,8 @@ from typing import TYPE_CHECKING, Any
 
 from jinja2 import Environment, FunctionLoader, select_autoescape
 
+from finops_assess.reporters.practice_review import render_practice_review_section
+
 if TYPE_CHECKING:  # pragma: no cover - import only for type checking
     pass
 
@@ -314,6 +316,7 @@ def build_pdf_html(report: dict[str, Any], branding: Branding | None = None) -> 
         top_surfaces=_top_surfaces_by_savings(findings),
         surface_labels=_SURFACE_LABELS,
         branding=branding,
+        practice_review_html=render_practice_review_section(report),
     )
 
 
