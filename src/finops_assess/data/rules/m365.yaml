@@ -24,9 +24,8 @@
   severity: medium
   summary: User holds both a bundle SKU and a child SKU it already includes.
   recommendation_template: >
-    {principal} has {current_sku} which already includes the
-    capabilities of the additionally-assigned {duplicate_sku}.
-    Remove {duplicate_sku}.
+    {principal} has {current_sku}, which already covers the
+    capabilities of {duplicate_sku}. Remove {duplicate_sku}.
 
 - id: M365.DISABLED_USER_LICENSED
   surface: m365

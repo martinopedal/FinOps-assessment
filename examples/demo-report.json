@@ -658,7 +658,7 @@
       "current_sku": "SPE_E3",
       "recommended_sku": null,
       "estimated_monthly_savings_usd": 10.0,
-      "recommendation": "sha256:cb7859dadf6104a6 has SPE_E3 which already includes the capabilities of the additionally-assigned SHAREPOINTENTERPRISE. Remove SHAREPOINTENTERPRISE.",
+      "recommendation": "sha256:cb7859dadf6104a6 has SPE_E3, which already covers the capabilities of SHAREPOINTENTERPRISE. Remove SHAREPOINTENTERPRISE.",
       "evidence_ref": null,
       "confidence": "high",
       "evidence": {
