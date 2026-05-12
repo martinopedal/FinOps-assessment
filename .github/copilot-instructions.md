@@ -51,7 +51,7 @@ decisions, and broken cross-PR continuity.
    Treat them as squad short-term memory: verify any that are relevant
    to your task, refresh them with `store_memory` if still accurate,
    and correct or discard any that have been superseded by recent
-   changes in steps 0–5.
+   changes in steps 0 to 5.
 
 If any of these reads contradict the user's stated request, surface
 the conflict in your first response rather than silently picking one.
@@ -196,6 +196,8 @@ does not need an update, say so in the PR description.
 
 **Docs voice:** see `.squad/skills/docs-voice/SKILL.md` for the operational style rules.
 
+**Agentic FinOps architecture:** see `.squad/skills/agentic-finops/SKILL.md` for the binding contract on any feature that takes action OUTSIDE this tool's process boundary based on findings (issue #63 remediation-PR drafter, issue #11 catalogue drift watcher, future agentic CLI subcommands). Operator-facing version of the same architecture lives at `docs/agentic-finops.md`.
+
 ## Out of scope (don't add without an issue)
 
 - Mutation / remediation paths.
@@ -252,7 +254,7 @@ delivered through the five-stage loop documented in `docs/plan.md`
    Code/data/doc changes + tests + a `parallel_validation` gate (code
    review + CodeQL) before opening the PR.
 
-Stages 1–3 produce artefacts that live in the PR description (or in
+Stages 1 to 3 produce artefacts that live in the PR description (or in
 `docs/decisions/` for cross-PR decisions) so future contributors can
 reconstruct *why* a choice was made, not just *what* changed.
 
