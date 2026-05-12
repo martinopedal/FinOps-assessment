@@ -2,7 +2,7 @@
 
 These instructions apply to every Copilot-assisted change in this repo
 (coding agent, chat, and PR review). Keep them short, concrete, and
-**aligned with `docs/plan.md`** — that document is the source of truth
+**aligned with `docs/plan.md`** , that document is the source of truth
 for scope, milestones, and the data contract.
 
 ## What this project is
@@ -11,7 +11,7 @@ A **read-only** FinOps assessment tool that audits licensing, identity,
 usage, and cost across the **Microsoft ecosystem**: Microsoft 365
 (incl. Entra/EMS/Defender/Purview/Power Platform), Azure, **GitHub**,
 and **Azure DevOps**. It emits right-sizing and savings findings with
-evidence — it never mutates the systems it inspects.
+evidence , it never mutates the systems it inspects.
 
 ## Session start: load context before doing any work
 
@@ -24,17 +24,17 @@ decisions, and broken cross-PR continuity.
    tool) to fetch the most recent runs on `main`. If any CI job is
    failing, surface the failure in your first response and investigate
    with `get_job_logs` before touching any other file. Do **not**
-   start feature work while `main` is red — fix CI first or hand off
+   start feature work while `main` is red , fix CI first or hand off
    to the tester squad member (`squad:tester`).
 1. **Read this file in full** (`.github/copilot-instructions.md`) and
-   `docs/plan.md` — the plan is the source of truth for scope and
+   `docs/plan.md` , the plan is the source of truth for scope and
    the §11 delivery loop.
 2. **Scan recent pull requests** (open *and* recently-merged/closed,
    sorted by `updated`) using the GitHub MCP tools. Read at least the
    titles and descriptions of the most recent ~10 to understand what
    has just shipped, what is in flight, and what conventions prior
    sessions established. Pay special attention to any PR authored by
-   `@copilot` or carrying a `squad:*` label — these represent agent
+   `@copilot` or carrying a `squad:*` label , these represent agent
    history. If your task overlaps a PR that is still open, coordinate
    with that branch instead of forking the work.
 3. **Scan open issues**, especially anything with a `squad:*` label,
@@ -42,7 +42,7 @@ decisions, and broken cross-PR continuity.
    are picking up.
 4. **Read `.squad/team.md`, `.squad/routing.md`, and the relevant
    `.squad/agents/{member}/charter.md`** if the issue or PR carries a
-   `squad:{member}` label — work in that member's voice and within
+   `squad:{member}` label , work in that member's voice and within
    their boundaries.
 5. **Check `.squad/decisions.md` and `.squad/decisions/inbox/`** for
    prior cross-PR decisions that constrain your approach.
@@ -60,7 +60,7 @@ the conflict in your first response rather than silently picking one.
 
 Any session that produces file changes **must** end with a pull
 request, and the final assistant reply **must** include the PR URL.
-This is the default — it does not require the user to ask for a PR.
+This is the default , it does not require the user to ask for a PR.
 
 - If you made edits, you must have called `report_progress` at least
   once (this creates the draft PR on first call).
@@ -72,12 +72,12 @@ This is the default — it does not require the user to ask for a PR.
   `PR: https://github.com/martinopedal/FinOps-assessment/pull/N`, so
   the user can jump to it without searching.
 - A session that produced **no** file changes (pure Q&A, planning,
-  or analysis) does **not** open a PR — but its final reply must
+  or analysis) does **not** open a PR , but its final reply must
   still link to any issues or prior PRs it referenced.
 - Never end a session that touched files without either a PR link
   or an explicit, written reason why no PR was opened (e.g. user
   cancelled mid-task). "Ran out of turns" is not an acceptable
-  reason — call `report_progress` early and often so the work is at
+  reason , call `report_progress` early and often so the work is at
   least preserved on a branch.
 
 ## Hard rules (non-negotiable)
@@ -110,7 +110,7 @@ This is the default — it does not require the user to ask for a PR.
   rich SDK coverage for Graph/Azure/GitHub/ADO, and the same engine can
   run locally, in CI, and in containers. CI exercises every push on
   the full `{ubuntu-latest, windows-latest, macos-latest} × {3.11,
-  3.12}` matrix — **never introduce OS-specific code paths, paths
+  3.12}` matrix , **never introduce OS-specific code paths, paths
   built with `os.sep`/`\\`, or shell-only invocations that wouldn't
   work in `cmd.exe` and `pwsh` and `bash`**. Use `pathlib.Path`,
   `subprocess` with a list-form `args`, and `importlib.resources` for
@@ -166,7 +166,7 @@ path arithmetic when reading bundled YAML.
   `id`, `surface`, `severity`, `summary`, `recommendation_template`.
   Rule IDs follow `SURFACE.SHORT_NAME`, screaming-snake-case (e.g.,
   `M365.UNUSED_LICENSE_30D`). When you add a rule, also reference its
-  ID in `docs/plan.md` §6 — keep the plan and the YAML in sync.
+  ID in `docs/plan.md` §6 , keep the plan and the YAML in sync.
 - **Recommendation wording must be conservative.** A rule's
   `recommendation_template` should phrase the action as *"consider"*
   or *"verify and then…"* rather than an absolute "remove", because
@@ -194,6 +194,8 @@ matching docs in the same PR before merge. At minimum, check `README.md`,
 `docs/user-guide.md`, and generated example reports for drift. If a doc
 does not need an update, say so in the PR description.
 
+**Docs voice:** see `.squad/skills/docs-voice/SKILL.md` for the operational style rules.
+
 ## Out of scope (don't add without an issue)
 
 - Mutation / remediation paths.
@@ -208,25 +210,25 @@ does not need an update, say so in the PR description.
 - Prefer `importlib.resources.files()` for packaged data over
   `__file__`-relative paths.
 - Docstrings on every public symbol; one-line summary + optional body.
-- No `print()` in library code — use `click.echo` in CLI, `logging`
+- No `print()` in library code , use `click.echo` in CLI, `logging`
   elsewhere.
 
 ## Per-step delivery process (multi-agent)
 
-Every milestone — and every non-trivial sub-task within one — is
+Every milestone , and every non-trivial sub-task within one , is
 delivered through the five-stage loop documented in `docs/plan.md`
 §11. Copilot agents working on this repo **must** follow it:
 
 1. **Research** (`explore` agent, parallel-safe; Haiku). Produce a short
    brief: relevant API surfaces, SKU IDs, prior-art links, public
-   docs, identified unknowns. Read-only — no edits.
+   docs, identified unknowns. Read-only , no edits.
 2. **Rubberduck** (`general-purpose`; Sonnet). Plain-English walkthrough
    of the proposed approach against the brief: what could go wrong,
    edge cases, false-positive risks, security implications, alternatives
    considered.
-3. **Plan** (`general-purpose`; **Opus 4.7 — always**). Concrete
+3. **Plan** (`general-purpose`; **Opus 4.7 , always**). Concrete
    checklist of file-level changes (paths, schemas, rule IDs), tests to
-   add, and acceptance criteria — small enough to fit in one PR. Posted
+   add, and acceptance criteria , small enough to fit in one PR. Posted
    into the PR description **before** any edits. Plan owns the most
    consequential reasoning of the loop; we never trade capability for
    cost here. If Opus 4.7 is unavailable, **block** stage 3 rather than
@@ -237,7 +239,7 @@ delivered through the five-stage loop documented in `docs/plan.md`
    silently overriding it. "No objections within X" never counts as
    consensus for security-relevant or schema-changing work. For squad
    PRs, the Coordinator posts Noor's verdict as a PR comment using the
-   marker `**Stage-4 Adversarial Review — Noor**` and a `VERDICT:
+   marker `**Stage-4 Adversarial Review , Noor**` and a `VERDICT:
    APPROVE` line; `.github/workflows/squad-approve.yml` then submits a
    `github-actions[bot]` approval so branch protection's review-count
    rule is satisfied without an `enforce_admins` toggle dance (see
@@ -255,7 +257,7 @@ Stages 1–3 produce artefacts that live in the PR description (or in
 reconstruct *why* a choice was made, not just *what* changed.
 
 When an agent fails or hits a dead end, the next agent must restate
-the brief from stage 1 in its own words before proceeding — this
+the brief from stage 1 in its own words before proceeding , this
 catches misunderstandings early and prevents single-agent tunnel
 vision. Agents are stateless across invocations; the PR is the shared
 memory.
@@ -271,15 +273,15 @@ relevant `squad:{member}` label event.
 
 The cloud-agent surface:
 
-- `squad-triage.yml` — fires on `issues: labeled` with the `squad`
+- `squad-triage.yml` , fires on `issues: labeled` with the `squad`
   label; Lead triages and applies one `squad:{member}` label.
-- `squad-issue-assign.yml` — fires on `issues: labeled` with any
+- `squad-issue-assign.yml` , fires on `issues: labeled` with any
   `squad:{member}` label; posts routing acknowledgment + (if
   `squad:copilot` and a PAT is configured) auto-assigns `@copilot`.
-- `squad-pr-route.yml` — fires on `pull_request_target: labeled`;
+- `squad-pr-route.yml` , fires on `pull_request_target: labeled`;
   mirrors the issue-assign behaviour for PRs so labelling a PR with
   `squad:{member}` posts the same routing acknowledgment.
-- `sync-squad-labels.yml` — fires on push when `.squad/team.md`
+- `sync-squad-labels.yml` , fires on push when `.squad/team.md`
   changes; ensures every `squad:{member}` label exists in the repo.
 
 When picking up an issue **or PR review** autonomously as `@copilot`:
@@ -297,7 +299,7 @@ When picking up an issue **or PR review** autonomously as `@copilot`:
    `.squad/decisions/inbox/copilot-{slug}.md`; the Scribe will merge
    it into `.squad/decisions.md`.
 
-🔴 (not-suitable) issues — security-sensitive work, schema changes,
+🔴 (not-suitable) issues , security-sensitive work, schema changes,
 catalogue-pricing edits, and anything that would relax the read-only
-posture — must not be picked up autonomously. Comment on the issue
+posture , must not be picked up autonomously. Comment on the issue
 asking the Lead to reassign to a human squad member.

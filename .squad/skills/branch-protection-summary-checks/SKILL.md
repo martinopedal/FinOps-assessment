@@ -26,9 +26,9 @@
                core.info('All required upstream jobs succeeded.');
              }
    ```
-   - `if: always()` matters: without it, the summary is `skipped` when an upstream job fails, and a `skipped` check does not satisfy protection — but it also doesn't *fail* it, so the PR sits forever.
+   - `if: always()` matters: without it, the summary is `skipped` when an upstream job fails, and a `skipped` check does not satisfy protection , but it also doesn't *fail* it, so the PR sits forever.
    - Filter on `result !== 'success'` (not `=== 'failure'`) so `cancelled` and `skipped` also fail the contract.
-   - Use kebab-case for the job `name:` — branch-protection contexts shouldn't carry spaces if you can avoid it.
+   - Use kebab-case for the job `name:` , branch-protection contexts shouldn't carry spaces if you can avoid it.
 
 2. **Operator handoff (post-merge, by a different agent than the PR author):** after the PR merges, swap the protection contract:
    ```bash
@@ -37,7 +37,7 @@
      --raw-field 'contexts[]=required-checks' \
      --field 'strict=true'
    ```
-   This must be a separate step *after* merge because branch-protection is repo-state, not branch-state — the PR cannot modify the rule that gates its own merge.
+   This must be a separate step *after* merge because branch-protection is repo-state, not branch-state , the PR cannot modify the rule that gates its own merge.
 
 3. **Bootstrap cost:** the PR introducing the summary job itself still needs one final `enforce_admins` toggle-dance to merge, because protection still requires the *old* (broken) context until the PATCH lands. Document this in the PR body so the operator isn't surprised.
 
@@ -56,7 +56,7 @@
 
 ## Pitfall: workflow-level `name:` is not a check context
 
-A common cause of this bug is assuming `name: CI` at the workflow root publishes a `CI` check. It does not — only **job** names (with matrix expansion) are published as check contexts. Branch-protection that references the workflow name will never be satisfied.
+A common cause of this bug is assuming `name: CI` at the workflow root publishes a `CI` check. It does not , only **job** names (with matrix expansion) are published as check contexts. Branch-protection that references the workflow name will never be satisfied.
 
 ## Provenance
 
