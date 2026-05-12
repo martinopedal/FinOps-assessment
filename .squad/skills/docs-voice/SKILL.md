@@ -65,7 +65,7 @@ Permitted emojis across all docs of record:
 - The squad role badges, because they are functional UI in routing tables and team rosters: `🏗️` `⚛️` `🔧` `🧪` `📋` `🔄`.
 - The capability traffic-light glyphs where they are load-bearing labels in routing (`🟢` `🟡` `🔴` inside `.squad/team.md`, `.squad/routing.md`, and the capability columns they feed). Outside those routing surfaces, strip them.
 
-Strip every other emoji on sight. Common offenders to remove: `🚀` `🎉` `💡` `🔥` `✨` `🤖` `📝` `📌` `🛠️` `⚠️` `🔒` `⚡` `🎯` `🔑` `🌟` `📦` `🧠` `🔍`.
+Strip every other emoji on sight. Common offenders to remove: `` `` `` `` `` `` `` `` `` `` `` `` `` `` `` `` `` ``.
 
 ### Rule B. Em-dash policy: full sweep, except historical logs
 
@@ -142,7 +142,7 @@ After:
 
 Before:
 
-> 🚀 New rule: ⚠️ never push secrets to the repo. 💡 Use OIDC instead.
+>  New rule:  never push secrets to the repo.  Use OIDC instead.
 
 After:
 

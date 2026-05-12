@@ -27,7 +27,7 @@ CSV or live-collector run writes:
 
 ```console
 $ finops-assess demo --output-dir ./demo-report
-OK — demo run produced 34 findings across 23 rules.
+OK , demo run produced 34 findings across 23 rules.
   JSON: demo-report/demo-report.json
   HTML: demo-report/demo-report.html
   CSV:  demo-report/demo-report.csv
@@ -35,11 +35,11 @@ OK — demo run produced 34 findings across 23 rules.
 
 Committed examples are available without installing the package:
 
-- [`examples/demo-report.html`](../examples/demo-report.html) — self-contained,
+- [`examples/demo-report.html`](../examples/demo-report.html) , self-contained,
   print-friendly report preview.
-- [`examples/demo-report.json`](../examples/demo-report.json) — full structured
+- [`examples/demo-report.json`](../examples/demo-report.json) , full structured
   report with summary, findings, and evidence.
-- [`examples/demo-report.csv`](../examples/demo-report.csv) — one row per finding
+- [`examples/demo-report.csv`](../examples/demo-report.csv) , one row per finding
   for pivots and exports.
 
 The sample input files under [`samples/`](../samples/) are synthetic illustrative
@@ -56,10 +56,10 @@ then run either the synthetic demo, normalized CSVs, or live read-only collector
 
 ```console
 $ finops-assess validate
-OK — catalog: 87 SKUs, personas: 7, rules: 23
+OK , catalog: 87 SKUs, personas: 7, rules: 23
 
 $ finops-assess demo --output-dir ./demo-report
-OK — demo run produced 34 findings across 23 rules.
+OK , demo run produced 34 findings across 23 rules.
   JSON: demo-report/demo-report.json
   HTML: demo-report/demo-report.html
   CSV:  demo-report/demo-report.csv
@@ -90,7 +90,7 @@ The evidence says the persona only requires `intune.mam`, `mailbox.2gb`,
 The report recommends considering `SPE_F3`, with an estimated monthly savings of
 `$49.00` for that assignment.
 
-What this gives you: a conversation-ready exception list for license owners —
+What this gives you: a conversation-ready exception list for license owners ,
 not just "unused," but "current SKU exceeds the persona's required features."
 
 ### Unused premium capabilities: E5 features not exercised
@@ -149,8 +149,8 @@ After a JSON report exists, generate a schema-versioned analyst queue:
 
 ```console
 $ finops-assess triage --input demo-report/demo-report.json --output-dir ./triage
-OK — wrote advisory triage JSON to triage/triage.json
-OK — wrote advisory triage CSV to triage/triage.csv
+OK , wrote advisory triage JSON to triage/triage.json
+OK , wrote advisory triage CSV to triage/triage.csv
 Advisory triage items: 34
 ```
 
@@ -209,15 +209,15 @@ schema/rule change with tests and conservative wording.
 
 The current rule reference lists **23 implemented rules** across four surfaces:
 
-- **Microsoft 365** — unused licenses, persona over-licensing, duplicate bundles,
+- **Microsoft 365** , unused licenses, persona over-licensing, duplicate bundles,
   disabled users with licenses, shared mailbox licensing, guest premium seats,
   inactive Copilot for M365, and E5 premium-feature inactivity.
-- **Azure** — idle VMs, unattached disks, unattached public IPs, oversized VMs,
+- **Azure** , idle VMs, unattached disks, unattached public IPs, oversized VMs,
   underutilized reservations, Log Analytics over-ingest, and Dev/Test pricing
   mismatch.
-- **GitHub** — inactive enterprise seats, inactive Copilot seats, over-provisioned
+- **GitHub** , inactive enterprise seats, inactive Copilot seats, over-provisioned
   GHAS, and runner tier mismatch.
-- **Azure DevOps** — inactive Basic seats, Stakeholder-eligible users,
+- **Azure DevOps** , inactive Basic seats, Stakeholder-eligible users,
   over-provisioned parallel jobs, and unused Test Plans seats.
 
 Cross-cutting capabilities include the persona engine, deterministic demo data,

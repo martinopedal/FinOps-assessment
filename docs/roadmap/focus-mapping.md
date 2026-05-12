@@ -1,6 +1,6 @@
 # FOCUS correlation mapping (exploratory)
 
-> **Status:** `exploratory` — documentation only. This file is the first
+> **Status:** `exploratory` , documentation only. This file is the first
 > implementation slice of the *FinOps Toolkit / FOCUS / Hubs alignment* epic
 > from [`docs/roadmap/README.md`](README.md). It does **not** ship a new
 > schema, a new reporter, a FOCUS-formatted output, or a Hubs connector. No
@@ -10,13 +10,13 @@
 > **FOCUS target version:** 1.2. If later research updates the target, this
 > document and the roadmap index move together in the same PR.
 
-> ⚠️ **Non-contract notice.** This document is exploratory and advisory.
+>  **Non-contract notice.** This document is exploratory and advisory.
 > Nothing here commits the project to ship a FOCUS exporter, a Hubs
 > connector, or any specific CLI surface, and nothing here freezes the
 > current `Finding` or `run` field set. If a future PR renames or removes
 > a field cited below, this document moves with it in the same PR. The
 > FOCUS specification and FinOps Toolkit / Hubs documentation remain with
-> their owners — see *Sources* below for the authoritative references.
+> their owners , see *Sources* below for the authoritative references.
 
 ## Why this exists
 
@@ -54,7 +54,7 @@ corresponding field in `Finding` or `run` today.
 ## Source field reference (current runtime contracts)
 
 These are the fields that exist **today** in the canonical JSON report and
-that this mapping draws from. They are the source of truth — if they drift,
+that this mapping draws from. They are the source of truth , if they drift,
 this document drifts with them in the same PR.
 
 `run` envelope (see [`docs/schema.md`](../schema.md) §Report envelope):
@@ -112,14 +112,14 @@ an export could fill them.
 | `PublisherName` | derived from `surface` | Same as `ProviderName` for first-party SKUs covered by the catalogue today. |
 | `InvoiceIssuerName` | not-populated | Depends on the customer agreement (EA, MCA, CSP, MOSP); not modelled. |
 | `ServiceCategory` | derived from `surface` | Coarse mapping: `m365` → *Productivity & Collaboration*; `azure` → *Compute / Storage / Networking / etc.* (depends on the rule); `github`/`ado` → *Developer Tools*. The exact FOCUS taxonomy value is the reader's responsibility. |
-| `ServiceSubcategory` | derived from `rule_id` surface prefix | Approximate — for example `AZ.IDLE_VM_14D` correlates to *Compute*, `AZ.UNATTACHED_DISK` to *Storage*, `M365.COPILOT_INACTIVE_60D` to *Productivity / AI assistance*. |
+| `ServiceSubcategory` | derived from `rule_id` surface prefix | Approximate , for example `AZ.IDLE_VM_14D` correlates to *Compute*, `AZ.UNATTACHED_DISK` to *Storage*, `M365.COPILOT_INACTIVE_60D` to *Productivity / AI assistance*. |
 | `ServiceName` | derived from `current_sku` (via catalogue) | Look up `current_sku` in `data/catalog/<surface>/*.yaml` to recover the human-readable service name. |
 
 ### Charge identity
 
 | FOCUS column | Source field | Mapping |
 |---|---|---|
-| `ChargeCategory` | constant | Always *Usage* in spirit — findings describe ongoing per-period charges, not one-off purchases or adjustments. |
+| `ChargeCategory` | constant | Always *Usage* in spirit , findings describe ongoing per-period charges, not one-off purchases or adjustments. |
 | `ChargeClass` | constant | Findings are **not** corrections; treat as a regular charge for filtering purposes. |
 | `ChargeFrequency` | constant | The rules engine assumes monthly billing for `estimated_monthly_savings_usd`. Reservation/Savings Plan-related findings may bridge multiple frequencies in a future slice. |
 | `ChargeDescription` | `recommendation` (advisory) | The recommendation text is operator-readable, not invoice-readable; use it as commentary, not as a join key. |
@@ -188,9 +188,9 @@ an export could fill them.
 
 ## Sources (authoritative, public)
 
-- FinOps Foundation — FOCUS specification index:
+- FinOps Foundation , FOCUS specification index:
   <https://focus.finops.org/>
-- FinOps Foundation — FOCUS GitHub organisation (spec source):
+- FinOps Foundation , FOCUS GitHub organisation (spec source):
   <https://github.com/FinOps-Open-Cost-and-Usage-Spec>
 - Microsoft FinOps Toolkit (overview):
   <https://learn.microsoft.com/cloud-computing/finops/toolkit/finops-toolkit-overview>

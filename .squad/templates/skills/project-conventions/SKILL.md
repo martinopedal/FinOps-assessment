@@ -8,7 +8,7 @@ source: "template"
 
 ## Context
 
-> **This is a starter template.** Replace the placeholder patterns below with your actual project conventions. Skills train agents on codebase-specific practices — accurate documentation here improves agent output quality.
+> **This is a starter template.** Replace the placeholder patterns below with your actual project conventions. Skills train agents on codebase-specific practices , accurate documentation here improves agent output quality.
 
 ## Patterns
 
@@ -40,9 +40,9 @@ Describe a key convention or practice used in this codebase. Be specific about w
 ### File Structure
 
 <!-- Example: How is the project organized? -->
-<!-- - src/ — Source code -->
-<!-- - test/ — Tests -->
-<!-- - docs/ — Documentation -->
+<!-- - src/ , Source code -->
+<!-- - test/ , Tests -->
+<!-- - docs/ , Documentation -->
 
 ## Examples
 
@@ -53,4 +53,4 @@ Describe a key convention or practice used in this codebase. Be specific about w
 ## Anti-Patterns
 
 <!-- List things to avoid in this codebase -->
-- **[Anti-pattern]** — Explanation of what not to do and why.
+- **[Anti-pattern]** , Explanation of what not to do and why.

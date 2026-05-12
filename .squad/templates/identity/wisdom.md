@@ -4,7 +4,7 @@ last_updated: {timestamp}
 
 # Team Wisdom
 
-Reusable patterns and heuristics learned through work. NOT transcripts — each entry is a distilled, actionable insight.
+Reusable patterns and heuristics learned through work. NOT transcripts , each entry is a distilled, actionable insight.
 
 ## Patterns
 

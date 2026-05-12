@@ -1,12 +1,12 @@
-# MCP Integration — Configuration and Samples
+# MCP Integration , Configuration and Samples
 
-MCP (Model Context Protocol) servers extend Squad with tools for external services — Trello, Aspire dashboards, Azure, Notion, and more. The user configures MCP servers in their environment; Squad discovers and uses them.
+MCP (Model Context Protocol) servers extend Squad with tools for external services , Trello, Aspire dashboards, Azure, Notion, and more. The user configures MCP servers in their environment; Squad discovers and uses them.
 
 > **Full patterns:** Read `.squad/skills/mcp-tool-discovery/SKILL.md` for discovery patterns, domain-specific usage, and graceful degradation.
 
 ## Security Considerations
 
-> ⚠️ **Important:** The sample configs below use `npx -y` to run MCP server packages without version pinning. For production use:
+>  **Important:** The sample configs below use `npx -y` to run MCP server packages without version pinning. For production use:
 > - **Pin versions:** Use `npx -y @trello/mcp-server@1.2.3` instead of bare package names
 > - **Audit packages:** Review MCP server source code before granting access to credentials
 > - **Use least-privilege tokens:** Create tokens with minimal required scopes
@@ -20,7 +20,7 @@ Users configure MCP servers at these locations (checked in priority order):
 3. **User-level:** `~/.copilot/mcp-config.json` (personal)
 4. **CLI override:** `--additional-mcp-config` flag (session-specific)
 
-## Sample Config — Trello
+## Sample Config , Trello
 
 ```json
 {
@@ -37,7 +37,7 @@ Users configure MCP servers at these locations (checked in priority order):
 }
 ```
 
-## Sample Config — GitHub
+## Sample Config , GitHub
 
 ```json
 {
@@ -53,7 +53,7 @@ Users configure MCP servers at these locations (checked in priority order):
 }
 ```
 
-## Sample Config — Azure
+## Sample Config , Azure
 
 ```json
 {
@@ -72,7 +72,7 @@ Users configure MCP servers at these locations (checked in priority order):
 }
 ```
 
-## Sample Config — Aspire
+## Sample Config , Aspire
 
 ```json
 {
@@ -92,7 +92,7 @@ Users configure MCP servers at these locations (checked in priority order):
 
 - **GitHub MCP requires a separate token** from the `gh` CLI auth. Generate at https://github.com/settings/tokens
 - **Trello requires API key + token** from https://trello.com/power-ups/admin
-- **Azure requires service principal credentials** — see Azure docs for setup
-- **Aspire uses the dashboard URL** — typically `http://localhost:18888` during local dev
+- **Azure requires service principal credentials** , see Azure docs for setup
+- **Aspire uses the dashboard URL** , typically `http://localhost:18888` during local dev
 
 Auth is a real blocker for some MCP servers. Users need separate tokens for GitHub MCP, Azure MCP, Trello MCP, etc. This is a documentation problem, not a code problem.

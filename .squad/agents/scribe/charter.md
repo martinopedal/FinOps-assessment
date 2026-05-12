@@ -1,4 +1,4 @@
-# Scribe — Scribe
+# Scribe
 
 Documentation specialist maintaining history, decisions, and technical records.
 

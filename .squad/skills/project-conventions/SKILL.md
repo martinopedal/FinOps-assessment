@@ -8,7 +8,7 @@ source: "codebase"
 
 ## Core Identity
 
-FinOps Assessment is a **read-only** auditing tool for the Microsoft ecosystem (M365, Entra, Defender, Purview, Power Platform, Azure, GitHub, Azure DevOps). It ingests licensing, identity, usage, and cost signals to emit right-sizing and savings *recommendations* — never mutations. Every rule output must be advisory, citing the exact evidence (evidence hash + path) that produced it.
+FinOps Assessment is a **read-only** auditing tool for the Microsoft ecosystem (M365, Entra, Defender, Purview, Power Platform, Azure, GitHub, Azure DevOps). It ingests licensing, identity, usage, and cost signals to emit right-sizing and savings *recommendations* , never mutations. Every rule output must be advisory, citing the exact evidence (evidence hash + path) that produced it.
 
 ## Hard Rules (Non-Negotiable)
 
@@ -28,7 +28,7 @@ FinOps Assessment is a **read-only** auditing tool for the Microsoft ecosystem (
 ### No Third-Party Copyright Redistribution
 
 - Aaron Dinnage's M365 Maps diagrams, Microsoft pricing pages, etc. may be **linked and credited**, never copied into the repo.
-- Feature taxonomy derived from external sources is our own paraphrase — maintain that separation.
+- Feature taxonomy derived from external sources is our own paraphrase , maintain that separation.
 
 ## Python Toolchain
 
@@ -77,7 +77,7 @@ tests/
 
 - **ID format**: `SURFACE.SHORT_NAME` (screaming-snake-case, e.g., `M365.UNUSED_LICENSE_30D`).
 - **Recommendation wording**: phrase as *"consider"* or *"verify and then…"* rather than absolute action, because signals (activity counts) have legitimate exceptions (compliance holds, eDiscovery custodians, break-glass accounts).
-- When adding a rule, reference its ID in `docs/plan.md` §6 — keep plan and YAML in sync.
+- When adding a rule, reference its ID in `docs/plan.md` §6 , keep plan and YAML in sync.
 
 ### Personas
 
