@@ -120,3 +120,227 @@ class AzureRegionPriceDataset(BaseModel):
         default=None, description="Optional version identifier for this dataset"
     )
     notes: str | None = Field(default=None, description="Human-readable notes about this dataset")
+
+
+# ---------------------------------------------------------------------------
+# Azure commitment (Reserved Instance / Savings Plan) observation models
+# ---------------------------------------------------------------------------
+
+# Acceptable sources for commitment observations.
+CommitmentObservationSource = Literal[
+    "cost_management_api",  # Azure Cost Management REST API
+    "reservation_summaries_api",  # Reservations Summaries API
+    "customer_supplied",  # Operator-provided CSV/JSON
+]
+
+
+# Commitment type distinguishes RIs from Savings Plans.
+CommitmentType = Literal[
+    "reserved_instance",  # VM, SQL, Cosmos DB, etc. Reserved Instances
+    "savings_plan_compute",  # Compute Savings Plan (VMs, App Service, etc.)
+    "savings_plan_azure",  # Azure Savings Plan (broader coverage)
+]
+
+
+# Commitment scope indicates the boundary of commitment applicability.
+CommitmentScope = Literal[
+    "single_subscription",  # Scoped to one subscription
+    "shared_subscription",  # Shared across multiple subscriptions
+    "management_group",  # Scoped at management group level
+]
+
+
+class AzureCommitmentObservation(BaseModel):
+    """An observation of a purchased Azure commitment (Reserved Instance or Savings Plan).
+
+    This is an **observation**, NOT a recommendation or instruction. It represents
+    a commitment that the customer has already purchased, as reported by Azure Cost
+    Management APIs or supplied by the operator. Rules use these observations to
+    detect underutilization, over-commitment, coverage gaps, scope mismatches, and
+    renewal review opportunities.
+
+    **Key design choices:**
+    - `commitment_type` distinguishes RIs from Savings Plans (different coverage/scope
+      semantics: RIs are resource-specific, SPs are consumption-based).
+    - `utilization_pct` represents the percentage of purchased capacity that was
+      actually used over a trailing window (e.g., 30 days). 0% means the commitment
+      is entirely unused; 100% means fully utilized; >100% is not possible.
+    - `coverage_pct` represents what portion of eligible on-demand spend is covered
+      by this commitment over a trailing window. Low coverage suggests under-commitment;
+      high coverage combined with low utilization suggests over-commitment.
+    - `utilization_window_days` and `coverage_window_days` document the time windows
+      for these metrics (typically 7, 30, or 90 days). Rules define their own
+      staleness thresholds.
+    - `scope` indicates whether the commitment is scoped to a single subscription,
+      shared across subscriptions, or at management group level. Rules may flag
+      scope mismatches (e.g., single-subscription RI applied to multi-subscription
+      workload).
+    - `expiry_date` is the commitment expiration date (ISO 8601 YYYY-MM-DD). Rules
+      define their own renewal review windows (e.g., "flag commitments expiring
+      within 90 days").
+    - `observed_at` is the date this observation was recorded (ISO 8601 YYYY-MM-DD).
+      Collectors should record the date the observation was retrieved, NOT leave it null.
+    - `source` documents provenance: was this from Cost Management API, Reservation
+      Summaries API, or customer-supplied CSV?
+
+    **What makes an observation distinct:**
+    A commitment observation is uniquely identified by `commitment_id`. The same
+    commitment may have multiple observations over time (different `observed_at`),
+    but each observation represents a snapshot at a specific point in time.
+
+    **Observation freshness:**
+    Rules should define their own staleness thresholds. A 90-day-old utilization
+    observation may be too old for some rules; a 7-day-old observation may be
+    sufficient for others. The model does not enforce freshness.
+
+    **Out of scope (deferred to rule PRs):**
+    - Commitment recommendations (e.g., "consider migrating RI to SP")
+    - Commitment pricing/cost modeling (handled by separate pricing observations)
+    - Commitment-to-resource mapping (collectors produce normalized records for rules)
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    commitment_id: str = Field(
+        ..., min_length=1, description="Commitment ID (reservation ID or savings plan ID)"
+    )
+    commitment_name: str | None = Field(
+        default=None, description="Optional human-readable commitment name"
+    )
+    commitment_type: CommitmentType = Field(
+        ...,
+        description="Type of commitment (reserved_instance, savings_plan_compute, savings_plan_azure)",
+    )
+    sku_id: str | None = Field(
+        default=None,
+        description="SKU covered by this commitment (e.g., 'Standard_D2s_v3' for RI; None for SPs)",
+    )
+    region: str | None = Field(
+        default=None,
+        description="Azure region (for region-scoped RIs; None for global SPs)",
+    )
+    scope: CommitmentScope = Field(
+        ...,
+        description="Commitment scope (single_subscription, shared_subscription, management_group)",
+    )
+    utilization_pct: float | None = Field(
+        default=None,
+        ge=0,
+        le=100,
+        description="Percentage of purchased capacity actually used (0-100, trailing window)",
+    )
+    utilization_window_days: int | None = Field(
+        default=None,
+        ge=1,
+        description="Trailing window for utilization metric (e.g., 7, 30, 90 days)",
+    )
+    coverage_pct: float | None = Field(
+        default=None,
+        ge=0,
+        le=100,
+        description="Percentage of eligible on-demand spend covered by this commitment (0-100, trailing window)",
+    )
+    coverage_window_days: int | None = Field(
+        default=None, ge=1, description="Trailing window for coverage metric (e.g., 7, 30, 90 days)"
+    )
+    monthly_cost_usd: float | None = Field(
+        default=None, ge=0, description="Commitment cost per month in USD"
+    )
+    expiry_date: str | None = Field(
+        default=None,
+        min_length=10,
+        max_length=10,
+        description="Commitment expiration date (ISO 8601 YYYY-MM-DD)",
+    )
+    observed_at: str = Field(
+        ...,
+        min_length=10,
+        max_length=10,
+        description="ISO 8601 date when this observation was recorded (YYYY-MM-DD)",
+    )
+    source: CommitmentObservationSource = Field(..., description="Provenance of the observation")
+    notes: str | None = Field(default=None, description="Optional collector/operator notes")
+
+
+class SavingsPlanEligibleSpendObservation(BaseModel):
+    """An observation of on-demand spend eligible for Savings Plan coverage.
+
+    This is an **observation**, NOT a recommendation. It represents on-demand
+    Azure consumption that COULD be covered by a Savings Plan commitment but
+    currently is not. Rules use these observations to detect opportunities for
+    commitment expansion.
+
+    **Key design choices:**
+    - `eligible_spend_usd` is the total on-demand spend (per month or trailing
+      window) that would be eligible for Savings Plan discounts if a commitment
+      were in place. This is NOT a recommendation to commit; it is a measurement.
+    - `resource_type` indicates what kind of resource generated this spend (e.g.,
+      "virtualMachine", "sqlDatabase", "appService"). Savings Plan eligibility
+      varies by resource type and SP type (Compute SP vs Azure SP).
+    - `window_days` documents the time window for this spend measurement (typically
+      30 or 90 days). Rules define their own thresholds for "material" eligible spend.
+    - `region` is optional and used when eligible spend is region-specific (Compute
+      SPs are region-agnostic, but the underlying spend may be region-concentrated).
+
+    **What makes an observation distinct:**
+    An eligible spend observation is uniquely identified by `(resource_type, region,
+    window_days, observed_at, source)`. The same resource type may have multiple
+    observations from different sources or different time windows.
+
+    **Out of scope (deferred to rule PRs):**
+    - Savings Plan recommendations (e.g., "consider committing to X USD/hour")
+    - ROI modeling (requires pricing data and commitment term length)
+    - Resource-to-commitment mapping (collectors produce normalized records for rules)
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    resource_type: str = Field(
+        ...,
+        min_length=1,
+        description="Resource type generating eligible spend (e.g., 'virtualMachine', 'sqlDatabase')",
+    )
+    region: str | None = Field(
+        default=None, description="Azure region (optional; None for region-agnostic aggregates)"
+    )
+    eligible_spend_usd: float = Field(
+        ..., ge=0, description="Monthly on-demand spend eligible for Savings Plan coverage (USD)"
+    )
+    window_days: int = Field(
+        ..., ge=1, description="Trailing window for spend measurement (e.g., 30, 90 days)"
+    )
+    observed_at: str = Field(
+        ...,
+        min_length=10,
+        max_length=10,
+        description="ISO 8601 date when this observation was recorded (YYYY-MM-DD)",
+    )
+    source: CommitmentObservationSource = Field(..., description="Provenance of the observation")
+    notes: str | None = Field(default=None, description="Optional collector/operator notes")
+
+
+class AzureCommitmentDataset(BaseModel):
+    """A collection of Azure commitment observations and eligible spend observations.
+
+    This wrapper exists so that collectors and customers can supply a versioned
+    batch of commitment-related observations with metadata about when the dataset
+    was generated, what it covers, and any disclaimers.
+
+    Rules consume individual observations from the `commitments` and
+    `eligible_spend_observations` lists; the dataset-level metadata is for
+    auditing and freshness checks.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    commitments: list[AzureCommitmentObservation] = Field(default_factory=list)
+    eligible_spend_observations: list[SavingsPlanEligibleSpendObservation] = Field(
+        default_factory=list
+    )
+    dataset_generated_at: str | None = Field(
+        default=None, description="ISO 8601 timestamp when this dataset was generated"
+    )
+    dataset_version: str | None = Field(
+        default=None, description="Optional version identifier for this dataset"
+    )
+    notes: str | None = Field(default=None, description="Human-readable notes about this dataset")
