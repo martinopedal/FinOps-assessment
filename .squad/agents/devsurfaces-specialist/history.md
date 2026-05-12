@@ -13,4 +13,4 @@ Agent devsurfaces-specialist initialized for the FinOps-assessment squad. See `.
 
 ## Learnings
 
-None yet — pick up the first `squad:devsurfaces-specialist` issue to start.
+- **2026-05-12** — Issue #26 (D.3: squad-cli upstream audit) now in backlog; label drift `squad:devsurfaces-specialist`→`squad:sam` is fixed. This is a maintenance spike to verify no breaking changes in @bradygaster/squad-cli before rolling out squad to other orgs.
