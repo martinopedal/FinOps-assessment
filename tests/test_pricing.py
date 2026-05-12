@@ -634,12 +634,10 @@ def test_commitment_language_guardrail() -> None:
         SavingsPlanEligibleSpendObservation,
     )
 
-    # Prohibited action verbs (as standalone words)
+    # Prohibited action verbs (as standalone words).
+    # Use explicit alphabetic lookaround to handle snake_case (Python's \b treats _ as word char).
     prohibited_patterns = [
-        r"\bpurchase\b",
-        r"\bbuy\b",
-        r"\bexchange\b",
-        r"\bmodify\b",
+        r"(?<![a-zA-Z])(purchase|buy|exchange|modify)(?![a-zA-Z])",
     ]
 
     def _extract_literal_values(annotation: typing.Any) -> list[str]:
@@ -652,6 +650,10 @@ def test_commitment_language_guardrail() -> None:
             out.extend(_extract_literal_values(a))
         return out
 
+    def _pattern_matches(text: str, patterns: list[str]) -> bool:
+        """Return True if any prohibited pattern matches text (case-insensitive)."""
+        return any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns)
+
     def _check_text_for_prohibited_verbs(
         text: str, model_name: str, surface: str, prohibited_patterns: list[str]
     ) -> None:
@@ -660,7 +662,7 @@ def test_commitment_language_guardrail() -> None:
             matches = list(re.finditer(pattern, text, re.IGNORECASE))
             # Filter out "purchased" (past tense is descriptive, not imperative)
             for match in matches:
-                verb = match.group()
+                verb = match.group(1)  # Group 1 captures the verb
                 start = max(0, match.start() - 3)
                 end = match.end() + 2
                 context = text[start:end].lower()
@@ -701,3 +703,19 @@ def test_commitment_language_guardrail() -> None:
                 _check_text_for_prohibited_verbs(
                     literal_value, model_name, f"{field_name}.Literal", prohibited_patterns
                 )
+
+    # Positive controls: verify the fix catches snake_case Literal values
+    assert _pattern_matches("exchange_recommended", prohibited_patterns), (
+        "Regex should catch 'exchange_recommended' (snake_case Literal)"
+    )
+    assert _pattern_matches("purchase_now", prohibited_patterns), (
+        "Regex should catch 'purchase_now' (snake_case Literal)"
+    )
+    assert _pattern_matches("BUY_SP", prohibited_patterns), (
+        "Regex should catch 'BUY_SP' (case-insensitive, snake_case)"
+    )
+
+    # Negative control: verify no false positive on unrelated tokens
+    assert not _pattern_matches("backup", prohibited_patterns), (
+        "Regex should NOT catch 'backup' (no prohibited verb)"
+    )
