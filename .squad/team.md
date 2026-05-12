@@ -57,6 +57,6 @@ but are **not** the default. See `decisions.md` for the rubric deprecation decis
 
 - **Project:** FinOps-assessment
 - **Created:** 2026-05-04
-- **Last activity:** 2026-05-12 (squad-memory bootstrap; first stage-3/stage-4 cycle)
+- **Last activity:** 2026-05-12 (local clear of issues #27–#35; falsification-test batch complete).
 - **Roadmap:** `CHANGELOG.md` (M0–M7 + Bonus shipped) + `docs/roadmap/README.md` (frontier epics, exploratory).
 - **Delivery loop:** `docs/plan.md` §11 (research → rubberduck → plan → consensus → implement). Squad members map to stages: `maya` owns stages 3–4; surface specialists (`priya`, `diego`, `sam`) own stages 1–2 and stage-5 implementation in their domain; `noor` owns the stage-4 adversarial pass; `yuki` owns stage-5 test authoring; `Scribe` records decisions across all stages.

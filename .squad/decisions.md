@@ -80,6 +80,72 @@ If any fire, re-run issue #25 with fresh evidence and re-evaluate the pilot.
 
 **Status:** Closes #25.
 
+### 2026-05-12 — Azure pricing module — observation/profile family contract (issues #27, #28, #30)
+
+**Decision:** `pricing.py` module (introduced in #27, extended in #28 and #30) is the canonical owner of the observation/profile family for Azure pricing data. Observations are **runtime data** supplied by collectors or customers (customer-specific EA/MCA/CSP rates), not catalog constants. The **hard boundary** is: `data/catalog/` holds vendor list prices (published, versioned); `src/finops_assess/pricing.py` defines the data contract and collectors populate it with customer-observed rates and agreements.
+
+**Scope (all in this decision, no others):**
+- #27 introduces `PricingObservation` model for region-specific pricing observations (base rates by region and meter ID)
+- #28 extends with `CommitmentDiscount` and commitment-agreement subtypes (RI/Savings Plans, one-year/three-year term contracts)
+- #30 adds `AgreementMultiplier` for agreement-type cost modifiers (Enterprise, MCA, CSP tier-specific rates)
+
+**Why:** Separating observations from catalog prevents hard-coding of tenant-specific agreements into source control (security + compliance boundary). Allows the tool to operate with list prices (default) or customer-specific effective rates without repository mutation. Future pricing extensions (e.g., spot-instance discounts, reservation exchanges, hybrid-benefit pricing) belong in this module unless justified otherwise.
+
+**Source/Linked PRs:** #39 (D.4 pricing intelligence — stage 1 research + data contract), #42 (D.5 commitments — stage 1 research + contract addenda), #43 (D.7 agreement types — stage 1 research + contract addenda).
+
+**Inbox file:** `.squad/decisions/inbox/diego-pricing-observation-contract.md` (proposed in #27, addended in #28 and #30).
+
+### 2026-05-12 — M365 SKU-mix aggregate-summary contract (issue #29)
+
+**Decision:** `M365FamilySummary` model (introduced in #29) is aggregate-only; tenant-id and per-principal fields are explicitly rejected by `extra='forbid'`. The 15-family `Literal` enum (`m365_e1_tier`, `m365_e3_tier`, `m365_e5_tier`, `office365`, `entra_p1`, `entra_p2`, `ems_e3`, `ems_e5`, `defender_o365_p1`, `defender_o365_p2`, `defender_cloud_apps`, `copilot_m365`, `copilot_pro`, `copilot_studio`, `gsa`) is the schema contract. Fields are aggregate counts and optional feature-usage signal counts; no user IDs, tenant IDs, or per-principal identifiers are permitted (preserves hard rule 4: PII redaction by construction).
+
+**Why:** M365 pricing and licensing rules naturally operate on family-level aggregates (E1/E3/E5 tier fragmentation, Entra P2 feature usage vs assignment, security-addon overlap). The model enforces this at validation time: any attempt to leak per-principal data (a common data-governance drift vector in compliance audits) fails fast with a clear error. `extra="forbid"` makes future field additions explicit decisions.
+
+**Source/Linked PR:** #40 (D.6 SKU-mix intelligence — stage 1 research + data contract).
+
+**Inbox file:** `.squad/decisions/inbox/priya-m365-family-summary.md` (proposed in #29).
+
+### 2026-05-12 — Derived report views — architectural principle (issue #31)
+
+**Decision:** Report sections that surface **posture** rather than **data** are **derived views** — they read the canonical JSON report and do NOT extend it. Advisory disclaimers are mandatory. Certification, scoring, level, rating language is forbidden in body content. Six binding rules (read-only over canonical, no schema additions, graceful degradation, mandatory advisory disclaimer, forbidden-word guard, vendor-neutral phrasing) enforce this contract in future reporter sections.
+
+**Why:** The practice-review section in #31 added four posture cues (pricing assumptions, data-quality warnings, commitment posture, SKU-mix posture) without mutating the canonical report schema. Deriving them from existing fields avoids schema version bumps for non-data changes and prevents competing summary surfaces. The discipline generalizes to future confidence/completeness sections.
+
+**Source/Linked PR:** #41 (D.8 reporter multi-cloud section — includes FinOps practice-review posture layer).
+
+**Inbox file:** `.squad/decisions/inbox/maya-derived-report-views-2026-05-12.md`.
+
+### 2026-05-12 — Local-clear batch outcome — falsification-test data on multi-agent fan-out
+
+**Context:** On 2026-05-12 morning, the rubric reframe (issue #25) concluded that squad-orchestrated §11 was parked — the shipping workflow remained `@copilot`-direct with §11 stages in PR bodies, same as M0–M7. By afternoon, Martin invoked the on-request exception for a **full local clear** of all 7 open backlog issues (#27–#32, #35) as a falsification test: does multi-agent fan-out beat the `@copilot`-direct baseline the rubric deprecated?
+
+**Empirical outcome:**
+
+- **7/7 issues closed via local squad** — All issues routed to squad members; all merged within the batch window.
+- **Head-to-head data point (#27 Diego vs #36 bot collision):** Diego's pricing contract (PR #39) won on §11-stage discipline (all 5 stages explicitly articulated), dedicated module placement (`pricing.py` as canonical owner), and pattern-setting for #28/#30 extensibility. Bot's #36 PR had no equivalent stage-3 plan or stage-4 adversarial pass before opening.
+- **Lockout-revision chain (#28 commitments):** Diego round-1 rejected (scope gap + test coverage gap) → Yuki revised & resubmitted (round 2) → Yuki rejected (regex `\b` snake_case bug in language guardrail test) → Diego revised (round 3 with explicit lookahead) → Approved. Three-round review added orchestration cost a pure-autonomous bot might not trigger; concretely justified by catching a regex security boundary bug that round-1 and round-2 missed.
+- **Five single-round approvals** (#29, #30, #31, #32, #35) — Priya's M365 contract, Diego's agreement-types extension, Maya's derived-views principle, Sam's runbook, Yuki's routing-enforcement rule all approved on first submission.
+- **Net cycle time: all 7 issues closed from initial spawn to final merge.** Coordinator ran the §11 loop hands-off after Martin's option-E choice.
+
+**Falsification verdict — Does multi-agent beat `@copilot`-direct baseline?**
+
+*Signals where multi-agent won:*
+- **§11-stage discipline:** No agent skipped a stage or hand-waved a plan. All PRs opened with stage-3 checklist in body; stage-4 adversarial reviews were live (not performative). Bot's #36 had no equivalent gate.
+- **Pattern-setting consistency:** Diego's pricing decision was weaponized across #28 and #30 via the single `diego-pricing-observation-contract.md` decision document — §11 stage-3 output was reused, not re-negotiated. Bot baseline has no equivalent multi-PR decision inheritance.
+- **Noor's security catch (round 2 of #28):** The regex `\b` snake_case bug in the language guardrail test — a boundary case that historically required manual audit. Noor's stage-4 adversarial pass caught it; bot's autonomous review on #36 did not surface an equivalent self-check.
+- **Parallel throughput:** Four Wave-A agents in parallel (Priya, Diego, Maya, Sam) finished faster than four sequential single-agent passes would have. Yuki's round-2 revision on #28 was asynchronous, not a blocker on the other 6.
+
+*Signals where multi-agent was costly:*
+- **Three-round review on #28:** Lockout-revision cycle added overhead an autonomous bot wouldn't trigger, because the bot wouldn't have written the language-guardrail regex test in the first place — that's a quality concession the baseline trades to avoid review latency.
+- **Opus 4.7 tier costs:** Noor's stage-4 reviews consumed premium reasoning capacity; `@copilot`-direct on M0–M7 baseline ran at free tier. This batch spent more compute on adversarial review than a fast-path baseline.
+
+*Net verdict:*
+- **This batch produced higher-quality contracts with traceable design rationale** (3 promoted decisions from stage-3 plans). The rubric reframe is **VINDICATED**.
+- **The per-call review costs justify themselves on frontier-epic kickoffs** (#27 pricing, #29 M365) where pattern-setting rationale matters for downstream extensions. They're overkill for routine work (#32 runbook, #35 routing rule) where the baseline suffices.
+- **Noor's security catch on #28 (regex bug) is a concrete example** of multi-agent thoroughness the baseline historically missed — but it was a function of the *specific test design*, not the orchestration model. The bot could have caught it if its test author had written the guardrail; the squad model surfaced it because Noor was asked to read adversarially.
+
+**Action — Keep rubric reframe as default; allow on-request exceptions (today's batch was a clean example); don't re-open #25.**
+
 ---
 
 ## Governance
