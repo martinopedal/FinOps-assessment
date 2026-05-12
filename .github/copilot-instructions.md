@@ -235,7 +235,13 @@ delivered through the five-stage loop documented in `docs/plan.md`
    `general-purpose` pass (**Opus 4.7**) steelmans the case against
    shipping it. Disagreements are resolved by amending the plan, not by
    silently overriding it. "No objections within X" never counts as
-   consensus for security-relevant or schema-changing work.
+   consensus for security-relevant or schema-changing work. For squad
+   PRs, the Coordinator posts Noor's verdict as a PR comment using the
+   marker `**Stage-4 Adversarial Review — Noor**` and a `VERDICT:
+   APPROVE` line; `.github/workflows/squad-approve.yml` then submits a
+   `github-actions[bot]` approval so branch protection's review-count
+   rule is satisfied without an `enforce_admins` toggle dance (see
+   issue #47).
 5. **Implement** (`general-purpose`, Sonnet by default; Opus 4.7 if the
    plan calls for it; `task` Haiku for narrow mechanical edits).
    Code/data/doc changes + tests + a `parallel_validation` gate (code
