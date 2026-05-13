@@ -5,6 +5,21 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project follows semantic versioning once it reaches a tagged
 release.
 
+## v0.6.0
+
+### Added
+
+- **Reporter template overlay (#74)**: New `--allow-template-overlay <dir>` CLI
+  flag lets operators supply custom Jinja2 templates that override the bundled
+  per-rule `.j2` files for the `--format playbook` export. Overlay templates run
+  in a `jinja2.sandbox.SandboxedEnvironment`; `{% include %}` and `{% import %}`
+  are rejected at AST parse time (C1), all content is loaded via `FileSystemLoader`
+  — never `from_string()` (C2), and three security tests cover path-traversal
+  blocking, extra-file isolation, and callable blocking (C3). A pre-flight render
+  checks every overlay template against a fixture finding before writing any
+  output. Manifest `template_sources` array records `source: "wheel"|"overlay"` and
+  SHA-256 provenance for each template used in the run.
+
 ## v0.5.0
 
 ### Added
