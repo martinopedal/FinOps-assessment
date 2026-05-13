@@ -2332,3 +2332,46 @@ Until that PATCH lands, this PR itself still requires one final `enforce_admins`
 - Document architectural decisions here
 - Keep history focused on work, decisions focused on direction
 - The drop-box pattern: agents write to `.squad/decisions/inbox/{name}-{slug}.md`; Scribe merges into this file at session end and clears the inbox (which is gitignored)
+
+
+## 2026-05-13: Issue #59 rule-2 stage-3 plan locked (Maya, parallel with rule-1)
+
+**By:** Maya (Lead / FinOps PM), model Opus 4.7 mandatory per §11 stage-3 contract.
+
+**What:** §11 stage-3 plan committed for ``AZ.COMMITMENT_UNDER_COVERED`` (child 2 of 5 in epic #59). Plan file: ``docs/plans/059-az-commitment-under-covered.md``. Branch: ``squad/59-plan-maya-commitment-under-covered``. Draft PR opened with full plan content in body, labelled ``squad,squad:maya,squad:noor,type:plan``.
+
+**Headline decision (different from rule 1):** zero schema changes. The rule is a derived view over existing ``AzureReservation`` (``src/finops_assess/models.py:235-250``) and ``AzureResource`` (``src/finops_assess/models.py:206-232``); it aggregates ``azure_resources.monthly_cost_usd`` group-by ``subscription_id`` and joins against under-utilised reservations. Three R-alternatives walked and rejected in plan §2.7:
+
+1. **(R1) Extend ``AzureReservation`` with ``applied_scope_subscription_ids: list[str]``.** Rejected for THIS PR: belongs to rule 4 (``AZ.RESERVATION_SCOPE_MISMATCH``). Adding it here entangles two rules and breaks the "one rule, one PR" cadence the epic mandates.
+2. **(R2) Add new ``AzureSubscriptionCost`` model.** Rejected for V1: YAGNI without a producer (no Cost Mgmt collector exists today). Will land paired with the future Cost Mgmt collector in a separate v0.6.0 issue, NOT in this PR.
+3. **(R3) Reuse rule-1's new ``AzureBenefitRecommendation`` model.** Rejected: conflates two operationally distinct findings (rule 1 = "buy a Savings Plan to cover currently-uncovered spend"; rule 2 = "widen an existing reservation's applied scope so a sibling sub absorbs the unused capacity"). Different ARM endpoints, different join keys, different operator actions.
+
+**Stage-3 correction surfaced explicitly (per the lines 31-33 norm from rule 1 and PR #61):** the epic body for #59 says "Cost Mgmt + reservation list, no new collector needed" but ``arm_collector.py`` on main SHA ``0942872`` does NOT actually call Cost Management. The ``_API_VERSIONS`` map at ``arm_collector.py:35-44`` does not include any Cost Mgmt or query endpoint; the only billing-style data the engine sees is ``AzureResource.monthly_cost_usd`` (currently emitted as empty cells by the live ARM collector at ``arm_collector.py:402, 445, 476, 503, 532``, and populated by CSV-mode operators today). The rule operates on that signal and degrades to "no signal" in live ARM mode until a future Cost Management collector lands. **Stage-4 reviewer (Noor) is asked to verify this correction independently.**
+
+**Cross-rule overlap with ``AZ.RESERVATION_UNDERUTILIZED`` is intentional (plan §2.4):** both rules gate on ``utilization_pct < 80%`` (mirroring the ``_RESERVATION_UTIL_THRESHOLD = 80.0`` literal at ``azure_rules.py:160``). Every rule-2 finding will also trigger ``AZ.RESERVATION_UNDERUTILIZED`` on the same reservation. The recommendations live on different cost levers (commitment size vs scope), and the dual fire is the signal: "you have two remediation options, pick the cheaper one". Test #9 in plan §3.8 asserts this overlap; stage-4 reviewer instructed not to request consolidation.
+
+**Two redaction surfaces per finding (PR #78 BLOCKING #1 lesson applied):** ``principal`` = reservation_id and ``evidence["sibling_sub"]`` = subscription_id, both flowing through ``ctx.redact()`` (``engine.py:70-75``) at FOUR call sites in §3.5. Symmetry across ``principal``, rendered ``recommendation``, and ``evidence`` dict is binding; tests #7 and #8 enforce it. Stage-4 reviewer counts call sites in the diff.
+
+**Documented V1 limitations (operator-visible via wording):**
+
+- E11: cannot identify the Single-scope reservation owner sub from current schema, so the owner sub is treated as a candidate sibling. Conservative over-count; the recommendation says "verify the sibling's on-demand SKUs are compatible" so the operator catches the tautology on inspection. Resolves once rule 4 lands ``applied_scope_subscription_ids``.
+- E5: cannot detect "reservation expires within 30 days" because current schema lacks ``expiry_date``. Out of scope for rule 2; rule 3 (``AZ.COMMITMENT_RENEWAL_REVIEW``) owns the field addition.
+- E6: cannot distinguish billing scopes because no billing-scope grouping exists in the schema. CSV-mode operators with multi-billing-scope tenants are advised in ``docs/rules.md`` to scope their inputs per billing account.
+
+**Why this matters for future stage-3 plans (rule of thumb to canonicalise):** when a rule can ship as a derived view over existing schema with conservative documented limitations, prefer that path over schema growth, even when a future schema extension would sharpen the signal. The schema-extension cost compounds across rules in an epic; deferring sharpening to the rule that actually needs the new field keeps each PR small, focused, and individually reviewable.
+
+**Trade-offs considered:**
+
+- **Ship the schema extension now (R1 or R2)** to avoid a future migration: rejected. The "future migration" is small (rule 4's stage-3 plan adds the field; rule 2's existing rule body picks it up automatically because the rule already reads ``reservation.scope`` plus a sibling-sub heuristic). Adding it in rule 2's PR couples two rules' review surface and forces stage-3 plans to co-evolve.
+- **Block rule 2 on the future Cost Mgmt collector landing first**: rejected. Rule 2 is useful TODAY in CSV mode and degrades gracefully in live ARM mode. Blocking on a larger dependency violates the epic's "one rule, one PR" cadence and starves the v0.5.0 release of value.
+- **Skip the cross-rule overlap discussion entirely**: rejected. The overlap with ``AZ.RESERVATION_UNDERUTILIZED`` is the most likely thing a stage-4 reviewer or an operator would ask about. The plan addresses it head-on (§2.4) and adds a regression test (test #9) to lock the contract.
+
+**Implementer:** Diego (primary, Azure specialist), Yuki backup. Implementation will live on ``squad/59-impl-commitment-under-covered`` after Noor approves this stage-3 plan.
+
+**Lockout note:** if Noor REJECTs this plan, the revision routes to a different agent than Maya, per the Reviewer Rejection Lockout pattern canonicalised in ``decisions.md`` from PR #78.
+
+**Coordinator label gate (binding from PR #78 driving cycle):** Coordinator MUST apply the ``squad:noor`` label to the plan PR before Noor posts the verdict comment, so ``.github/workflows/squad-approve.yml`` fires. Without the label the workflow correctly skips defensively.
+
+**Related:** issue #59 (epic), branch ``squad/59-plan-maya-savings-plan-eligible`` (sibling rule-1 plan, parallel stage-4), branch ``squad/59-plan-maya-commitment-under-covered`` (this plan), planned branch ``squad/59-impl-commitment-under-covered`` (future Diego stage-5).
+
+**Scope:** binding once Noor approves. Rule-2 stage-5 implementation cannot deviate from §3.5 rule body, §3.6 YAML entry, §3.7 producer-path citations, or §3.8 test list without amendment to this plan via a different agent (Lockout protocol).
