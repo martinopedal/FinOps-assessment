@@ -1052,6 +1052,163 @@ Orchest log: `.squad/orchestration-log/2026-05-13T085530Z-yuki-stage3-revise-61.
 
 ---
 
+## §11 Stage-4 Adversarial Review — Playbook / Ticket Reporter (#61, PR #78)
+
+> **Reviewer:** Noor (Security Specialist) — Opus 4.7 xhigh  
+> **Verdict:** **REJECT** (2026-05-13 11:56:00 UTC)  
+> **BLOCKING:** 1  
+> **AMENDMENT:** 3  
+> **NIT:** 2  
+> **PR:** [#78](https://github.com/martinopedal/FinOps-assessment/pull/78)  
+> **Implementation head at review:** `eef9b10`  
+> **Test suite:** 230 playbook-tests green locally.
+
+### BLOCKING #1 — Manifest declares `azure: stable` while engine emits per-run-salted Azure principals
+
+**Core finding:** The locked plan stated `"stable" for Azure cleartext resource IDs` without verifying that Azure resource IDs are actually cleartext at the reporter boundary. Diego implemented the manifest literally (`_STABLE_SURFACES = frozenset({"azure"})`; `stability = {"azure": "stable", ...}`), but the engine's `RuleContext.redact()` salts ANY principal with `secrets.token_hex(16)` per-run when `redact_pii=True` (default).
+
+**Empirical proof (commit `eef9b10`, live test):**
+```
+Run 1 azure principal:     sha256:0bcc98c44ac33ef5
+Run 2 azure principal:     sha256:1e62bf2379dad7ec
+Run 1 ticket_key:          sha256:2d0d9a083555348177e623e036d66015ec091ff872e72f46e5a91d6b52843b0f
+Run 2 ticket_key:          sha256:2c57563dca06f6270b1f7bc0aa07291173f842f8078d7df55627829b07c46d40
+ticket_keys equal:         False
+Manifest claims azure:     'stable'
+```
+
+This is a **manifest dishonesty** violation (PII Hard Rule #4): any consumer trusting `azure: stable` for cross-run dedup will create duplicate tickets every run. The defect is not Diego's drift — he implemented the locked plan faithfully. The defect is in the plan: both Maya and Yuki assumed Azure principals were cleartext at the reporter boundary without verifying `azure_rules.py`.
+
+**Fix:** Make the stability dict pii-aware in `build_playbook_manifest`. When `pii_redaction=True`, all four surfaces emit `per_run`; when `pii_redaction=False`, all four emit `stable`. Add a regression test that runs the engine twice with `redact_pii=True` and asserts ticket_keys rotate; second variant with `redact_pii=False` asserts they're stable.
+
+**Cross-cutting note:** At stage-4, when a plan asserts a per-surface invariant, prove it with a two-run end-to-end fixture, not a single-fixture spot check. The 230-test suite is mostly correct; the one missing test (cross-run stability with default redaction) is the one that would have caught this before merge.
+
+### AMENDMENT #1 — `extract_template_vars()` re-parses every render (perf cliff at scale)
+
+`playbook.py:364` calls `extract_template_vars(template_source)` inside `render_row()`, which AST-parses the template source on **every** finding. At 10K Azure findings × ~5ms parse, that's 50s of avoidable wall-clock. Memoize on `rule_id` or compute `template_render_inputs` once at env-build time.
+
+### AMENDMENT #2 — Evidence dict overrides reserved finding fields in render context
+
+`playbook.py:346–358` spreads `**evidence` last in the render context, allowing evidence keys to override reserved fields (e.g., `principal`). If a future rule emits `evidence = {"principal": "<cleartext UPN>"}`, the cleartext value silently overrides the redacted `principal` and leaks in the template output. Spread `**evidence` first, then reserved keys second, so reserved wins on conflict.
+
+### AMENDMENT #3 — `_playbook_env.py` docstring vs reality drift
+
+The module docstring claims *"A single Environment is built once at module import and cached"* but `get_playbook_env()` builds the env lazily on the first call, not at module import. The functional contract (built once, pre-compiled) is met, but the docstring misleads future maintainers about when the work happens. Update the docstring to accurately describe lazy initialisation.
+
+### NIT #1 — Test coverage gap that allowed BLOCKING #1 to slip past
+
+`tests/test_playbook_pii_warning.py:206–227` only verifies `mode = salted_hash` + `m365 = per_run` + `azure = stable` in isolation. There is **no** test that re-runs the engine end-to-end and verifies a real Azure ticket_key is actually stable across runs. The fix for BLOCKING #1 must ship with a regression test that uses realistic salted Azure principals across two runs and asserts the manifest claim matches the actual behavior.
+
+### NIT #2 — Same false assumption in `focus_aligned` reporter (PR #70)
+
+`focus_aligned.py` declares `"pii_handling": {"mode": "azure_resource_id_cleartext"}` for the same reason — assuming Azure principals are cleartext at the report boundary. This is a pre-existing issue from #58/#70, not a Diego regression. Mirror the BLOCKING #1 fix in focus_aligned so both reporters are honest about per-run-salt reality.
+
+### What was reviewed clean (record for next reviewer)
+
+- **Atomic-write Option C:** correctly implemented with `mkstemp` → `fsync` → `os.replace`; manifest written after JSONL; `--cleanup-orphans` flag with pre-flight scan exists.
+- **`.j2` LF pinning:** `.gitattributes:40` rule present (`src/finops_assess/data/playbooks/**/*.j2 text eol=lf`); regression test exhaustive.
+- **StrictUndefined + pre-compile:** env built with `undefined=StrictUndefined`, `autoescape=False`, all `.j2` files pre-compiled.
+- **Fail-fast on missing template:** `PlaybookTemplateNotFoundError` defined and raised on every missing-template path.
+- **`evidence_ref` only in row:** row schema does not include `evidence`; only `evidence_ref` + `template_render_inputs`.
+- **Reproducibility:** `SOURCE_DATE_EPOCH` honored via `_determinism.generated_at_iso()`.
+- **Read-only posture:** no new credential code paths; pure dict→files transform.
+- **CLI surface:** `--format playbook`, `--playbook-output`, `--cleanup-orphans`, `--skip-warnings`, `--no-pii-redaction` all wired.
+- **Recommendation wording:** conservative ("consider", "verify", not absolute "remove").
+
+### Reviewer Rejection Lockout
+
+Diego is locked out of the revision. Both original author Maya and implementer Diego are locked per protocol. Next reviser (Yuki) owns ALL findings in single pass (no fork, no new PR).
+
+---
+
+## §11 Stage-5 Implementation — Playbook / Ticket Reporter (#61, PR #78 revision by Yuki)
+
+> **Reviser:** Yuki (Tester / hardening specialist) — Opus 4.7 xhigh  
+> **Mode:** background spawn under Reviewer Rejection Lockout  
+> **Verdict:** **APPROVED for re-review** (2026-05-13 11:47:00 UTC)  
+> **Implementation branch:** `squad/61-impl-diego` (force-push revision onto prior stage-5 head)  
+> **Revision commit:** `5bf48e8`  
+> **Test count delta:** 444 → 476 (+32 new tests across 4 new files)  
+> **All validation gates:** 🟢 green
+
+### BLOCKING #1 fix — Manifest now pii-aware
+
+`pii_handling.ticket_key_stability_by_surface` now emits:
+- All four surfaces (`azure`, `ado`, `github`, `m365`): `per_run` when `pii_redaction=True`
+- All four surfaces: `stable` when `pii_redaction=False`
+
+Mirror fix applied in `focus_aligned.py` (`pii_handling.mode` + `join_keys[*].stability`).
+
+**Regression test (NEW):** `tests/test_playbook_cross_run_stability.py` — real engine cross-run test variant 1 (redaction on) asserts ticket_keys rotate; variant 2 (redaction off) asserts they're stable. This is the test that would have caught the false assumption.
+
+### AMENDMENT #1 fix — Perf: repeated AST parsing memoized
+
+Added `@functools.cache`-wrapped `_template_vars_cached(rule_id, source)`; `render_row` now calls the memoised version. Per-rule memoization asserted in `tests/test_playbook_template_vars_memo.py` (NEW).
+
+### AMENDMENT #2 fix — Evidence/reserved-keys boundary defended
+
+In `render_row`, `**evidence` is now spread FIRST, then reserved keys SECOND, so reserved wins on conflict. Three regression tests in `tests/test_playbook_render_context_boundary.py` (NEW).
+
+### AMENDMENT #3 fix — `_playbook_env.py` docstring honest
+
+Module docstring now accurately describes lazy initialisation on first `get_playbook_env()` call (not module import).
+
+### NIT #1 applied — Schema field rename `note` → `known_limitation`
+
+Plan A12 originally specified `known_limitation`; Diego's `note` was the deviation. Schema and manifest examples updated; mirror in focus_aligned.
+
+### Yuki's own amendments
+
+- **A-1 (narrow except):** `_build_adapter_class_map` narrowed to `(FileNotFoundError, OSError)` with logging.
+- **A-5 (NUL-byte parametrized test):** Added to `test_playbook_template_lf.py`, parametrised over all 23 shipped templates.
+- **A-6 (CliRunner integration for `--cleanup-orphans`):** Two tests in `tests/test_playbook_cli_cleanup_orphans.py` (NEW).
+
+### Locked-plan deviations (carried forward, NOT re-litigated)
+
+- **A8 (`_AccessTrackingEvidence`):** Diego shipped a static AST walk via `_template_vars_cached`. Yuki accepted this per spawn-prompt guidance "the cheaper, plan-compliant path". Comment in code documents the deviation.
+- **A12 (manifest field name):** Reverted to plan: `known_limitation`, not `note`.
+
+### False-assumption pattern verdict (learning for future stage-3 authors)
+
+Both Maya (PR #72 plan author) and Yuki (revised plan author) asserted "Azure ticket_keys are stable because resource IDs aren't PII" without inspecting `engine.py:RuleContext.redact()`. The engine ALWAYS salts when `redact_pii=True`, regardless of assumed-PII status.
+
+**Norm:** Any plan claim about a manifest field's value MUST cite the producer code path (file:line) that establishes it. This pattern — consuming a producer's contract without verifying actual behaviour — should be flagged in future stage-1 research briefs as an anti-pattern.
+
+### Files modified (15 total, +1742 / -847)
+
+**Core implementation:**
+- `src/finops_assess/reporters/playbook.py` — BLOCKING #1, AMEND #1/#2/#3, except narrowing, docstring
+- `src/finops_assess/reporters/focus_aligned.py` — BLOCKING #1 mirror, NIT #2, schema update
+- `src/finops_assess/reporters/_playbook_env.py` — AMEND #3 docstring honesty
+- `src/finops_assess/schemas/playbook_manifest.schema.json` — NIT #1 field rename
+- `src/finops_assess/schemas/focus_aligned_manifest.schema.json` — BLOCKING #1 mirror, NIT #1 mirror
+
+**Test files (4 NEW, 32 net new tests):**
+- `tests/test_playbook_cross_run_stability.py` (NEW) — regression net for BLOCKING #1
+- `tests/test_playbook_template_vars_memo.py` (NEW) — AMEND #1 memoization assertion
+- `tests/test_playbook_render_context_boundary.py` (NEW) — AMEND #2 boundary defense
+- `tests/test_playbook_cli_cleanup_orphans.py` (NEW) — Yuki A-6 CliRunner tests
+- `tests/test_playbook_pii_warning.py` — Test 5 rewrite, new Test 6
+- `tests/test_playbook_template_lf.py` — NUL-byte parametrised test (Yuki A-5)
+
+### Follow-up issues filed
+
+- **#81** (squad:maya, p1) — Repo-wide CRLF hygiene (`*.py text eol=lf` in `.gitattributes`)
+- **#82** (squad:yuki, p2) — NIT bundle (fsync docstring, naming clarification, loop-var shadowing)
+
+### Validation gates (all green)
+
+- `finops-assess validate`: 87 SKUs, 7 personas, 23 rules — pass
+- `ruff check . && ruff format --check .`: clean
+- `mypy src`: strict, no violations
+- `pytest`: 476 passed (+32 new from baseline 444)
+
+### Ready for Noor stage-4 re-review
+
+PR #78 ready for adversarial re-review of BLOCKING #1 fix. Noor to verify the pii-aware stability dict and regression test satisfy intent. Once Noor re-approves, ready for merge to `squad/61-impl-diego` baseline.
+
+---
+
 ### 2026-05-13 — Stage-3 plan for #58 FOCUS-aligned advisory exporter (Maya, Opus 4.7)
 
 ## §11 Stage-3 Plan — FOCUS-aligned advisory exporter (#58)
