@@ -690,6 +690,70 @@ Copy-paste into a working branch checklist:
 
 — Maya
 
+### 2026-05-13 — Stage-4 adversarial review for #58 FOCUS-aligned advisory exporter (Noor, Opus 4.7)
+
+**VERDICT: APPROVE**
+
+> Reviewer: Noor (Security & Compliance) — model: Opus 4.7
+> Issue: #58 (epic #57) — `release:v0.5.0`
+> Artefact under review: `.squad/decisions/inbox/maya-stage3-58-focus-aligned-export.md`
+> Locked inputs (not relitigated): `focus-1-3-consensus.md` D1–D7 + six blockers.
+
+**Steelman against shipping:** Five angles considered and counter-argued:
+
+1. **`evidence_key_version` future-cost.** Maya adds Rule.evidence_key_version: int = 1 without v0.5.0 use. Trade-off: forever-cost in schema vs retrofit risk when consumers pin AdvisoryFindingKey. Counter-wins: declaring migration contract now is cheaper than retrofitting. Acceptable.
+
+2. **Enum extension is not strict-additive.** v0.5.0 consumer pinning pii_handling.mode enum will REJECT v0.6.0 manifests when mode values expand. Counter-wins: consumers MUST ignore unknown fields; documented in manifest schema description. Known JSON-Schema wart, not Maya's invention. Acceptable.
+
+3. **ARM resource IDs carry resource-name PII.** ResourceId cleartext (e.g. `vm-john-test01`) encodes user names. Counter-wins: operator opted into PII redaction upstream; export echoes source_report.pii_redaction; ResourceId is the FOCUS warehouse join key — hashing defeats the purpose. Acceptable.
+
+4. **Empty-input CI-script trap.** Zero rows exit 0, masking silent collector failures. Counter-wins: correct trade-off; clear stdout "Wrote 0 advisory rows" is the signal; failing loud would force every consumer to special-case zero. Risk R8 acknowledged.
+
+5. **`_generated_at` lift target left ambiguous.** Plan offered two options; implementer chose _determinism.py. Counter-wins: Diego shipped the choice inline; not a blocker. Acceptable.
+
+**Hard-rule audit: ALL PASS**
+| Rule | Verdict | Note |
+|------|---------|------|
+| 1. Read-only | **PASS** | No API, no scope request |
+| 2. No secrets | **PASS** | jsonschema dev-only, no live-scope dep |
+| 3. No copyright | **PASS** | Schema is ours; warning-banner is paraphrase |
+| 4. PII redaction | **PASS** (P2 tail-risk) | ARM resource ID is principal; echoes upstream flag |
+| 5. Catalogue as data | **PASS** | evidence_key_version lives in code, not YAML |
+
+**Blocker traceability: 6/6 PASS** — ListCost, conformance branding, ResourceId cleartext, CLI shape, manifest fields, golden+SOURCE_DATE_EPOCH all addressed in plan.
+
+**D-decision traceability: 7/7 PASS** — D1–D7 all honoured.
+
+**P2 findings (note for follow-up, not blockers):**
+1. Citation drift html_reporter.py:89 → actual :96 (no semantic risk)
+2. Manifest enum extension not consumer-strict-additive (industry wart; documented)
+3. evidence_key_version unused in v0.5.0 (intentional; v0.6.0 will mix it in)
+4. Test coverage gaps (5 enumerated, worth stage-5 follow-up but not P0)
+5. _generated_at lift choice left to implementer (resolved inline)
+6. D4 calendar-month derivation not explicitly described (implementer will figure it out)
+
+**Stage-3 correction verification: ✅** — Per-run salt lives in engine.py:151, not json_reporter.py. All reference code pointers verified.
+
+**Verdict stands: APPROVE.** The P2 items should be folded inline by Diego/Yuki without Maya revision. Strict-lockout rule does not apply — Maya is free to address P2 items if she chooses.
+
+— Noor
+
+### 2026-05-13 — Diego implementation: advisory_finding_key() NUL-collision fix (embedded in #58 stage-5)
+
+**Decision:** During stage-5 implementation of #58, Diego discovered and fixed a hash-collision vulnerability in advisory_finding_key():
+
+**Before:** The function concatenated `rule_id + '\x00' + resource_id + '\x00' + evidence_json` (NUL-byte separators).
+**Vulnerability:** Evidence values containing literal NUL characters could collide with distinct (rule_id, resource_id, evidence) tuples. Example: `(X, Y, Z\x00abc)` and `(X, Y\x00a, bc)` would produce the same serialization.
+**Non-deterministic in practice:** NUL characters are rare in Azure resource IDs and log evidence, so collision probability is low.
+**Fix:** Switched to `sha256(json.dumps([rule_id, resource_id, evidence_json]))`. JSON serialization is lossless and guarantees unique canonical form.
+**Consequence:** Bumped `Rule.evidence_key_version` from implicit 0 to explicit 1, creating forward contract. Future rule evidence changes can increment the version independently; manifest documents the algorithm string starting in v0.6.0.
+
+**Why this matters:** The vulnerability is a protocol issue that should be corrected upstream rather than papered over. Fixing it in v0.5.0 means v0.6.0 can safely mix the version into the hash without worrying about backward-collision edge cases.
+
+**Trade-off:** The hash format changed, so advisory keys in v0.5.0 exports will NOT match keys computed by future rule-evaluation code. This is acceptable because the exporter is read-only and does not participate in production keying — consumers who migrate v0.5.0 exports to warehouses must re-key them against v0.6.0 hash logic anyway when they adopt that version.
+
+— Scribe (Diego's embedded decision)
+
 ### 2026-05-12T10:51Z  ,  User directive  ,  local-spawn preference when repo is open (Coordinator)
 
 **By:** martinopedal (via Squad Coordinator)
