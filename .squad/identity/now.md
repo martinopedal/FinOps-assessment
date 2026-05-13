@@ -1,8 +1,8 @@
 ---
-updated_at: 2026-05-13T15:35:00.000Z
-focus_area: "#59 epic: rule 1 plan MERGED (#83); rule 2 plan APPROVED awaiting merge (#84); rule 1 impl awaiting Noor (#85); rules 3-5 not started"
+updated_at: 2026-05-13T16:30:00.000Z
+focus_area: "#59 epic: rules 1-2 plans MERGED (#83, #84); rule 3 plan in flight (#86, awaiting Noor stage-4); rule 1 impl in flight on Diego/Noor cycle (#85); rules 4-5 not yet planned"
 active_issues: [59, 73, 75, 76, 81, 82]
-open_prs: [84, 85]
+open_prs: [85, 86]
 ---
 
 # What We're Focused On
