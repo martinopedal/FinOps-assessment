@@ -22,6 +22,7 @@
       "AZ.LOG_ANALYTICS_OVERINGEST": 1,
       "AZ.DEV_TEST_SUB_MISMATCH": 1,
       "AZ.SAVINGS_PLAN_ELIGIBLE_SPEND": 0,
+      "AZ.COMMITMENT_UNDER_COVERED": 2,
       "GH.INACTIVE_SEAT_90D": 1,
       "GH.COPILOT_INACTIVE_30D": 1,
       "GH.GHAS_OVER_PROVISIONED": 1,
@@ -36,10 +37,10 @@
       "M365.E5_FEATURES_UNUSED": 2
     },
     "rules_skipped_no_impl": [],
-    "total_findings": 34,
+    "total_findings": 36,
     "principals_evaluated": 11,
     "assignments_evaluated": 13,
-    "azure_resources_evaluated": 5,
+    "azure_resources_evaluated": 6,
     "persona_distribution": {
       "frontline_worker": 1,
       "information_worker": 4,
@@ -243,6 +244,48 @@
         "subscription_id": "11111111",
         "subscription_offer": "Dev/Test",
         "location": "westus"
+      }
+    },
+    {
+      "rule_id": "AZ.COMMITMENT_UNDER_COVERED",
+      "surface": "azure",
+      "severity": "medium",
+      "principal": "sha256:efb1eb6d0c6c0952",
+      "current_sku": "Standard_D4s_v5",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": null,
+      "recommendation": "Reservation sha256:efb1eb6d0c6c0952 is Shared-scope and averaged 45.0% utilisation, while sibling subscription sha256:6581d3cf7d0d3d5a shows $120.0 of on-demand resource spend over the same window. Verify the sibling's on-demand SKUs are compatible with this reservation's family and region (Azure auto-applies on a best-fit basis), then consider widening the reservation's applied scope so the sibling's workload absorbs the unused capacity.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "reservation_name": "RI-VM-D4s-EastUS",
+        "sku": "Standard_D4s_v5",
+        "scope_kind": "Shared",
+        "utilization_pct": 45.0,
+        "monthly_cost_usd": 500.0,
+        "sibling_sub": "sha256:6581d3cf7d0d3d5a",
+        "sibling_on_demand_spend_usd": 120.0
+      }
+    },
+    {
+      "rule_id": "AZ.COMMITMENT_UNDER_COVERED",
+      "surface": "azure",
+      "severity": "medium",
+      "principal": "sha256:efb1eb6d0c6c0952",
+      "current_sku": "Standard_D4s_v5",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": null,
+      "recommendation": "Reservation sha256:efb1eb6d0c6c0952 is Shared-scope and averaged 45.0% utilisation, while sibling subscription sha256:d3c35dbc62687a64 shows $180.0 of on-demand resource spend over the same window. Verify the sibling's on-demand SKUs are compatible with this reservation's family and region (Azure auto-applies on a best-fit basis), then consider widening the reservation's applied scope so the sibling's workload absorbs the unused capacity.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "reservation_name": "RI-VM-D4s-EastUS",
+        "sku": "Standard_D4s_v5",
+        "scope_kind": "Shared",
+        "utilization_pct": 45.0,
+        "monthly_cost_usd": 500.0,
+        "sibling_sub": "sha256:d3c35dbc62687a64",
+        "sibling_on_demand_spend_usd": 180.0
       }
     },
     {

@@ -16,7 +16,7 @@ def test_collect_samples_directory_loads_all_files() -> None:
     assert len(dataset.users) >= 10
     assert len(dataset.assignments) >= 10
     assert len(dataset.usage) > 0
-    assert len(dataset.azure_resources) == 5
+    assert len(dataset.azure_resources) == 6
     assert len(dataset.azure_reservations) == 2
     assert len(dataset.azure_log_workspaces) == 2
     assert len(dataset.azure_benefit_recommendations) == 2

@@ -76,3 +76,17 @@
     one-off project, then consider a {term} Savings Plan commitment with
     an hourly commit of ${recommended_hourly_commit_usd}.
   min_uncovered_usd: 50.0
+
+- id: AZ.COMMITMENT_UNDER_COVERED
+  surface: azure
+  severity: medium
+  summary: Under-utilised reservation while a sibling subscription pays on-demand for a likely-compatible workload.
+  recommendation_template: >
+    Reservation {principal} is {scope_kind}-scope and averaged
+    {utilization_pct}% utilisation, while sibling subscription
+    {sibling_sub} shows ${sibling_on_demand_spend_usd} of on-demand
+    resource spend over the same window. Verify the sibling's
+    on-demand SKUs are compatible with this reservation's family
+    and region (Azure auto-applies on a best-fit basis), then
+    consider widening the reservation's applied scope so the
+    sibling's workload absorbs the unused capacity.

@@ -4,3 +4,4 @@ resource_id,resource_type,sku,location,avg_cpu_pct,p95_cpu_pct,p95_mem_pct,avg_n
 /subscriptions/00000000/rg/dev/disks/disk-orphan,managedDisk,Premium_LRS_512,eastus,,,,,30,false,,42.00,,,,
 /subscriptions/00000000/rg/dev/networkInterfaces/pip-orphan,publicIp,Standard,eastus,,,,,,,false,3.65,,,,
 /subscriptions/11111111/rg/prod/vm/vm-prod-in-devtest,virtualMachine,Standard_D4s_v3,westus,45.0,62.0,55.0,1200.0,,,,120.00,,11111111,Dev/Test,prod
+/subscriptions/sub-undercovered-001/rg/prod/vm/vm-sibling,virtualMachine,Standard_D4s_v5,eastus,55.0,68.0,72.0,1200.0,,,,180.00,,sub-undercovered-001,,
