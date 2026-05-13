@@ -240,6 +240,19 @@ class AzureReservation(BaseModel):
     (0-100). Rules abstain when the signal is absent rather than assuming
     zero utilization.
 
+    ``scope`` carries the API's ``appliedScopeType`` discriminator string
+    (``"Single"`` / ``"Shared"`` / ``"ManagementGroup"``, case-insensitive
+    in CSV mode). The field name is a legacy from the M5 Azure rules; a
+    future issue may rename it to ``applied_scope_type``.
+
+    ``applied_scope_subscription_ids`` is the operator-owned list of
+    subscription ARNs the discount is applied to (``Microsoft.Capacity``
+    reservations API ``properties.appliedScopes``). ``None`` means the
+    signal is absent (CSV-mode operators may leave the column blank);
+    ``AZ.RESERVATION_SCOPE_MISMATCH`` abstains on ``None``. An empty list
+    on a ``Single``-scope row is contradictory; the rule logs WARN and
+    abstains on that row.
+
     ``expiry_date`` is the commitment expiration date (ISO 8601 YYYY-MM-DD).
     ``auto_renew`` is the operator's renewal-intent flag; ``None`` means the
     signal is absent (CSV-mode operators may leave it blank). Both fields
@@ -256,6 +269,7 @@ class AzureReservation(BaseModel):
     monthly_cost_usd: float | None = Field(default=None, ge=0)
     expiry_date: str | None = Field(default=None, min_length=10, max_length=10)
     auto_renew: bool | None = None
+    applied_scope_subscription_ids: list[str] | None = None
 
 
 class AzureLogWorkspace(BaseModel):

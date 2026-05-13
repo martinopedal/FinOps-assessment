@@ -216,6 +216,7 @@ Each rule has: `id`, `surface`, `severity`, `recommendation_template`,
 - `AZ.SAVINGS_PLAN_ELIGIBLE_SPEND`: scope with uncovered on-demand spend a Savings Plan would cover (Benefit Recommendations API).
 - `AZ.COMMITMENT_UNDER_COVERED`: under-utilised reservation while a sibling subscription pays on-demand for a likely-compatible workload (scope-widening signal).
 - `AZ.COMMITMENT_RENEWAL_REVIEW`: reservation expiring within 60 days with auto-renew not configured.
+- `AZ.RESERVATION_SCOPE_MISMATCH`: single-scope reservation while sibling subscriptions carry significant on-demand spend for likely-compatible workloads.
 - `AZ.DEV_TEST_SUB_PRODUCTION_PRICING`: workload tagged `env=prod` running in a Dev/Test subscription (or vice-versa).
 
 ### GitHub rules

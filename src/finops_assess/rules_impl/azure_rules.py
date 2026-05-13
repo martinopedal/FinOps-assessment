@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import os
+from collections import defaultdict
 from collections.abc import Iterable
 from datetime import UTC, date, datetime
 
@@ -551,6 +552,115 @@ def commitment_renewal_review(ctx: RuleContext) -> Iterable[Finding]:
                 "expiry_date": reservation.expiry_date,
                 "days_until_expiry": days_until_expiry,
                 "auto_renew": reservation.auto_renew,
+                "utilization_pct": reservation.utilization_pct,
+                "monthly_cost_usd": reservation.monthly_cost_usd,
+            },
+        )
+
+
+# ---------------------------------------------------------------------------
+# AZ.RESERVATION_SCOPE_MISMATCH
+# ---------------------------------------------------------------------------
+
+_RESERVATION_SCOPE_MIN_NON_OWNER_USD = 50.0
+"""Minimum monthly non-owner-subscription spend (USD) before the rule fires.
+
+Below this threshold the scope-mismatch signal is too noisy — the
+reservation scope may be intentionally narrow and the sibling spend is
+negligible. The constant mirrors the rule YAML ``min_uncovered_usd``
+field so unit tests can reference the same value.
+"""
+
+_SUB_PREFIX = "/subscriptions/"
+
+
+def _bare_sub_id(arm_or_bare: str) -> str:
+    """Extract a bare subscription ID from a full ARM path or a bare ID.
+
+    ``/subscriptions/00000000`` → ``00000000``;
+    ``00000000`` → ``00000000`` (already bare).
+    """
+    lowered = arm_or_bare.lower()
+    if lowered.startswith(_SUB_PREFIX.lower()):
+        rest = arm_or_bare[len(_SUB_PREFIX) :]
+        # Strip any trailing path segments (e.g. resourceGroups/…)
+        return rest.split("/")[0]
+    return arm_or_bare
+
+
+@register("AZ.RESERVATION_SCOPE_MISMATCH")
+def reservation_scope_mismatch(ctx: RuleContext) -> Iterable[Finding]:
+    """Flag single-scope reservations whose peers pay on-demand elsewhere.
+
+    The rule pre-aggregates monthly spend per subscription from
+    ``ctx.dataset.azure_resources``, then iterates reservations to find
+    single-scope RIs whose discount applies to *one* subscription while
+    sibling subscriptions carry significant on-demand spend.
+    """
+    threshold: float = ctx.rule.min_uncovered_usd or _RESERVATION_SCOPE_MIN_NON_OWNER_USD
+
+    # Pre-aggregate spend per subscription (bare IDs)
+    spend_by_sub: defaultdict[str, float] = defaultdict(float)
+    for res in ctx.dataset.azure_resources:
+        if res.subscription_id and res.monthly_cost_usd is not None:
+            spend_by_sub[_bare_sub_id(res.subscription_id)] += res.monthly_cost_usd
+
+    if not spend_by_sub:
+        return  # E6: no spend data at all
+
+    for reservation in ctx.dataset.azure_reservations:
+        if not reservation.scope:
+            continue  # E2: scope missing
+        if reservation.scope.lower() != "single":
+            continue  # E3: not single-scope
+        if reservation.applied_scope_subscription_ids is None:
+            continue  # E4: scope IDs absent
+        if not reservation.applied_scope_subscription_ids:
+            logger.warning(
+                "AZ.RESERVATION_SCOPE_MISMATCH: %s is single-scope but "
+                "applied_scope_subscription_ids is empty — abstaining",
+                reservation.reservation_id,
+            )
+            continue  # E5: contradictory empty list
+
+        # Normalise owner sub IDs to bare form for matching
+        owner_bare: set[str] = {
+            _bare_sub_id(sid) for sid in reservation.applied_scope_subscription_ids
+        }
+        sibling_subs: list[str] = []
+        non_owner_usd = 0.0
+        for sub_id, spend in spend_by_sub.items():
+            if sub_id not in owner_bare:
+                sibling_subs.append(ctx.redact(sub_id))
+                non_owner_usd += spend
+
+        if not sibling_subs:
+            continue  # E7: all spend is in owner subscriptions
+        if non_owner_usd < threshold:
+            continue  # E8: below threshold
+
+        owner_display = sorted(ctx.redact(sid) for sid in owner_bare)
+        yield Finding(
+            rule_id=ctx.rule.id,
+            surface="azure",
+            severity=ctx.rule.severity,
+            principal=ctx.redact(reservation.reservation_id),
+            current_sku=reservation.sku,
+            estimated_monthly_savings_usd=_round(non_owner_usd),
+            recommendation=render(
+                ctx.rule.recommendation_template,
+                principal=ctx.redact(reservation.reservation_id),
+                owner_subs=", ".join(owner_display),
+                sibling_subs=", ".join(sorted(sibling_subs)),
+                non_owner_usd=_round(non_owner_usd),
+            ),
+            evidence={
+                "reservation_name": reservation.reservation_name,
+                "sku": reservation.sku,
+                "scope": reservation.scope,
+                "owner_subscription_ids": owner_display,
+                "sibling_subscription_ids": sorted(sibling_subs),
+                "non_owner_monthly_usd": _round(non_owner_usd),
                 "utilization_pct": reservation.utilization_pct,
                 "monthly_cost_usd": reservation.monthly_cost_usd,
             },

@@ -16,7 +16,7 @@ def test_collect_samples_directory_loads_all_files() -> None:
     assert len(dataset.users) >= 10
     assert len(dataset.assignments) >= 10
     assert len(dataset.usage) > 0
-    assert len(dataset.azure_resources) == 6
+    assert len(dataset.azure_resources) == 7
     assert len(dataset.azure_reservations) == 2
     assert len(dataset.azure_log_workspaces) == 2
     assert len(dataset.azure_benefit_recommendations) == 2
@@ -210,3 +210,44 @@ def test_azure_reservations_csv_empty_renewal_cells_become_null(tmp_path: Path) 
     row = dataset.azure_reservations[0]
     assert row.expiry_date is None
     assert row.auto_renew is None  # MUST be None, not False
+
+
+def test_azure_reservations_csv_round_trip_with_scope_ids(tmp_path: Path) -> None:
+    """Scope-mismatch §3.8 test #15(a): round-trip applied_scope_subscription_ids.
+
+    Pin the strict-column loader's handling of the pipe-separated list field:
+    non-empty cell → split on ``|`` into ``list[str]``; empty cell → ``None``.
+    """
+    (tmp_path / "azure_reservations.csv").write_text(
+        "reservation_id,reservation_name,sku,scope,utilization_pct,monthly_cost_usd,"
+        "expiry_date,auto_renew,applied_scope_subscription_ids\n"
+        "/providers/Microsoft.Capacity/reservationOrders/o-1/reservations/r-1,"
+        "RI-shared,Standard_D4s_v5,shared,72.0,1450.00,2026-07-12,false,\n"
+        "/providers/Microsoft.Capacity/reservationOrders/o-2/reservations/r-2,"
+        "RI-single,GP_Gen5_8,single,85.0,720.00,2026-08-30,true,"
+        "/subscriptions/sub-a|/subscriptions/sub-b\n",
+        encoding="utf-8",
+    )
+    dataset = collect_from_directory(tmp_path)
+    assert len(dataset.azure_reservations) == 2
+    shared_row, single_row = dataset.azure_reservations
+    assert shared_row.applied_scope_subscription_ids is None
+    assert single_row.applied_scope_subscription_ids == [
+        "/subscriptions/sub-a",
+        "/subscriptions/sub-b",
+    ]
+
+
+def test_azure_reservations_csv_legacy_loads_with_null_scope_ids(tmp_path: Path) -> None:
+    """Backward-compat: legacy CSV without applied_scope_subscription_ids still loads."""
+    (tmp_path / "azure_reservations.csv").write_text(
+        "reservation_id,reservation_name,sku,scope,utilization_pct,monthly_cost_usd\n"
+        "/providers/Microsoft.Capacity/reservationOrders/o-1/reservations/r-1,"
+        "RI-legacy,Standard_D4s_v5,shared,55.0,500.00\n",
+        encoding="utf-8",
+    )
+    dataset = collect_from_directory(tmp_path)
+    assert len(dataset.azure_reservations) == 1
+    legacy = dataset.azure_reservations[0]
+    assert legacy.applied_scope_subscription_ids is None
+    assert legacy.utilization_pct == 55.0

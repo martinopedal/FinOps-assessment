@@ -55,6 +55,17 @@ release.
 
 ### Added
 
+- `AZ.RESERVATION_SCOPE_MISMATCH` rule: flags single-scope Azure reservations
+  whose discount applies to one subscription while sibling subscriptions carry
+  significant on-demand spend (≥ $50/mo by default) on likely-compatible
+  workloads. The rule pre-aggregates spend per subscription from
+  `azure_resources` and compares with the reservation's
+  `applied_scope_subscription_ids` to identify scope-widening opportunities.
+  Adds `applied_scope_subscription_ids: list[str] | None` to the
+  `AzureReservation` model (pipe-separated in CSV mode). ARM collector now
+  populates the field from `properties.appliedScopes`. Legacy CSVs without
+  the new column load unchanged; the rule abstains on those rows. Ships with
+  a per-rule playbook template and 14 unit tests. (#59)
 - `AZ.COMMITMENT_RENEWAL_REVIEW` rule: surfaces Azure reservations expiring
   within 60 days whose operator has NOT configured auto-renew on the
   Microsoft.Capacity reservations API. The rule reads the API's
