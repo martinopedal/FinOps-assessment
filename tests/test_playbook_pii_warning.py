@@ -204,7 +204,13 @@ def test_no_pii_warning_when_redaction_off(tmp_path: Path) -> None:
 
 
 def test_manifest_pii_mode_salted_hash(tmp_path: Path) -> None:
-    """Manifest pii_handling.mode must be 'salted_hash' when PII redaction is on."""
+    """Manifest pii_handling.mode must be 'salted_hash' when PII redaction is on.
+
+    Under default redaction (Noor PR #78 BLOCKING #1 fix): EVERY surface —
+    including azure — reports ``per_run`` because the engine salts every
+    principal with a per-run secret.  ``known_limitation`` is non-null and
+    references issue #73.
+    """
     import json
 
     out = tmp_path / "playbook.jsonl"
@@ -216,10 +222,52 @@ def test_manifest_pii_mode_salted_hash(tmp_path: Path) -> None:
         )
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         assert manifest["pii_handling"]["mode"] == "salted_hash"
-        # M365 must be per_run
-        assert manifest["pii_handling"]["ticket_key_stability_by_surface"]["m365"] == "per_run"
-        # Azure must be stable
-        assert manifest["pii_handling"]["ticket_key_stability_by_surface"]["azure"] == "stable"
+        stability = manifest["pii_handling"]["ticket_key_stability_by_surface"]
+        # All four surfaces — including azure — are per_run when redaction is on.
+        for surface in ("azure", "ado", "github", "m365"):
+            assert stability[surface] == "per_run", (
+                f"Under default redaction, {surface} must report per_run "
+                f"because the engine salts every principal (Noor PR #78 BLOCKING #1)."
+            )
+        # known_limitation must be non-null and reference #73 (binding plan A12).
+        kl = manifest["pii_handling"]["known_limitation"]
+        assert isinstance(kl, str) and kl, (
+            f"known_limitation must be a non-empty string when any surface is per_run; got {kl!r}"
+        )
+        assert "#73" in kl, f"known_limitation must reference issue #73; got: {kl!r}"
+    finally:
+        if old is None:
+            os.environ.pop("SOURCE_DATE_EPOCH", None)
+        else:
+            os.environ["SOURCE_DATE_EPOCH"] = old
+
+
+# ---------------------------------------------------------------------------
+# Test 6 — manifest reflects pii_handling.mode correctly when redaction off
+# ---------------------------------------------------------------------------
+
+
+def test_manifest_pii_mode_cleartext_when_redaction_off(tmp_path: Path) -> None:
+    """All surfaces must report 'stable' and known_limitation null when --no-pii-redaction."""
+    import json
+
+    out = tmp_path / "playbook.jsonl"
+    old = os.environ.get("SOURCE_DATE_EPOCH")
+    os.environ["SOURCE_DATE_EPOCH"] = "0"
+    try:
+        _, manifest_path = write_playbook_export(
+            _azure_only_report(pii_redaction=False), out, skip_warnings=True
+        )
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        assert manifest["pii_handling"]["mode"] == "cleartext"
+        stability = manifest["pii_handling"]["ticket_key_stability_by_surface"]
+        for surface in ("azure", "ado", "github", "m365"):
+            assert stability[surface] == "stable", (
+                f"With --no-pii-redaction, {surface} must report stable (cleartext principal)."
+            )
+        assert manifest["pii_handling"]["known_limitation"] is None, (
+            "known_limitation must be null when every surface is stable."
+        )
     finally:
         if old is None:
             os.environ.pop("SOURCE_DATE_EPOCH", None)

@@ -9,9 +9,13 @@ Row schema contract
 -------------------
 Every row conforms to ``schemas/playbook_row.schema.json`` and carries:
 
-* ``ticket_key`` — a stable SHA-256 ID for cross-run deduplication.  See
-  ``pii_handling.ticket_key_stability_by_surface`` in the manifest for the
-  stability guarantee per surface.
+* ``ticket_key`` — a SHA-256 ID for cross-run deduplication.  Stability is
+  per-surface and depends on whether PII redaction is enabled at engine
+  level.  See ``pii_handling.ticket_key_stability_by_surface`` in the
+  manifest for the per-surface guarantee.  With the default
+  ``pii_redaction=True``, the engine salts EVERY principal (including
+  Azure resource IDs) with a per-run salt, so all surfaces report
+  ``per_run`` until engine tenant-stable salting lands (#73).
 * ``finding_revision`` — always ``1`` in v0.5.0; will increment when the
   playbook for a rule is structurally changed in a future release.
 * ``title``, ``description``, ``remediation_steps``, ``verification_checklist``,
@@ -46,11 +50,14 @@ overlay is not supported in v0.5.0 (tracked at #74).
 
 PII warning
 -----------
-When ``pii_redaction=True`` (default) and findings from non-Azure surfaces
-are present, the CLI emits a stderr warning: ``ticket_key`` is computed from
-the (possibly redacted) principal, so identical principals across runs will
-produce different keys when the redaction salt changes.  Suppress with
-``--skip-warnings``.
+When ``pii_redaction=True`` (default), the engine's per-run salt rotates
+EVERY principal across runs — including Azure resource IDs — so
+``ticket_key`` is per_run for ALL surfaces.  The CLI emits a stderr
+warning when non-Azure findings are present (the warning predates the
+discovery that Azure is also salted; the warning text was kept narrow to
+avoid alarming the M365-only user, but the manifest stability map is the
+authoritative contract).  Suppress with ``--skip-warnings``.  Engine
+tenant-stable salting is tracked at #73.
 
 Reproducibility
 ---------------
@@ -61,6 +68,7 @@ Timestamps honour ``SOURCE_DATE_EPOCH`` via
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import logging
@@ -93,9 +101,20 @@ _SEC_REFS = "[REFERENCES]"
 
 _ORDERED_SECTIONS = [_SEC_TITLE, _SEC_DESC, _SEC_REMEDIATION, _SEC_CHECKLIST, _SEC_REFS]
 
-# Surfaces where ticket_key is stable (cleartext resource ID is the principal
-# and doesn't change with redaction).
-_STABLE_SURFACES: frozenset[str] = frozenset({"azure"})
+# All surfaces report ``stable`` for ticket_key only when PII redaction is
+# OFF.  When ``pii_redaction=True`` (default) the engine's per-run salt
+# rotates every principal — including Azure resource IDs — so all surfaces
+# become ``per_run``.  Engine tenant-stable salting is deferred to #73.
+_STABLE_SURFACES_WHEN_CLEARTEXT: frozenset[str] = frozenset({"azure", "ado", "github", "m365"})
+
+_KNOWN_LIMITATION_PER_RUN = (
+    "ticket_key is per_run for ALL surfaces when PII redaction is on "
+    "(the engine salts every principal — including Azure resource IDs — "
+    "with a per-run secret).  Cross-run deduplication is unsafe under "
+    "this mode.  Engine tenant-stable salting is deferred to #73; until "
+    "then, run with --no-pii-redaction or accept that re-runs will "
+    "produce duplicate tickets."
+)
 
 # Severity → adapter-system priority mapping.
 _SEVERITY_TO_ADAPTER: dict[str, dict[str, Any]] = {
@@ -177,10 +196,14 @@ def _canonicalise(value: Any) -> Any:
 def _ticket_key(finding: dict[str, Any]) -> str:
     """Compute a per-finding ticket_key as ``sha256:<hex>``.
 
-    Inputs: ``(rule_id, principal, normalized_evidence_json)``.
-    For Azure surfaces the principal is the cleartext ARM resource ID, making
-    the key stable across runs.  For M365/GitHub/ADO with PII redaction on,
-    the principal changes when the salt changes, so the key is ``per_run``.
+    Inputs: ``(rule_id, principal, normalized_evidence_json)``.  The
+    principal is whatever the engine emitted — under default
+    ``pii_redaction=True``, that is a salted hash for ALL surfaces
+    (including Azure), so the ticket_key rotates with the per-run salt.
+    With ``--no-pii-redaction`` the principal is cleartext, so the
+    ticket_key is stable across runs for every surface.  See the
+    manifest's ``ticket_key_stability_by_surface`` for the per-run
+    contract observed by the export.
     """
     rule_id: str = finding.get("rule_id", "")
     principal: str = finding.get("principal", "")
@@ -313,6 +336,21 @@ def _sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+@functools.cache
+def _template_vars_cached(rule_id: str, template_source: str) -> tuple[str, ...]:
+    """Memoised ``extract_template_vars`` keyed on ``(rule_id, source)``.
+
+    AST-parsing each template once per render was a perf cliff at scale
+    (Noor AMENDMENT #1 on PR #78): 10K Azure findings * ~5ms parse =
+    ~50s of avoidable wall-clock.  The cache is keyed on
+    ``template_source`` as well as ``rule_id`` so a runtime overlay
+    (deferred to #74) cannot reuse a stale parse.  Returns a tuple
+    (immutable, hashable) so the cache value cannot be mutated by a
+    caller — callers convert to ``list`` when emitting into JSON.
+    """
+    return tuple(extract_template_vars(template_source))
+
+
 # ---------------------------------------------------------------------------
 # Public render helper
 # ---------------------------------------------------------------------------
@@ -341,9 +379,13 @@ def render_row(finding: dict[str, Any], adapter_class: str = "generic") -> dict[
 
     tmpl = env.get_template(rel_path)
 
-    # Build render context: top-level finding fields + flattened evidence.
+    # Build render context defensively: spread evidence FIRST, then
+    # reserved keys, so a (mis-named or hostile) evidence entry like
+    # ``{"principal": "<cleartext UPN>"}`` cannot override the redacted
+    # reserved value and leak through the rendered title or description.
     evidence = finding.get("evidence") or {}
     ctx: dict[str, Any] = {
+        **evidence,
         "rule_id": rule_id,
         "surface": finding.get("surface", ""),
         "severity": severity,
@@ -354,14 +396,17 @@ def render_row(finding: dict[str, Any], adapter_class: str = "generic") -> dict[
         "recommendation": finding.get("recommendation", ""),
         "evidence_ref": finding.get("evidence_ref"),
         "confidence": finding.get("confidence", "high"),
-        **evidence,
     }
 
     rendered = tmpl.render(**ctx)
     parsed = _parse_template_output(rendered)
 
-    # Extract variable names referenced by the template (static AST walk).
-    template_vars = extract_template_vars(template_source)
+    # Extract variable names referenced by the template (static AST walk,
+    # memoised per ``rule_id``).  Plan A8 originally specified post-render
+    # ``_AccessTrackingEvidence``; the static walk is the documented
+    # deviation locked into the row schema description (acceptable for
+    # all current templates and cheaper than per-render dict wrapping).
+    template_vars = _template_vars_cached(rule_id, template_source)
 
     ticket_k = _ticket_key(finding)
     hints = _adapter_hints(severity)
@@ -379,7 +424,7 @@ def render_row(finding: dict[str, Any], adapter_class: str = "generic") -> dict[
         "recommended_sku": finding.get("recommended_sku"),
         "estimated_monthly_savings_usd": finding.get("estimated_monthly_savings_usd"),
         "evidence_ref": finding.get("evidence_ref"),
-        "template_render_inputs": template_vars,
+        "template_render_inputs": list(template_vars),
         "title": parsed["title"],
         "description": parsed["description"],
         "remediation_steps": parsed["remediation_steps"],
@@ -407,14 +452,27 @@ def build_playbook_manifest(
     """Build the sidecar manifest dict for a playbook JSONL export.
 
     Manifest schema version ``"0.1"`` is additive-only in v0.5.0.
+
+    PII / stability contract
+    ------------------------
+    The engine's ``ctx.redact()`` salts every principal — including
+    Azure resource IDs — with a per-run ``secrets.token_hex(16)`` when
+    ``pii_redaction=True`` (default).  The reporter's ``ticket_key`` is
+    therefore ``per_run`` for ALL surfaces under default redaction; only
+    when the operator opts into ``--no-pii-redaction`` are principals
+    cleartext and ticket_keys stable across runs.  ``known_limitation``
+    is non-null whenever ANY surface is ``per_run`` and references
+    issue #73 (engine tenant-stable salting).
     """
     run = report.get("run", {})
-    stability: dict[str, str] = {
-        "azure": "stable",
-        "ado": "per_run",
-        "github": "per_run",
-        "m365": "per_run",
-    }
+    if pii_redaction:
+        stability: dict[str, str] = dict.fromkeys(
+            sorted(_STABLE_SURFACES_WHEN_CLEARTEXT), "per_run"
+        )
+        known_limitation: str | None = _KNOWN_LIMITATION_PER_RUN
+    else:
+        stability = dict.fromkeys(sorted(_STABLE_SURFACES_WHEN_CLEARTEXT), "stable")
+        known_limitation = None
     return {
         "playbook_schema_version": PLAYBOOK_SCHEMA_VERSION,
         "tool": {"name": "finops-assess", "version": __version__},
@@ -432,11 +490,7 @@ def build_playbook_manifest(
         "pii_handling": {
             "mode": "salted_hash" if pii_redaction else "cleartext",
             "ticket_key_stability_by_surface": stability,
-            "note": (
-                "ticket_key is per_run for M365/GitHub/ADO when PII redaction is on "
-                "because the principal is hashed with a per-run salt. "
-                "Engine-level stable-salt deferred to #73."
-            ),
+            "known_limitation": known_limitation,
         },
         "surfaces": sorted(surfaces),
         "sort_key": "(surface, rule_id, ticket_key, evidence_ref)",
@@ -620,14 +674,21 @@ def _get_click_echo() -> Any:
 
 
 def _build_adapter_class_map() -> dict[str, str]:
-    """Load rules and return a mapping of rule_id → adapter_class.
+    """Load rules and return a mapping of ``rule_id`` -> ``adapter_class``.
 
-    Falls back to ``"generic"`` for any rule not found.
+    Falls back to ``"generic"`` for any rule not found.  Narrow except
+    clause: the ``Rule`` model carries ``adapter_class`` (default
+    ``"generic"``) so an ``AttributeError`` here would indicate a real
+    schema regression — log and re-raise rather than silently returning
+    an empty map (Yuki PR #78 hardening A-1).
     """
-    try:
-        from finops_assess.rules import load_rules
+    from finops_assess.rules import load_rules
 
+    try:
         rules = load_rules()
-        return {r.id: r.adapter_class for r in rules}
-    except Exception:
+    except (FileNotFoundError, OSError) as exc:
+        # Packaged data unavailable (e.g. malformed install).  Fall back
+        # to the generic adapter rather than blocking export.
+        _log.warning("Could not load rules to map adapter_class; defaulting to 'generic': %s", exc)
         return {}
+    return {r.id: r.adapter_class for r in rules}
