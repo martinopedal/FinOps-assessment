@@ -1350,6 +1350,22 @@ Copy-paste into a working branch checklist:
 
 2. **Enum extension is not strict-additive.** v0.5.0 consumer pinning pii_handling.mode enum will REJECT v0.6.0 manifests when mode values expand. Counter-wins: consumers MUST ignore unknown fields; documented in manifest schema description. Known JSON-Schema wart, not Maya's invention. Acceptable.
 
+---
+
+## Merged from inbox
+
+### Cross-pollination: #61 stage-3 plan (Maya, 2026-05-13)
+
+Issue #61 (playbook / ticket reporter, p1, v0.5.0) stage-3 plan now locked and committed at `.squad/decisions.md:6-500`. All divergences reconciled: D1 (both-additively), D2 (Option B-honest stable-ID declaration), D3 (both-complementarily pre-compile + StrictUndefined), D4 (evidence_ref + template_render_inputs). All five research OQs closed. All five Noor predictions pre-empted. Two follow-ups filed: #73 (stable-salt engine, v0.6.0 p1), #74 (runtime overlay sandbox, v0.6.0 p2). Ready for stage-4 adversarial review; Diego + Yuki assigned for stage-5 implementation.
+
+### Triage decision: #66 + #69 paired operator-hygiene effort (2026-05-13)
+
+Route #66 (squad-info-hygiene docs) and #69 (selective-gitignore) to squad:scribe as a paired iteration with explicit dependency ordering: #66 unblocks #69. Both address "operator-visible vs. maintainer-only" boundaries. #66 establishes the `<details><summary>` convention for squad scaffolding; #69 follows up with file-tracking discipline (mid-stream churn stays local, distilled audit trail stays tracked). Implementation sequence: (1) #66 ships first (operator-visible docs, README pointer, CHANGELOG, .squad/skills/squad-pr-discipline/SKILL.md); (2) #66 verified (squad-approve.yml regex confirmed in <details> blocks); (3) #69 unblocked (.gitignore, README maintainer-section); (4) auto-approve re-verified. Not cross-blocking #67 (multi-cloud roadmap) or #68 (FinOps backlog), both independent.
+
+### Decision: Golden fixture byte-comparison requires `.gitattributes text eol=lf` (Yuki, 2026-05-13)
+
+Every golden fixture file compared byte-for-byte in tests (via `read_bytes()` or equivalent) **must** have a `text eol=lf` entry in `.gitattributes`, regardless of directory (`examples/`, `tests/fixtures/`, or other). **Rationale:** Windows-hosted GitHub Actions runners default to `core.autocrlf=true`, which rewrites LF to CRLF on checkout. Production reporters write LF-only output (enforced by `lineterminator="\n"` in CSV writers and `newline=""` in `write_text` calls). Without `eol=lf`, golden fixtures checked out with CRLF fail byte-identical comparisons exclusively on Windows (Linux/macOS pass), giving false cross-platform safety. **Scope:** applies to byte-identical comparisons in `tests/fixtures/**/*.csv`, `tests/fixtures/**/*.json`, `tests/fixtures/**/*.html`. **Checklist for future reporter PRs:** (1) Does reporter write bytes deterministically (LF-only, UTF-8)? (2) Does test compare golden fixture bytes with `read_bytes()`? (3) If both: add `text eol=lf` to `.gitattributes` for every such fixture in the same PR. (4) Verify on `windows-latest` — if conditions 1–2 met but `.gitattributes` missing, Windows CI fails while Linux/macOS pass. See `.squad/skills/focus-aligned-golden-fixtures/SKILL.md` for reusable testing pattern including `newline=""` and `.gitattributes` checklist.
+
 3. **ARM resource IDs carry resource-name PII.** ResourceId cleartext (e.g. `vm-john-test01`) encodes user names. Counter-wins: operator opted into PII redaction upstream; export echoes source_report.pii_redaction; ResourceId is the FOCUS warehouse join key — hashing defeats the purpose. Acceptable.
 
 4. **Empty-input CI-script trap.** Zero rows exit 0, masking silent collector failures. Counter-wins: correct trade-off; clear stdout "Wrote 0 advisory rows" is the signal; failing loud would force every consumer to special-case zero. Risk R8 acknowledged.
