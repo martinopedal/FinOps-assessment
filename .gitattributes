@@ -18,8 +18,23 @@ examples/demo-triage.csv text eol=lf
 examples/demo-triage.json text eol=lf
 examples/focus-aligned.csv text eol=lf
 examples/focus-aligned.csv.manifest.json text eol=lf
+examples/playbook.jsonl text eol=lf
+examples/playbook.jsonl.manifest.json text eol=lf
 # Test golden fixtures for the FOCUS-aligned reporter — byte-compared in tests
 # 1 & 2 (test_golden_csv_byte_identical / test_golden_manifest_byte_identical).
 # Must be LF on all platforms or the comparison fails on Windows-hosted runners.
 tests/fixtures/focus_aligned/golden-azure.csv text eol=lf
 tests/fixtures/focus_aligned/golden-azure.manifest.json text eol=lf
+# Test golden fixtures for the playbook reporter (issue #61, v0.5.0) --
+# byte-compared in tests 11 & 12 (test_golden_jsonl_byte_identical /
+# test_golden_manifest_byte_identical). Same Windows-LE-rewrite mechanism.
+tests/fixtures/playbook/golden-azure.jsonl text eol=lf
+tests/fixtures/playbook/golden-azure.jsonl.manifest.json text eol=lf
+# Packaged Jinja2 source templates for the playbook reporter (issue #61) --
+# the RENDER INPUT to the byte-compared playbook fixtures above. Without
+# this rule a Windows clone with core.autocrlf=true rewrites the templates
+# to CRLF, Jinja2 emits \r in rendered strings, json.dumps escapes them as
+# \\r in the JSONL, and test_golden_jsonl_byte_identical fails on Windows
+# only. Test 16 (test_packaged_j2_templates_are_lf_only) is the regression
+# net if this line is ever removed. Same defence Yuki added for #58.
+src/finops_assess/data/playbooks/**/*.j2 text eol=lf

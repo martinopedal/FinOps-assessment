@@ -3,6 +3,1055 @@
 ## Active Decisions
 
 
+### 2026-05-13 — Stage-3 plan for #61 playbook / ticket reporter (Maya, Opus 4.7)
+
+## §11 Stage-3 Plan — Playbook / ticket reporter (#61)
+
+> **Author:** Maya (Lead / FinOps PM) — model: Opus 4.7
+> **Status:** stage-3 plan, awaiting stage-4 adversarial sign-off (Noor)
+> **Issue:** #61 (epic #57 child) — release `release:v0.5.0`, priority `priority:p1`
+> **Branch (planned):** `squad/61-playbook-reporter`
+> **Implementer:** Diego (reporter module owner — same hands as #58) + Yuki (tests, docs, golden-fixture pinning)
+> **Foundation block under:** #16 (FinOps roadmap) — prerequisite for #63 (remediation-PR drafter)
+
+This plan turns the locked stage-2 consensus
+(`61-consensus.md`) into a file-level checklist precise enough that
+the implementer makes zero architectural decisions. The four
+divergences (D1–D4), six convergent amendments, five Noor
+predictions, and five research OQs are **closed below** — if anything
+in the implementation diverges from the lockings in §1, treat the
+locking as the source of truth and flag the contradiction back to me
+before merging.
+
+The exporter pattern, byte-contract discipline, manifest-sidecar
+shape, and golden-fixture pinning are inherited verbatim from #58.
+This is a deliberate copy of the architectural posture that worked;
+no new patterns are coined here.
+
+---
+
+### Inputs (locked)
+
+- `C:\Users\martinopedal\.copilot\session-state\00cb0f92-01d8-49ec-b313-1616120d0178\files\61-consensus.md` — **the locked stage-2 consensus.** Verbatim source for the six convergent amendments, the four divergence points, and the eight-item stage-3 prep checklist. Do not revisit.
+- Stage-1 research brief (`research-61-playbook` Haiku explore agent history) — sections A (schema patterns), B (existing reporter precedent), C (Jinja2 availability), D (10 risks / 5 OQs), E (test patterns), F (file-level skeleton), G (cross-platform / CI). Confidence A/B/C/D/E/G HIGH, F MEDIUM.
+- Stage-2 rubberduck Sonnet 4.5 (`rubberduck-61-sonnet`) — APPROVE WITH AMENDMENTS, 8-item checklist, 5 Noor predictions.
+- Stage-2 rubberduck GPT-5.4 (`rubberduck-61-gpt`) — APPROVE WITH AMENDMENTS, 5 blockers, "neutral row + adapter hints" model, BLOCKING PII finding (D2).
+- `C:\git\FinOps-assessment\.squad\decisions.md` — Diego's #58 entry (FOCUS-aligned exporter): the format mirror, golden-fixture pinning skill, generative test pattern, and "single module per output format" convention all carry over.
+- `C:\git\FinOps-assessment\src\finops_assess\reporters\focus_aligned.py` — structural template for `playbook_reporter.py`.
+- `C:\git\FinOps-assessment\src\finops_assess\reporters\_determinism.py` — reused for `generated_at_iso()` and `SOURCE_DATE_EPOCH` honouring.
+- `C:\git\FinOps-assessment\src\finops_assess\schemas\focus_aligned_manifest.schema.json` — structural template for `playbook_manifest.schema.json`.
+
+### Stage-3 corrections to the consensus
+
+The consensus (D2, GPT's BLOCKING finding) flagged the per-run salt
+behavior in `engine.py:70-75,151`. **Verified against the repo at
+commit `39b3230`:**
+
+- `RuleContext.redact()` (`engine.py:70-75`) hashes the principal as `sha256(f"{salt}:{principal}")` and returns the first 16 hex chars prefixed `sha256:`.
+- `run_rules()` (`engine.py:137,151`) accepts an optional `salt: str | None` parameter; when `None` (the CLI default), the salt is generated per invocation via `secrets.token_hex(16)`.
+- `cli.py` does **not** currently flow a stable salt; every CLI run gets a fresh per-run salt.
+
+**Conclusion:** GPT's claim is **correct**. With the default
+`--pii-redaction` posture (on) and no operator-supplied stable salt,
+`finding.principal` for M365 / GitHub / ADO findings IS unstable
+across runs. A naive `sha256(rule_id || principal || evidence)`
+ticket key would generate a brand-new ticket every run — fatal for a
+ticketing reporter framed as a foundation block under #16/#63.
+
+**Locked architectural response (Option B from the consensus,
+"honest stability declaration" variant):**
+
+- The playbook reporter **does not introduce a stable principal salt** in v0.5.0 (that is a separate engine-level architectural change, deferred to its own follow-up issue — placeholder `#73`, to be filed by Maya at PR-open time).
+- Instead, the reporter emits two distinct identifiers per row, derived from whatever the engine produced:
+  - `ticket_key` — the dedup key used by downstream ticketing systems. Computed as `sha256(json_envelope([rule_id, principal_as_emitted, evidence_key_version]))` truncated to 32 hex chars. **Stability is per-surface and explicitly declared in the manifest**: `"stable"` for Azure (cleartext resource IDs), `"per_run"` for M365 / GitHub / ADO when `pii_redaction=true` with no stable salt.
+  - `finding_revision` — `sha256(normalized_evidence_json)` truncated to 16 hex chars. Always changes when evidence shifts; allows operators to detect when an existing ticket needs an update vs. when nothing has changed.
+- The manifest carries an explicit `pii_handling` block with `mode`, `ticket_key_stability_by_surface`, and a `known_limitation` string so downstream consumers cannot accidentally treat a `per_run` key as stable. The CLI emits a stderr warning when redaction is on AND non-Azure findings are present AND no stable salt was supplied.
+- Mirrors the focus-aligned posture in `.squad/decisions.md:537` ("Azure-only … M365/GitHub/ADO ship in v0.6.0 once the stable-principal-salt feature lands"), but for #61 we **do not filter non-Azure findings out** — the playbook is multi-surface from day one because operators want a single JSONL stream. We just **declare honestly** what is stable and what is not.
+
+This is the only correction to the consensus document. D1, D3, D4
+and the six convergent amendments are accepted verbatim.
+
+---
+
+## Section 1 — Decisions locked (close all OQs and divergences)
+
+### Research-brief OQs
+
+| OQ | Question | Locked decision | One-line rationale |
+|----|----------|-----------------|-------------------|
+| **OQ-1** | Row cardinality — one row per finding, or one row per (rule, principal) aggregated? | **One row per finding.** No aggregation. | Aggregation is a rule-design concern, not a reporter concern; the reporter is a faithful projection of the engine output. |
+| **OQ-2** | How is a row's identity defined when the same rule fires N times for the same principal with different evidence? | `ticket_key = sha256(json_envelope([rule_id, principal, evidence_key_version]))`. Same `(rule, principal)` collisions are disambiguated by `finding_revision = sha256(normalized_evidence)` when stability allows; otherwise treated as separate rows whose downstream dedup is the operator's responsibility. | Mirrors `advisory_finding_key` pattern in `focus_aligned.py:138-158` so consumers can join playbook to FOCUS-aligned export on `(rule_id, principal)` when stability matches. |
+| **OQ-3** | Should operators be able to overlay custom templates from `~/.finops-assess/playbooks/`? | **No.** Repo-controlled templates only via `importlib.resources`. **Defer to v0.6.0** (placeholder issue `#74` to be filed by Maya at PR-open time). | Sandbox-escape risk + supply-chain risk; v0.5.0 ships only what is in the wheel. Sonnet's Noor prediction #2. |
+| **OQ-4** | Should the row carry the full `evidence` dict, or just an `evidence_ref`? | **`evidence_ref` only**, plus `template_render_inputs[]` listing the evidence keys the template touched. | Keeps row size bounded; gives operators a debuggable trail without bloating the JSONL or leaking unredacted evidence into ticket bodies. |
+| **OQ-5** | Missing-template policy — fail-fast, silently skip, or generic fallback? | **Fail-fast.** Raise `PlaybookTemplateNotFoundError(rule_id, expected_path)`. No silent skip, no generic fallback. | Mirrors mypy / ruff posture: a missing template is a packaging defect, not a runtime warning. Sonnet's Noor prediction #4. |
+
+### Divergence points (D1–D4)
+
+| D | Topic | Sonnet position | GPT position | **Locked decision** | Rationale |
+|---|-------|-----------------|--------------|---------------------|-----------|
+| **D1** | Payload model | Issue's row shape + `playbook_schema_version` | Neutral row + `adapter_hints.{servicenow,jira,github}` | **Both, additively.** Core row = Sonnet's shape. Optional nested `adapter_hints` object derived from `severity` + a new `rules.yaml` field `adapter_class` (defaults to `"generic"`). Ship in row v1; do not defer. | GPT is right that "vendor-ready superset" is misleading — adapters always reinterpret. The hints are a free leg-up: cheap to compute, cheap to ignore. Schema versioning means we can extend the hints object additively in v0.6.0 without a v1 break. |
+| **D2** | PII stable-ID | Not addressed | BLOCKING — per-run salt makes `finding_id` non-stable | **Option B-honest** (see "Stage-3 corrections" above): emit `ticket_key` + `finding_revision`, declare per-surface stability in manifest, emit a CLI warning when redaction is on with non-Azure findings, defer the stable-salt engine change to follow-up issue `#73`. The warning is emitted from `cli.py` **before** `write_playbook_export` is invoked (so an operator piping stderr to `>/dev/null` after the export still sees it), is suppressed by `--skip-warnings`, and is **also** suppressed when the input report contains zero non-Azure findings (`m365_count == github_count == ado_count == 0`). The same condition that triggers the stderr warning ALSO populates `pii_handling.known_limitation` in the manifest as the durable, machine-readable copy. | Option A (per-run-only) breaks #16/#63 framing. Option C (introduce stable-salt mode) is a cross-cutting engine change that does not belong in a reporter PR. Option B ships honest semantics today and unblocks the stable-salt issue without coupling. |
+| **D3** | Jinja2 hardening | Pre-compile templates at startup | Configure `StrictUndefined` | **Both.** A single helper `_load_playbook_environment()` builds the `Environment` with `undefined=StrictUndefined`, autoescape disabled (templates produce JSON-string fragments, not HTML), `keep_trailing_newline=False`, and pre-compiles every templated rule's `.j2` source on construction. | Complementary, not exclusive. Pre-compile catches syntax errors at export start (before any rows render); StrictUndefined catches missing-variable errors at render time. |
+| **D4** | Evidence in row | `evidence_ref` only | Defers to Maya | **`evidence_ref` only**, plus `template_render_inputs: list[str]` captured by **post-render access tracking** (NOT by a Jinja2 `finalize` hook, which is wrong under `StrictUndefined` because `finalize` only fires on `Undefined` access — i.e. never under StrictUndefined except on crash). The mechanism: wrap the per-row `evidence` dict in a small `dict` subclass `_AccessTrackingEvidence` that overrides `__getitem__`, `get`, `__contains__`, `__iter__`, `keys`, `values`, and `items` to record every key access into a `set`; sort the recorded set after `template.render(...)` returns; emit as `template_render_inputs`. Only the `evidence` context key is wrapped (the other context keys — `rule`, `finding`, `principal`, `severity` — do not need tracking). The `evidence_ref` object itself carries only `report_path` (the duplicate `finding_revision` field is dropped — it is already a top-level row field). | Sonnet's call. The `template_render_inputs` list gives operators "what fed this ticket?" without re-emitting the full evidence payload. Post-render diffing was rejected: deep-equality of two evidence dicts per row is O(N×evidence-size) and noisier than tracking actual key accesses. |
+
+### Pre-emption of Sonnet's 5 Noor predictions
+
+| # | Prediction | Pre-emption in this plan |
+|---|------------|--------------------------|
+| **N1** | No schema versioning → breaks #63 drafter | `playbook_schema_version: "0.1"` declared in manifest; `Rule.evidence_key_version` (existing field at `models.py:56`) mixed into `ticket_key` envelope so a rule's evidence-shape bump bumps the ticket key. |
+| **N2** | Runtime overlay sandbox escape | `importlib.resources` only; no filesystem sniffing of `~/.finops-assess/`; helper `_load_playbook_environment()` cannot accept a non-packaged loader. Documented as deferred to v0.6.0 in `docs/playbook-reporter.md`. |
+| **N3** | No atomic write → partial JSONL on crash | `tempfile.mkstemp(dir=output.parent, prefix=".playbook-", suffix=".jsonl.tmp")` + `os.fsync` + `os.replace(tmp, output)`. The JSONL atomic write is followed by a manifest atomic write that is the canonical **readiness marker** for downstream consumers; the manifest also self-attests the JSONL via `output_artifacts.jsonl_sha256` + `output_artifacts.jsonl_byte_count`. A pre-flight check refuses to overwrite an orphaned JSONL (no sibling manifest) without `--cleanup-orphans`. Code + reader contract in §5.1. |
+| **N4** | Missing template silent skip vs crash | Custom exception `PlaybookTemplateNotFoundError(rule_id, expected_path)` raised at export start (during pre-compile), not during row render. Tested by `test_missing_template_fails_fast`. |
+| **N5** | Windows CRLF breaks downstream parsers | Files opened in **binary** mode (`"wb"`) with manual `b"\n"` between rows and trailing `b"\n"` on the final row, so no platform layer can rewrite line endings. `.gitattributes` `text eol=lf` for `examples/playbook.jsonl`, `examples/playbook.jsonl.manifest.json`, the two golden fixtures under `tests/fixtures/playbook/`, **AND `src/finops_assess/data/playbooks/**/*.j2`** (the 23 packaged Jinja2 source templates — without this line, a Windows clone with `core.autocrlf=true` rewrites the templates to CRLF, Jinja2 emits `\r` in rendered strings, `json.dumps` escapes them as `\\r`, and the byte-identical golden test fails on `windows-latest` only — same regression class Yuki patched in #58 commit `3e18275`). Yuki's #58 hardening pattern (see `.squad/skills/focus-aligned-golden-fixtures/SKILL.md`); regression net is test #16 in §6. |
+
+---
+
+## Section 2 — File-level changes
+
+All paths are absolute Windows-style. LoC estimates include
+docstrings + blank lines, exclude tests. Total: ~25 files,
+~500 LoC of new product code (matches Sonnet's estimate).
+
+| # | Path | Verb | Purpose | LoC |
+|---|------|------|---------|----:|
+| 1 | `C:\git\FinOps-assessment\src\finops_assess\reporters\playbook_reporter.py` | NEW | The reporter module: row projection, manifest assembly, atomic deterministic write, `PlaybookTemplateNotFoundError`. | ~320 |
+| 2 | `C:\git\FinOps-assessment\src\finops_assess\reporters\__init__.py` | MODIFIED | Re-export `write_playbook_export`, `build_playbook_manifest`, `PlaybookTemplateNotFoundError`. Add to `__all__`. | +6 |
+| 3 | `C:\git\FinOps-assessment\src\finops_assess\schemas\playbook_row.schema.json` | NEW | JSON Schema (draft 2020-12) for a single playbook row. Bundled as package-data; consumed by row-validator test. | ~140 (JSON) |
+| 4 | `C:\git\FinOps-assessment\src\finops_assess\schemas\playbook_manifest.schema.json` | NEW | JSON Schema (draft 2020-12) for the sidecar manifest. Mirrors `focus_aligned_manifest.schema.json` shape. | ~150 (JSON) |
+| 5 | `C:\git\FinOps-assessment\src\finops_assess\data\playbooks\__init__.py` | NEW | Empty marker so `importlib.resources.files("finops_assess.data.playbooks")` resolves at runtime. | 1 |
+| 6 | `C:\git\FinOps-assessment\src\finops_assess\data\playbooks\m365\*.j2` (8 files) | NEW | One Jinja2 template per M365 rule: `M365.UNUSED_LICENSE_30D.j2`, `M365.OVER_LICENSED_VS_PERSONA.j2`, `M365.DUPLICATE_BUNDLE.j2`, `M365.DISABLED_USER_LICENSED.j2`, `M365.SHARED_MAILBOX_LICENSED.j2`, `M365.GUEST_PREMIUM_LICENSED.j2`, `M365.COPILOT_INACTIVE_60D.j2`, `M365.E5_FEATURES_UNUSED.j2`. | ~25 each |
+| 7 | `C:\git\FinOps-assessment\src\finops_assess\data\playbooks\azure\*.j2` (7 files) | NEW | One per Azure rule: `AZ.IDLE_VM_14D.j2`, `AZ.UNATTACHED_DISK.j2`, `AZ.PUBLIC_IP_UNATTACHED.j2`, `AZ.OVERSIZED_VM.j2`, `AZ.RESERVATION_UNDERUTILIZED.j2`, `AZ.LOG_ANALYTICS_OVERINGEST.j2`, `AZ.DEV_TEST_SUB_MISMATCH.j2`. | ~25 each |
+| 8 | `C:\git\FinOps-assessment\src\finops_assess\data\playbooks\github\*.j2` (4 files) | NEW | One per GitHub rule: `GH.INACTIVE_SEAT_90D.j2`, `GH.COPILOT_INACTIVE_30D.j2`, `GH.GHAS_OVER_PROVISIONED.j2`, `GH.RUNNER_TIER_MISMATCH.j2`. | ~25 each |
+| 9 | `C:\git\FinOps-assessment\src\finops_assess\data\playbooks\ado\*.j2` (4 files) | NEW | One per ADO rule: `ADO.INACTIVE_BASIC_90D.j2`, `ADO.STAKEHOLDER_ELIGIBLE.j2`, `ADO.PARALLEL_JOBS_OVER_PROVISIONED.j2`, `ADO.TEST_PLANS_UNUSED.j2`. | ~25 each |
+| 10 | `C:\git\FinOps-assessment\src\finops_assess\data\rules\*.yaml` (m365, azure, github, ado) | MODIFIED | Add optional `adapter_class` field per rule (default inferred at load time, see D1 reconciliation). Permissible values: `"generic"`, `"identity_lifecycle"`, `"resource_rightsizing"`, `"runner_capacity"`, `"licensing_rightsizing"`. | +1 line per rule, ~23 rules |
+| 11 | `C:\git\FinOps-assessment\src\finops_assess\models.py` | MODIFIED | Add `adapter_class: Literal[...] = "generic"` to `Rule` model with `extra="forbid"` discipline. Mirror addition to the YAML loader's allowed-keys set. | +6 |
+| 12 | `C:\git\FinOps-assessment\src\finops_assess\cli.py` | MODIFIED | Add `@export.command("playbook")` mirroring the `focus-aligned` subcommand. Help text, `--input`, `--output`, optional `--skip-warnings` flag (off by default). | +75 |
+| 13 | `C:\git\FinOps-assessment\pyproject.toml` | MODIFIED | (a) Promote `Jinja2>=3.1` from optional `[pdf]` extra to a runtime dep (already required by HTML + PDF reporters; promoting it makes the runtime dep tree honest). Confirm via `import jinja2` at module top of `playbook_reporter.py` rather than lazy-loading. (b) Extend `[tool.setuptools.package-data].finops_assess` to include `"data/playbooks/**/*.j2"`. (c) Confirm `"schemas/*.json"` already covers the two new schema files (added in #58). | +3, ~0 net |
+| 14 | `C:\git\FinOps-assessment\src\finops_assess\rules.py` | MODIFIED | Allow `adapter_class` key in the YAML schema; default to `"generic"` when absent so existing operator overrides continue to load. | +4 |
+| 15 | `C:\git\FinOps-assessment\tests\test_playbook_reporter.py` | NEW | The 12 enumerated tests in §6, including the parametrized template-coverage matrix. | ~520 |
+| 16 | `C:\git\FinOps-assessment\tests\fixtures\playbook\input-multi-surface.json` | NEW | Hand-authored canonical findings JSON: 1 Azure idle-VM + 1 M365 unused-license + 1 GitHub inactive-seat + 1 ADO inactive-basic. Drives the multi-surface stability declaration test. | ~140 (JSON) |
+| 17 | `C:\git\FinOps-assessment\tests\fixtures\playbook\input-empty.json` | NEW | `{"findings": []}` — drives empty-export, manifest-still-written test. | ~25 (JSON) |
+| 18 | `C:\git\FinOps-assessment\tests\fixtures\playbook\input-azure-only.json` | NEW | 2 Azure findings, distinct rule IDs, distinct evidence shapes. Drives the golden-byte test (only Azure rows have `stable` ticket keys, so this is the canonical reproducible input). | ~80 (JSON) |
+| 19 | `C:\git\FinOps-assessment\tests\fixtures\playbook\golden-azure.jsonl` | NEW | Byte-identical expected JSONL for `input-azure-only.json` rendered with `SOURCE_DATE_EPOCH=0`. LF line endings, pinned via `.gitattributes`. | 2 lines |
+| 20 | `C:\git\FinOps-assessment\tests\fixtures\playbook\golden-azure.jsonl.manifest.json` | NEW | Byte-identical expected manifest for the same input. | ~50 (JSON) |
+| 21 | `C:\git\FinOps-assessment\tests\fixtures\playbook\golden-cli-help.txt` | NEW | Snapshot of `finops-assess export playbook --help` output. | ~14 |
+| 22 | `C:\git\FinOps-assessment\.gitattributes` | MODIFIED | Append `text eol=lf` lines for: `examples/playbook.jsonl`, `examples/playbook.jsonl.manifest.json`, `tests/fixtures/playbook/golden-azure.jsonl`, `tests/fixtures/playbook/golden-azure.jsonl.manifest.json`, **AND `src/finops_assess/data/playbooks/**/*.j2`** (the 23 packaged Jinja2 source templates — see N5 in §1 for the regression mechanism this prevents on `windows-latest`). **(Yuki's hardening lesson from #58 commit `3e18275` — every byte-compared fixture AND every render INPUT that feeds a byte-compared fixture needs its own line.)** | +5 |
+| 23 | `C:\git\FinOps-assessment\scripts\generate_docs.py` | MODIFIED | (a) Extend `regenerate_examples` to render `examples\playbook.jsonl` + `examples\playbook.jsonl.manifest.json` from the bundled demo report. (b) Extend the `--check` diff loop to cover the two new artefacts. (c) Export `PLAYBOOK_BASENAME = "playbook"` constant. | +35 |
+| 24 | `C:\git\FinOps-assessment\examples\playbook.jsonl` | NEW (generated, committed) | Generated artefact, byte-pinned LF via `.gitattributes`. | n/a |
+| 25 | `C:\git\FinOps-assessment\examples\playbook.jsonl.manifest.json` | NEW (generated, committed) | Generated artefact, byte-pinned LF via `.gitattributes`. | n/a |
+| 26 | `C:\git\FinOps-assessment\docs\playbook-reporter.md` | NEW | Operator-facing user doc. Warning-banner heavy: per-surface stability table, no-API-push posture, fail-fast template policy, schema-versioning contract, `--skip-warnings` opt-out documented as expert-only. | ~190 |
+| 27 | `C:\git\FinOps-assessment\README.md` | MODIFIED | One-line entry to the reports section linking to `docs/playbook-reporter.md`; reference the new CLI subcommand. | +6 |
+| 28 | `C:\git\FinOps-assessment\docs\user-guide.md` | MODIFIED | New `## Exporting findings to a ticketing playbook` section after the FOCUS-aligned section; embed the help-text block; link to `docs/playbook-reporter.md`. | +35 |
+| 29 | `C:\git\FinOps-assessment\docs\schema.md` | MODIFIED | Add `## Playbook reporter (v0.5.0)` subsection after the FOCUS-aligned manifest subsection: per-row schema fields + manifest fields + JSON Schema pointer. Make explicit that the playbook is a sidecar, NOT part of the canonical report envelope. | +45 |
+| 30 | `C:\git\FinOps-assessment\docs\plan.md` §6 | MODIFIED | Add a `### Playbook / ticket reporter` subsection after `### FOCUS-aligned advisory export` (lines 230-235). Wording mirrors the FOCUS-aligned cross-reference — point at `docs/playbook-reporter.md` and at `finops-assess export playbook`. | +6 |
+| 31 | `C:\git\FinOps-assessment\CHANGELOG.md` | MODIFIED | New entry under `## v0.5.0`: "Added: `finops-assess export playbook` — per-finding NDJSON ticketing-system payloads with sidecar manifest (foundation block under #16/#63). Templates packaged for all current rules. Multi-surface; per-surface ticket-key stability declared in manifest. See `docs/playbook-reporter.md`. (#61, epic #57)" | +5 |
+| 32 | `C:\git\FinOps-assessment\.github\workflows\ci.yml` | NO CHANGE | The new export subcommand reuses existing `lint-and-test` and `catalog-validation` jobs (which run pytest + `finops-assess validate`). No new top-level CI job is introduced, so the `required-checks` summary at `ci.yml:68-79` does not need extension. **If a test in #15 turns out to need a new top-level job, the `needs:` list MUST be amended in the same PR (per copilot-instructions §11 / issue #51).** |
+| 33 | `C:\git\FinOps-assessment\data\` | NO CHANGE | The `adapter_class` field is added to `src/finops_assess/data/rules/*.yaml` (the packaged copy that runs at install time). The top-level `data/` mirror is updated by an existing script — confirm `tests/test_packaged_data.py` covers parity if it does. |
+
+---
+
+## Section 3 — Schema contract
+
+### 3.1 Per-row JSON Schema (`playbook_row.schema.json`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/martinopedal/FinOps-assessment/blob/main/src/finops_assess/schemas/playbook_row.schema.json",
+  "title": "Playbook row (v0.1)",
+  "description": "One JSONL row per finding. Schema_version '0.1' is additive-only: new top-level keys may be added in future releases without a version bump; consumers MUST ignore unknown keys. A breaking change increments playbook_schema_version on the sibling manifest to '0.2'.",
+  "type": "object",
+  "required": [
+    "playbook_schema_version",
+    "rule_id",
+    "ticket_key",
+    "finding_revision",
+    "surface",
+    "severity",
+    "title",
+    "description",
+    "remediation_steps",
+    "verification_checklist",
+    "evidence_ref",
+    "template_render_inputs"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "playbook_schema_version": { "type": "string", "const": "0.1" },
+    "rule_id": { "type": "string" },
+    "ticket_key": { "type": "string", "pattern": "^[0-9a-f]{32}$", "description": "sha256(json_envelope([rule_id, principal, evidence_key_version])), 32 hex chars. Stability declared per-surface in sibling manifest." },
+    "finding_revision": { "type": "string", "pattern": "^[0-9a-f]{16}$", "description": "sha256(normalized_evidence_json), 16 hex chars. Always changes when evidence shifts." },
+    "surface": { "type": "string", "enum": ["m365", "azure", "github", "ado"] },
+    "severity": { "type": "string", "enum": ["high", "medium", "low", "info"] },
+    "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1 },
+    "remediation_steps": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
+    "verification_checklist": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
+    "evidence_ref": {
+      "type": "object",
+      "required": ["report_path"],
+      "additionalProperties": false,
+      "properties": {
+        "report_path": { "type": ["string", "null"], "description": "Echoes report.run.input (already path-redacted upstream when pii_redaction=true). Sole field in evidence_ref; the canonical row-identity hash lives in the top-level finding_revision field." }
+      }
+    },
+    "template_render_inputs": { "type": "array", "items": { "type": "string" }, "description": "Evidence keys the rendering template referenced. Empty array means the template referenced no evidence keys." },
+    "assignee_hint": { "type": ["string", "null"], "description": "Free-form identifier (e.g. 'm365-admin', 'azure-platform-team') derived from surface + adapter_class. Operators MAY rewrite." },
+    "adapter_hints": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Per-vendor guidance derived from rule.adapter_class. v0.1 keys: servicenow, jira, github. Consumers MUST ignore unknown sub-keys.",
+      "properties": {
+        "servicenow": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "table": { "type": "string", "description": "Suggested ServiceNow table. Examples: 'incident', 'sc_task', 'change_request'." },
+            "category": { "type": "string" },
+            "urgency": { "type": "integer", "minimum": 1, "maximum": 4 }
+          }
+        },
+        "jira": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "issuetype": { "type": "string", "description": "Suggested Jira issue type. Examples: 'Task', 'Story', 'Bug'." },
+            "labels": { "type": "array", "items": { "type": "string" } },
+            "priority": { "type": "string", "enum": ["Highest", "High", "Medium", "Low", "Lowest"] }
+          }
+        },
+        "github": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "labels": { "type": "array", "items": { "type": "string" } },
+            "milestone": { "type": ["string", "null"] }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**Field-order contract:** the writer emits keys in **the order
+declared in `required` + the optional list above**. `json.dumps`
+is invoked with `sort_keys=False` and an explicit `OrderedDict`-
+equivalent input (Python 3.7+ dict insertion order is part of the
+spec) so the JSONL byte stream is deterministic.
+
+### 3.2 Manifest JSON Schema (`playbook_manifest.schema.json`)
+
+Mirrors `focus_aligned_manifest.schema.json` with playbook-specific
+fields. Required top-level keys, in declared order:
+
+```
+playbook_schema_version  : const "0.1"
+tool                     : { name: const "finops-assess", version: SemVer }
+generated_at             : ISO-8601 (honours SOURCE_DATE_EPOCH)
+source_report            : { path, schema_version, pii_redaction }
+dataset_type             : const "playbook"
+row_count                : int >= 0
+template_versions        : array of { rule_id, surface, template_path, sha256 }
+output_artifacts         : { jsonl_path, jsonl_sha256, jsonl_byte_count }
+pii_handling             : { mode, ticket_key_stability_by_surface, known_limitation }
+schema_contract_url      : URL pointing at playbook_row.schema.json on main
+```
+
+`output_artifacts` shape (binding — the manifest's self-attestation
+of the JSONL it accompanies; together with the manifest-as-readiness
+contract in §5.1, this lets consumers detect a stale or truncated
+JSONL):
+
+```json
+{
+  "jsonl_path": "playbook.jsonl",
+  "jsonl_sha256": "<64 hex chars — sha256 of the JSONL bytes the manifest accompanies>",
+  "jsonl_byte_count": 12345
+}
+```
+
+`pii_handling` shape (binding):
+
+```json
+{
+  "mode": "redacted_per_run | redacted_stable | cleartext",
+  "ticket_key_stability_by_surface": {
+    "m365":   "stable | per_run",
+    "azure":  "stable | per_run",
+    "github": "stable | per_run",
+    "ado":    "stable | per_run"
+  },
+  "known_limitation": "string | null — populated (non-null) whenever ANY surface in ticket_key_stability_by_surface is per_run; the string MUST reference issue #73 and warn that re-runs will produce duplicate tickets for non-Azure surfaces. Test #7 asserts the non-null contract."
+}
+```
+
+**Algorithm-vs-input clarification (NIT-15):** the reporter computes
+`ticket_key` with a single uniform algorithm (`sha256(json_envelope([
+rule_id, principal, evidence_key_version]))[:32]`) for all four
+surfaces. The per-surface `stability` declaration is a statement about
+the **input quality** to that algorithm (Azure principals are
+cleartext ARM IDs and survive across runs; M365/GitHub/ADO principals
+are per-run salted hashes from `engine.RuleContext.redact()` and do
+NOT survive across runs), NOT about the algorithm itself. Future
+consumers reading the row payload alone MUST NOT infer per-surface
+algorithmic divergence; the reporter has none.
+
+`additionalProperties: true` at every level so v0.6.0 can extend
+without a manifest version bump (same forward-compat posture as
+focus-aligned).
+
+---
+
+## Section 3.3 — `adapter_class` per-rule mapping + `adapter_hints` derivation (binding)
+
+Closes Noor amendments A5 + A6. The implementer picks **zero**
+architectural values from this section; the tables below are binding.
+
+### 3.3.1 Per-rule `adapter_class` assignment (23 rules)
+
+Added as `adapter_class:` on each rule entry in
+`src/finops_assess/data/rules/{m365,azure,github,ado}.yaml` (file #10
+in §2). Permissible values: `generic`, `identity_lifecycle`,
+`resource_rightsizing`, `runner_capacity`, `licensing_rightsizing`.
+
+| Surface | Rule ID | `adapter_class` | Justification |
+|---------|---------|-----------------|---------------|
+| m365 | `M365.UNUSED_LICENSE_30D` | `licensing_rightsizing` | Action: drop a paid SKU; trigger: zero usage for 30 days. |
+| m365 | `M365.OVER_LICENSED_VS_PERSONA` | `licensing_rightsizing` | Action: downgrade SKU to persona's recommended tier. |
+| m365 | `M365.DUPLICATE_BUNDLE` | `licensing_rightsizing` | Action: collapse overlapping bundles to one. |
+| m365 | `M365.DISABLED_USER_LICENSED` | `identity_lifecycle` | Trigger: disabled account; action sequence is identity-lifecycle (verify offboarding) before license drop. |
+| m365 | `M365.SHARED_MAILBOX_LICENSED` | `licensing_rightsizing` | Action: convert to unlicensed shared mailbox. |
+| m365 | `M365.GUEST_PREMIUM_LICENSED` | `identity_lifecycle` | Trigger: guest identity class; license is the symptom, not the cause. |
+| m365 | `M365.COPILOT_INACTIVE_60D` | `licensing_rightsizing` | Action: drop Copilot add-on. |
+| m365 | `M365.E5_FEATURES_UNUSED` | `licensing_rightsizing` | Action: downgrade E5 → E3. |
+| azure | `AZ.IDLE_VM_14D` | `resource_rightsizing` | Action: stop / right-size the VM. |
+| azure | `AZ.UNATTACHED_DISK` | `resource_rightsizing` | Action: delete or re-attach the disk. |
+| azure | `AZ.PUBLIC_IP_UNATTACHED` | `resource_rightsizing` | Action: release the IP. |
+| azure | `AZ.OVERSIZED_VM` | `resource_rightsizing` | Action: change VM size. |
+| azure | `AZ.RESERVATION_UNDERUTILIZED` | `resource_rightsizing` | Action: re-scope or exchange the reservation. |
+| azure | `AZ.LOG_ANALYTICS_OVERINGEST` | `resource_rightsizing` | Action: throttle ingestion / move to basic logs. |
+| azure | `AZ.DEV_TEST_SUB_MISMATCH` | `generic` | Subscription-shape governance; not a per-resource size or licensing call. |
+| github | `GH.INACTIVE_SEAT_90D` | `identity_lifecycle` | Trigger: user inactivity; action sequence is offboard-or-justify before seat removal. |
+| github | `GH.COPILOT_INACTIVE_30D` | `licensing_rightsizing` | Action: drop GHCB seat. |
+| github | `GH.GHAS_OVER_PROVISIONED` | `licensing_rightsizing` | Action: downgrade GHAS coverage. |
+| github | `GH.RUNNER_TIER_MISMATCH` | `runner_capacity` | Action: change hosted-runner tier. |
+| ado | `ADO.INACTIVE_BASIC_90D` | `identity_lifecycle` | Trigger: user inactivity; same shape as `GH.INACTIVE_SEAT_90D`. |
+| ado | `ADO.STAKEHOLDER_ELIGIBLE` | `licensing_rightsizing` | Action: downgrade Basic → Stakeholder license tier. |
+| ado | `ADO.PARALLEL_JOBS_OVER_PROVISIONED` | `runner_capacity` | Action: reduce parallel job count. |
+| ado | `ADO.TEST_PLANS_UNUSED` | `licensing_rightsizing` | Action: drop the Test Plans extension. |
+
+### 3.3.2 `adapter_hints` derivation (severity × `adapter_class`)
+
+Two orthogonal contributions, **unioned per row**:
+
+**Contribution A — severity → urgency / priority** (universal across `adapter_class`):
+
+| `severity` | `servicenow.urgency` | `jira.priority` | `github.labels` adds |
+|------------|---------------------:|-----------------|----------------------|
+| `high`   | 2 | `High`    | `priority:high` |
+| `medium` | 3 | `Medium`  | `priority:medium` |
+| `low`    | 4 | `Low`     | `priority:low` |
+| `info`   | 4 | `Lowest`  | `priority:info` |
+
+**Contribution B — `adapter_class` → table / category / labels** (universal across severity):
+
+| `adapter_class` | `servicenow.table` | `servicenow.category` | `jira.issuetype` | `jira.labels` adds | `github.labels` adds |
+|-----------------|--------------------|-----------------------|------------------|--------------------|----------------------|
+| `generic`               | `incident` | `cost-optimization` | `Task` | `finops` | `finops` |
+| `identity_lifecycle`    | `incident` | `identity-management` | `Task` | `finops`, `identity` | `finops`, `identity` |
+| `resource_rightsizing`  | `sc_task` | `cost-optimization` | `Task` | `finops`, `rightsizing` | `finops`, `rightsizing` |
+| `runner_capacity`       | `sc_task` | `capacity-management` | `Task` | `finops`, `ci-cd` | `finops`, `ci-cd` |
+| `licensing_rightsizing` | `sc_task` | `cost-optimization` | `Task` | `finops`, `licensing` | `finops`, `licensing` |
+
+**Composition rule (binding):** the row-assembler computes
+`adapter_hints` by taking a fresh `dict[str, dict[str, Any]]` with
+empty `servicenow`, `jira`, `github` sub-dicts; applying contribution
+A; then applying contribution B; for label arrays, the union is order-
+preserving (B-labels first, A-label appended) and de-duplicated. The
+result is a stable, deterministic dict for any `(severity,
+adapter_class)` pair, which keeps `test_deterministic_reruns` (#4)
+green.
+
+`github.milestone` is always `null` in v0.5.0 (operators set it via
+their own automation; surfacing a fabricated milestone here would be
+dishonest).
+
+**Stage-4 amendment (Noor):** B1 pair-atomicity contract added in §5.1; B2 `.j2` LF-pin added to file #22 in §2 + test #16 in §6; A3 CLI warning trigger location + suppression rule locked in D2 above; A4 worked example added to file #26 in §2 (see §10.3); A5 + A6 closed by the §3.3 table above; A7 explicit pre-compile statement added to §4.1 + test #17 in §6; A8 post-render access tracking locked in D4 above + §4.2; A9 duplicate `finding_revision` dropped from `evidence_ref` in §3.1; A10 `original_index` tiebreaker added to §5.2; A11 hardening tests #13–#15 enumerated in §6; A12 `known_limitation` non-null assertion added to test #7 in §6; NITs N13/N14/N15 addressed inline.
+
+---
+
+## Section 4 — Template architecture
+
+### 4.1 Loading
+
+Templates loaded **only** via `importlib.resources.files(
+"finops_assess.data.playbooks") / surface / f"{rule_id}.j2"` —
+mirrors `html_reporter.py:33-48`. No filesystem path arithmetic, no
+overlay directories.
+
+`_load_playbook_environment(rule_ids)` is invoked **once per
+`write_playbook_export(...)` call**, scoped to the set of rule IDs
+present in the input findings (`rule_ids_in_findings = {f["rule_id"]
+for f in findings}`). It is **NOT cached at module-import time** and
+**NOT memoised across export calls** — that would defeat the
+fail-fast posture for newly-shipped rules whose templates land
+between two CLI invocations in a long-running parent process. Test
+#17 in §6 asserts this: a rule template added between two
+`write_playbook_export` calls is picked up by the second call without
+a process restart.
+
+```python
+def _load_playbook_environment(rule_ids: Iterable[str]) -> tuple[Environment, dict[str, Template]]:
+    """Build a Jinja2 environment and pre-compile every requested template.
+
+    Raises PlaybookTemplateNotFoundError on the first missing template.
+    """
+    env = Environment(
+        loader=FunctionLoader(_load_template_source),
+        undefined=StrictUndefined,
+        autoescape=False,           # rows are JSON strings, not HTML
+        keep_trailing_newline=False,
+    )
+    compiled: dict[str, Template] = {}
+    for rule_id in sorted(rule_ids):
+        try:
+            compiled[rule_id] = env.get_template(_template_path_for(rule_id))
+        except TemplateNotFound as exc:
+            raise PlaybookTemplateNotFoundError(rule_id, expected=str(exc)) from exc
+    return env, compiled
+```
+
+`_template_path_for(rule_id)` derives `"<surface>/<rule_id>.j2"` from
+the rule prefix (`M365.*` → `m365/`, `AZ.*` → `azure/`, `GH.*` →
+`github/`, `ADO.*` → `ado/`).
+
+**`StrictUndefined` failure modes (binding):**
+
+- **Compile-time** (typo in template body, e.g. `{{ findng.principal }}`) — raised by `env.get_template(...)` inside `_load_playbook_environment` on the FIRST template that fails. The reporter has not yet opened a tempfile, so there is nothing to clean up. Wrapped as `PlaybookTemplateRenderError` (test #8).
+- **Render-time** (template references `evidence['vm_size']` but the row's evidence dict has no `vm_size` key) — `template.render(...)` raises `jinja2.UndefinedError`. The reporter is mid-stream inside the JSONL temp-file write loop. **Policy:** fail-fast (do NOT skip the row, do NOT substitute a sentinel). The temp-file `BaseException` handler unlinks the partial JSONL temp; the export crashes with `PlaybookTemplateRenderError(rule_id, principal, original=UndefinedError)`. Operators get a deterministic, debuggable failure pointing at the offending `(rule, principal, missing_key)` tuple. Test #18 in §6 covers this.
+
+### 4.2 Template variable contract
+
+Every `.j2` template is rendered with **exactly** this context dict
+(StrictUndefined will raise on any missing-key reference):
+
+```
+{
+  "rule":     Rule          (full pydantic model — id, surface, severity, summary, recommendation_template, evidence_key_version)
+  "finding":  dict          (the original finding dict — principal, current_sku, recommended_sku, estimated_monthly_savings_usd, evidence)
+  "evidence": _AccessTrackingEvidence (dict subclass that records key reads — see D4 lock; powers template_render_inputs)
+  "principal": str          (alias for finding["principal"])
+  "severity":  str
+}
+```
+
+A template MUST emit a Jinja2 block named `title`, `description`,
+`remediation_steps` (one step per line), and `verification_checklist`
+(one item per line). The reporter uses `template.render()` to grab
+each block via `get_or_select_template` + a small block-extraction
+helper. Missing blocks → `PlaybookTemplateBlockMissingError`.
+
+**JSON escaping happens at the row-assembly site, not in templates
+(NIT-14):** templates emit raw Python strings (titles, descriptions,
+remediation step text). The row-assembler builds a Python `dict` from
+those strings and calls `json.dumps(row, ensure_ascii=False,
+allow_nan=False, sort_keys=False)`. `json.dumps` is the canonical
+escaping site for `"`, `\`, and control characters (including
+embedded `\r` / `\n` / `\t` / NUL). Templates MUST NOT use `|tojson`
+on individual fields — doing so would double-escape the eventual JSON
+output. Test #2 (`test_jsonl_byte_contract`) and tests #13/#14
+(NUL/Unicode hardening) verify the escaping contract end-to-end.
+
+### 4.3 Coverage policy (Sonnet's "fail-fast" question, locked)
+
+**Ship templates for ALL 23 currently-implemented rules in v0.5.0.**
+No `--skip-missing-templates` flag. No "3-5 representative ones"
+shortcut. Rationale:
+
+1. Fail-fast is the Noor-resistant posture (Sonnet's recommendation, confirmed).
+2. The rules YAML is the authoritative list — any rule that has a YAML entry SHOULD have a template. Anything else creates a long tail of "implementation incomplete" tickets we will be paying down for milestones.
+3. Diego's #58 plan also shipped FOCUS support for every rule, not a representative subset; the convention is "support full coverage when shipping a new output format."
+4. New rules added in future PRs MUST add a template in the same PR — covered by `test_template_for_rule[parametrized over registered_rule_ids()]` (see §6, test 1).
+
+(Note: The user prompt referenced "18 existing rules" — repo
+inventory at commit `39b3230` is actually 23 rules across the four
+surfaces. The plan ships 23 templates.)
+
+---
+
+## Section 5 — Atomic write + determinism
+
+### 5.1 Pair-atomic write contract (Noor predictions N3 + B1)
+
+**Reader contract (binding, surfaced in `docs/playbook-reporter.md`
+and `docs/schema.md`):**
+
+> The sibling manifest `<output>.jsonl.manifest.json` is the
+> **canonical readiness marker** for a playbook export. Its presence
+> guarantees that the JSONL it accompanies is byte-complete and
+> matches `manifest.output_artifacts.jsonl_sha256` /
+> `jsonl_byte_count`. Consumers (#63 remediation-PR drafter,
+> ServiceNow / Jira / GitHub Issues importers) MUST gate ingestion on
+> the manifest's presence and SHOULD verify the JSONL's sha256
+> against the manifest before trusting any row. An orphaned JSONL (no
+> sibling manifest) is **undefined state** from a prior interrupted
+> export; consumers MUST refuse to ingest it. The reporter itself
+> refuses to overwrite an orphaned JSONL on the next run unless the
+> operator passes `--cleanup-orphans` (CLI subcommand option, §7.2).
+
+**Atomic-write strategy: Option C (two-step `os.replace` with
+`os.fsync` durability, manifest-as-readiness-marker, sha256 self-
+attestation, orphan pre-flight + `--cleanup-orphans` recovery).**
+Option A (`os.replace` of a directory) was rejected because Windows
+`MoveFileEx` cannot replace a non-empty target directory. Option B
+(content-addressed JSONL filename) was rejected because it changes
+the operator-facing filename. Option C ships an honest, cross-
+platform-safe failure mode — the manifest is the gate; an orphaned
+JSONL is detectable, refused, and recoverable.
+
+```python
+class PlaybookOrphanedJSONLError(RuntimeError):
+    """Raised when a prior export's JSONL exists with no sibling manifest."""
+
+
+def write_playbook_export(
+    report: dict[str, Any],
+    output_jsonl: Path,
+    *,
+    cleanup_orphans: bool = False,
+) -> tuple[Path, Path]:
+    """Write playbook JSONL + sidecar manifest with a manifest-as-readiness contract.
+
+    Sequence:
+      1. Pre-flight: refuse to run if a prior orphaned JSONL exists with
+         no sibling manifest, unless cleanup_orphans=True.
+      2. Pre-compile every required Jinja2 template (fail-fast on missing).
+      3. Stream JSONL to a tempfile, hashing as we go; fsync; os.replace
+         into output_jsonl.
+      4. Build the manifest (including the JSONL's sha256 + byte_count).
+      5. Stream manifest to a tempfile; fsync; os.replace into manifest_path.
+
+    The manifest is the canonical readiness marker. An orphaned JSONL
+    (step 3 succeeded but step 5 did not — process killed, power loss)
+    is detectable on the next run by the step-1 pre-flight and is
+    refused without --cleanup-orphans.
+    """
+    output_jsonl = Path(output_jsonl)
+    output_jsonl.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path = output_jsonl.with_name(output_jsonl.name + ".manifest.json")
+
+    # Step 1: orphan pre-flight (BLOCKING B1 mitigation).
+    if output_jsonl.exists() and not manifest_path.exists():
+        if cleanup_orphans:
+            output_jsonl.unlink()
+        else:
+            raise PlaybookOrphanedJSONLError(
+                f"Refusing to overwrite orphaned JSONL at {output_jsonl}: "
+                f"no sibling manifest at {manifest_path.name}. The prior "
+                f"export was interrupted; re-run with --cleanup-orphans to "
+                f"discard the orphan."
+            )
+
+    findings = report.get("findings", [])
+
+    # Step 2: fail-fast on missing templates BEFORE opening the temp file.
+    rule_ids_in_findings = {f["rule_id"] for f in findings}
+    env, compiled = _load_playbook_environment(rule_ids_in_findings)
+
+    # Step 3: JSONL atomic write with sha256 self-attestation.
+    sha = hashlib.sha256()
+    byte_count = 0
+    fd, tmp_jsonl = tempfile.mkstemp(
+        dir=output_jsonl.parent, prefix=".playbook-", suffix=".jsonl.tmp"
+    )
+    try:
+        with os.fdopen(fd, "wb") as fh:    # binary mode: no platform LE rewrite
+            for finding in _sorted_findings(findings):
+                row = _project_row(finding, env=env, compiled=compiled, report=report)
+                payload = (
+                    json.dumps(row, ensure_ascii=False, allow_nan=False, sort_keys=False)
+                    + "\n"
+                ).encode("utf-8")
+                fh.write(payload)
+                sha.update(payload)
+                byte_count += len(payload)
+            fh.flush()
+            os.fsync(fh.fileno())          # durability before rename
+        os.replace(tmp_jsonl, output_jsonl)
+    except BaseException:
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(tmp_jsonl)
+        raise
+
+    # Step 4: build manifest (carries jsonl_sha256 + jsonl_byte_count).
+    manifest = build_playbook_manifest(
+        report,
+        rows=findings,
+        compiled=compiled,
+        jsonl_sha256=sha.hexdigest(),
+        jsonl_byte_count=byte_count,
+        jsonl_filename=output_jsonl.name,
+    )
+
+    # Step 5: manifest atomic write — the readiness marker.
+    fd, tmp_manifest = tempfile.mkstemp(
+        dir=manifest_path.parent, prefix=".playbook-", suffix=".manifest.tmp"
+    )
+    try:
+        payload = (
+            json.dumps(manifest, indent=2, sort_keys=False, ensure_ascii=False) + "\n"
+        ).encode("utf-8")
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(payload)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp_manifest, manifest_path)
+    except BaseException:
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(tmp_manifest)
+        raise
+
+    return output_jsonl, manifest_path
+```
+
+Cross-platform notes:
+
+- `os.replace` is atomic per POSIX `rename(2)` and Windows `MoveFileEx(MOVEFILE_REPLACE_EXISTING)`; both replace an existing destination atomically.
+- `os.fsync` flushes file contents to disk before `os.replace`; we do not fsync the parent directory (POSIX-only and not load-bearing for our consumer contract — a missed parent-directory fsync would only lose a freshly-renamed manifest in a power-loss window the orphan pre-flight already handles on next run).
+- Binary mode (`"wb"`) bypasses Python's universal newline translation entirely; we never get a `\r\n` from the platform.
+- The pair is **not** strictly atomic at the filesystem level (filesystems do not support multi-file atomic commit). What the contract guarantees is that the **failure mode is safe and detectable**: an interrupted export leaves either (a) nothing, (b) a tempfile that the cleanup handler unlinks on `BaseException`, or (c) an orphaned JSONL that the next run refuses to overwrite. There is **no failure mode in which a complete-looking JSONL is shipped to a downstream consumer without the manifest's per-surface stability declaration.**
+
+### 5.2 Determinism contract
+
+| Requirement | Mechanism |
+|-------------|-----------|
+| `SOURCE_DATE_EPOCH` honoured | `manifest.generated_at` → `generated_at_iso()` from `_determinism.py`. No other timestamps in the JSONL row. |
+| Sorted row order | `_sorted_findings()` returns `sorted(enumerate(findings), key=lambda pair: (pair[1]["surface"], pair[1]["rule_id"], pair[1]["principal"], finding_revision_for(pair[1]), pair[0]))` and discards the index after sorting. The `pair[0]` original-enumerate-index is the **final tiebreaker** — it guarantees a total order even if two findings collide on `(surface, rule_id, principal, finding_revision)`. Without this tiebreaker, Python's stable-sort fallback to engine insertion order is non-deterministic across runs (rule iteration × principal iteration × evidence-key-set ordering all vary), and `test_deterministic_reruns` (#4) goes flaky. Closes Noor amendment A10. |
+| UTF-8 no BOM | `encoding="utf-8"` on every write. No `utf-8-sig` anywhere. |
+| LF line endings on all platforms | `newline=""` on file open + manual `"\n"` writes (CSVDictWriter trick from `focus_aligned.py:361`). |
+| Trailing `\n` on final row | Loop unconditionally appends `\n` after each `json.dumps`. The empty-export case (zero findings) produces a zero-byte JSONL plus a manifest with `row_count: 0`. |
+| Float reproducibility | `allow_nan=False`; floats canonicalised via `repr()` (mirror `focus_aligned._canonicalise`). |
+| `.gitattributes` pinning | Lines added in file #22 above for every byte-compared artefact. |
+
+---
+
+## Section 6 — Tests (18 enumerated)
+
+Generative parametrization wherever possible. The fixture set is
+deliberately small (3 input JSONs) — the parametrize matrix gives
+the coverage breadth.
+
+| # | Test | Input fixture | Asserts | Generated? |
+|---|------|---------------|---------|-----------|
+| 1 | `test_template_for_rule[rule_id]` | n/a | For every `rule_id in registered_rule_ids()`: `_template_path_for(rule_id)` resolves via `importlib.resources` AND template renders without raising against a synthesized minimal context. **This is the safety net for "new rule landed without template"** — it's the parametrize that Sonnet pushed. | parametrize over `registered_rule_ids()` |
+| 2 | `test_jsonl_byte_contract` | `input-azure-only.json` | Output JSONL is valid UTF-8, has no BOM, every line ends `\n`, last line ends `\n`, no `\r` anywhere, every line is a self-contained JSON object that validates against `playbook_row.schema.json`. | no |
+| 3 | `test_atomic_write_on_failure` | `input-azure-only.json` | Monkeypatch `_project_row` to raise on the second row; assert no `playbook.jsonl` AND no `playbook.jsonl.manifest.json` exists in the output dir afterward, AND no `.tmp` files remain. | no |
+| 4 | `test_deterministic_reruns` | `input-multi-surface.json` | Run the export twice with `SOURCE_DATE_EPOCH=0`; assert both `.jsonl` and `.manifest.json` are byte-identical between runs. The `original_index` tiebreaker added in §5.2 must hold even when a synthetic input contains two `(surface, rule_id, principal, finding_revision)` collisions. | no |
+| 5 | `test_manifest_schema_validates` | `input-multi-surface.json` | `jsonschema.validate(manifest, playbook_manifest.schema.json)` passes; `pii_handling.ticket_key_stability_by_surface` has all 4 surface keys; `output_artifacts.jsonl_sha256` matches `hashlib.sha256(jsonl_bytes).hexdigest()`; `output_artifacts.jsonl_byte_count` equals `len(jsonl_bytes)`. | no |
+| 6 | `test_missing_template_fails_fast` | synthetic finding with `rule_id="FAKE.MISSING"` | `write_playbook_export` raises `PlaybookTemplateNotFoundError` before any temp file is created (assert no `.tmp` files exist in output dir afterward, AND no `playbook.jsonl`, AND no `playbook.jsonl.manifest.json`). | no |
+| 7 | `test_pii_redaction_propagates` | `input-multi-surface.json` rendered from a report where `run.pii_redaction=true` | manifest's `pii_handling.mode` is `"redacted_per_run"`; `ticket_key_stability_by_surface["m365"]` is `"per_run"`; `ticket_key_stability_by_surface["azure"]` is `"stable"`; `pii_handling.known_limitation` is **non-null** (string, length > 0) and the string contains the substring `"#73"` (closes Noor A12 — the durable, machine-readable copy of the stderr warning). | no |
+| 8 | `test_strict_undefined_catches_typos` | synthetic template with `{{ findng.principal }}` (typo) | Loading the env raises `PlaybookTemplateRenderError` wrapping `jinja2.UndefinedError` at PRE-COMPILE time, not at row-render time. | no |
+| 9 | `test_cli_format_playbook` | `input-multi-surface.json` via tmp path | `CliRunner().invoke(main, ["export", "playbook", "--input", ..., "--output", ...])` exit code 0; stdout contains `"Wrote N playbook rows to ..."`; stderr contains the redaction warning when applicable; stderr warning fires **before** the export completes (assert via stderr capture interleaved with on-disk file appearance). | no |
+| 10 | `test_cli_help_snapshot` | n/a | `CliRunner().invoke(main, ["export", "playbook", "--help"])` stdout equals `tests/fixtures/playbook/golden-cli-help.txt` byte-for-byte. | no |
+| 11 | `test_golden_jsonl_byte_identical` | `input-azure-only.json` with `SOURCE_DATE_EPOCH=0` | Generated JSONL bytes equal `tests/fixtures/playbook/golden-azure.jsonl`. | no |
+| 12 | `test_golden_manifest_byte_identical` | same | Generated manifest JSON bytes equal `tests/fixtures/playbook/golden-azure.jsonl.manifest.json`. | no |
+| 13 | `test_evidence_with_nul_bytes_round_trips` | synthetic finding with `evidence = {"resource_id": "abc\x00def"}` referenced by template | Output JSONL row contains `"resource_id": "abc\u0000def"` (json.dumps canonical NUL escape); no truncation; row re-parses via `json.loads` to identical Python string. **Yuki #58 hardening parity, A11.** | no |
+| 14 | `test_evidence_unicode_round_trips` | synthetic finding with non-ASCII (`"résumé"`, `"héllo🌍"`, RTL Arabic, CJK) in `principal` and `evidence` | Output JSONL preserves bytes (assert `ensure_ascii=False` via `"é".encode("utf-8") in jsonl_bytes`), no `\u00e9` escape; round-trip through `json.loads` preserves NFC normalization. **Yuki #58 hardening parity, A11.** | no |
+| 15 | `test_long_resource_id_no_truncation` | synthetic finding with a 4 KiB-long Azure ARM resource_id in `evidence["resource_id"]` referenced by template | The full 4 KiB string appears verbatim in the rendered `description`; no template-side truncation, no row-assembler truncation. Schema's `description` field has no `maxLength`. **Yuki #58 hardening parity, A11.** | no |
+| 16 | `test_packaged_j2_templates_are_lf_only` | n/a | Walk every `*.j2` under `importlib.resources.files("finops_assess.data.playbooks")`; for each, read bytes; assert `b"\r" not in template_bytes`. **Closes Noor BLOCKING B2 — guards against `core.autocrlf=true` re-rewriting the templates on a Windows clone if the `.gitattributes` rule is removed in a future PR. Yuki #58 byte-level parity, mirrors `tests/test_focus_aligned.py::test_golden_fixtures_have_lf_line_endings`.** | parametrize over discovered `.j2` files |
+| 17 | `test_pre_compile_picks_up_new_template` | n/a | First `write_playbook_export` call with input findings limited to rules `{R1, R2}` succeeds. Then monkeypatch `importlib.resources.files(...)` to expose a new template `R3.j2`; second `write_playbook_export` call with input findings now including `R3` succeeds **without a process restart** (proves no module-import-time caching of `Environment` / pre-compiled templates). | no |
+| 18 | `test_strict_undefined_catches_missing_evidence_key` | synthetic finding with `evidence = {}` rendered through a template that references `{{ evidence['vm_size'] }}` | `write_playbook_export` raises `PlaybookTemplateRenderError` wrapping `jinja2.UndefinedError`; the temp `.jsonl.tmp` file is unlinked (assert no `.tmp` files in output dir); no `playbook.jsonl` exists; no `playbook.jsonl.manifest.json` exists. **Closes Noor A8 render-time concern.** | no |
+
+---
+
+## Section 7 — CLI wiring
+
+### 7.1 Subcommand shape
+
+Mirrors `export focus-aligned` verbatim. The playbook is a
+**standalone export subcommand**, NOT composable with `--format
+all` on the `run` command, because:
+
+1. `run` operates on a CSV input directory; `export` operates on an existing JSON report. The semantic split was locked in #58.
+2. Composability with `run --format all` would require teaching the run command how to find templates AND would re-introduce coupling between the engine and the playbook templates that we deliberately avoided.
+3. Operators who want a one-shot pipeline use a two-step shell invocation; this is documented in the user guide.
+
+### 7.2 Help-text contract (verbatim — golden-snapshotted in test 10)
+
+```
+$ finops-assess export playbook --help
+Usage: finops-assess export playbook [OPTIONS]
+
+  Emit per-finding ticketing-system payloads (NDJSON) from a finops-assess
+  report.
+
+  This export is read-only. The JSONL stream is consumed out-of-band by
+  the operator's ticketing platform (ServiceNow / Jira / GitHub Issues);
+  finops-assess never calls a ticketing API. See docs/playbook-reporter.md
+  for the per-surface ticket-key stability contract.
+
+Options:
+  --input PATH           Canonical findings JSON from `finops-assess run`.
+                         [required]
+  --output PATH          Destination JSONL path; manifest written
+                         alongside as <output>.manifest.json.  [required]
+  --skip-warnings        Suppress the stderr warning about per-run
+                         ticket-key stability when redaction is on with
+                         non-Azure findings. Expert use only.
+  --cleanup-orphans      If a prior export was interrupted and left an
+                         orphaned JSONL with no sibling manifest at the
+                         output path, delete the orphan instead of
+                         refusing to run. The manifest is the canonical
+                         readiness marker; an orphaned JSONL is undefined
+                         state. See docs/playbook-reporter.md.
+  --help                 Show this message and exit.
+```
+
+### 7.3 Stderr warning text + ordering (binding)
+
+**Trigger location:** the warning is computed and emitted from the
+`@export.command("playbook")` handler in `cli.py`, **immediately
+before** the call to `write_playbook_export(...)`. Operators piping
+stderr to `>/dev/null` after the export will still see it printed
+during the export's startup window. The reporter module itself does
+not know about CLI flags and does not emit any stderr text.
+
+**Suppression rules** (all three apply; warning is silent if any
+fires):
+
+1. The operator passed `--skip-warnings`.
+2. The input report has `run.pii_redaction=false` (operator opted into cleartext; per-run instability does not apply).
+3. The input report has zero non-Azure findings (`m365_count == 0 AND github_count == 0 AND ado_count == 0`); the warning text would name three zero-count surfaces and be meaningless.
+
+**Verbatim warning text** (when emitted):
+
+```
+WARNING: pii_redaction is on and findings include surfaces without a
+stable principal salt (m365=N, github=N, ado=N). Their ticket_key
+values are stable WITHIN this run only and will change on the next
+invocation. Downstream ticketing systems will treat re-runs as new
+tickets. Track stable-salt support at issue #73.
+```
+
+**Manifest mirror:** the same condition that triggers the stderr
+warning ALSO populates `pii_handling.known_limitation` in the
+manifest with a string of the form:
+
+```
+"per-run ticket_key instability for surfaces: {m365,github,ado} (counts: {3,1,2}); track stable-salt at #73"
+```
+
+This is the durable, machine-readable copy of the warning for
+consumers that never see stderr. Test #7 asserts the field is
+non-null whenever any surface is `per_run`.
+
+---
+
+## Section 8 — Acceptance criteria
+
+The PR is mergeable when ALL of the following are simultaneously
+true. Stage-4 Noor will check this list verbatim.
+
+### 8.1 Convergent amendments (consensus §1, all 6 present)
+
+- [ ] **NDJSON byte contract** — `test_jsonl_byte_contract` (#2) is green.
+- [ ] **Atomic writes** — `test_atomic_write_on_failure` (#3) is green; `tempfile.mkstemp` + `os.replace` visible in `playbook_reporter.py`.
+- [ ] **Manifest sidecar** — `playbook_manifest.schema.json` exists; `test_manifest_schema_validates` (#5) green.
+- [ ] **Fail-fast on missing template** — `PlaybookTemplateNotFoundError` raised; `test_missing_template_fails_fast` (#6) green.
+- [ ] **Deterministic row sort** — `_sorted_findings()` keyed `(surface, rule_id, principal, finding_revision)`; `test_deterministic_reruns` (#4) green.
+- [ ] **Out-of-scope items rejected** — section 9 below; no API push, no custom field mapping, no dedup, no aggregation, no runtime overlay, no cross-surface rules.
+
+### 8.2 Noor predictions pre-empted (all 5)
+
+- [ ] N1 — `playbook_schema_version: "0.1"` in manifest.
+- [ ] N2 — No filesystem template overlay; `importlib.resources` only.
+- [ ] N3 — `tempfile.mkstemp` + `os.fsync` + `os.replace` in both writes; manifest is the readiness marker (§5.1); orphan pre-flight refuses partial state without `--cleanup-orphans`.
+- [ ] N4 — `PlaybookTemplateNotFoundError` raised at pre-compile, not row render.
+- [ ] N5 — `.gitattributes` carries 5 new `text eol=lf` lines (4 byte-compared fixtures + 1 glob for the 23 `.j2` source templates); test #16 asserts no `.j2` carries `\r`.
+
+### 8.3 Divergences reconciled (all 4)
+
+- [ ] D1 — Row carries optional `adapter_hints` object derived per the binding §3.3 tables; `Rule.adapter_class` field added; per-rule mapping in §3.3.1; severity × class derivation in §3.3.2.
+- [ ] D2 — `pii_handling.ticket_key_stability_by_surface` declared in manifest; CLI emits stderr warning **before** `write_playbook_export` runs (§7.3 trigger location); `pii_handling.known_limitation` is non-null whenever any surface is `per_run`; follow-up issue `#73` filed and linked.
+- [ ] D3 — `_load_playbook_environment()` uses `StrictUndefined` AND pre-compiles every templated rule; pre-compile runs **once per `write_playbook_export` call**, scoped to `rule_ids_in_findings`, NOT cached at module-import time (test #17).
+- [ ] D4 — Row carries `evidence_ref` (now `{report_path}` only — duplicate `finding_revision` dropped) + `template_render_inputs` (computed via `_AccessTrackingEvidence` dict subclass — see D4 lock and §4.2); NOT the full evidence dict.
+
+### 8.4 Research OQs closed (all 5)
+
+- [ ] OQ-1, OQ-2, OQ-3, OQ-4, OQ-5 — answers in §1 above are reflected in code/docs/tests.
+
+### 8.5 Validation gates (all green)
+
+- [ ] `finops-assess validate` — passes (catalog + personas + rules schema, including the new `adapter_class` field).
+- [ ] `ruff check . && ruff format --check .` — passes.
+- [ ] `mypy src` — passes (`--strict`); new `Rule.adapter_class` annotated; `playbook_reporter.py` is fully typed.
+- [ ] `pytest` — all 18 enumerated tests green (12 originals + 3 hardening A11 + LF-pin guard A11/B2 + pre-compile no-cache A7 + render-time UndefinedError A8).
+- [ ] `python scripts/generate_docs.py --check` — passes; the two new `examples/playbook.*` artefacts are byte-fresh.
+- [ ] CI matrix — `{ubuntu-latest, windows-latest, macos-latest} × {3.11, 3.12}` ALL green. The `required-checks` summary context (`ci.yml:68-79`) is the gate.
+
+### 8.6 Documentation drift (all updated, per copilot-instructions §"Documentation updates")
+
+- [ ] `README.md` — playbook reporter mentioned in the reports section.
+- [ ] `CHANGELOG.md` — entry under `## v0.5.0`.
+- [ ] `docs/plan.md` §6 — playbook subsection added (file #30).
+- [ ] `docs/schema.md` — playbook row + manifest documented; manifest-as-readiness contract from §5.1 documented; **schema versioning contract** lifted out of the JSON-Schema description string into a top-level "Schema versioning contract" section (closes Noor NIT N13).
+- [ ] `docs/user-guide.md` — playbook section added.
+- [ ] `docs/playbook-reporter.md` — operator guide created; includes (a) per-surface stability worked example showing the manifest-first consumer pattern (closes Noor amendment A4), (b) `--cleanup-orphans` recovery procedure, (c) top-level "Schema versioning contract" section (NIT N13 surfaced operator-side too).
+- [ ] `examples/playbook.jsonl` + `.manifest.json` — generated and committed.
+
+---
+
+## Section 9 — Out of scope (reject scope creep early)
+
+Per consensus §6, **none** of the following are in this PR. Stage-4
+Noor MUST reject any PR that smuggles them in.
+
+| # | Item | Rationale | Disposition |
+|---|------|-----------|-------------|
+| 1 | Direct API push to ServiceNow / Jira / GitHub Issues | Read-only posture is non-negotiable per copilot-instructions §"Hard rules" #1; #61's framing is explicit ("operators can pipe to … out-of-band"). | Permanent — would violate the read-only architecture. |
+| 2 | Custom-field mapping per ticketing instance | Operator-specific; belongs in the operator's downstream adapter, not in finops-assess. | Permanent — out of charter. |
+| 3 | Ticket dedup across runs | Requires stable salt + a state store; both are out of scope. The honest stability declaration (D2) tells operators which dedup is safe. | Defer to follow-up `#73` (Maya files at PR-open). |
+| 4 | Multi-finding aggregation (one ticket for N findings) | Aggregation is a rule-design concern (where the rule itself emits one finding per group), not a reporter concern. | Permanent for the reporter — revisit at the rule level if requested. |
+| 5 | Runtime template overlay (`~/.finops-assess/playbooks/`) | Sandbox escape + supply-chain risk. | Defer to v0.6.0 — placeholder issue `#74` (Maya files at PR-open). |
+| 6 | Cross-surface rules (a "playbook rule" that fires on a join of M365 + Azure findings) | Cross-surface evaluation is an engine-level architectural change, not a reporter concern. | Defer — no follow-up filed (no operator demand surfaced yet). |
+| 7 | Stable-principal-salt feature | The engine-level architectural change to make `principal` stable across runs when redacted. The honest stability declaration (D2) ships v0.5.0 without it. | Follow-up `#73` (Maya files at PR-open). |
+
+---
+
+## Section 10 — Stage-5 implementer guidance
+
+**Owner:** Diego (reporter module, mirrors his #58 ownership) + Yuki
+(test enumeration, golden-fixture pinning, docs sweep).
+
+**Inheritance from #58:**
+
+- Single module per output format (no separate `playbook_manifest.py`). The `build_playbook_manifest` helper lives inside `playbook_reporter.py` for the same reasons documented at `.squad/decisions.md` lines 85-100 of the #58 entry.
+- `.gitattributes` discipline: every byte-compared fixture needs its own line. Yuki: re-apply the pattern from `.squad/skills/focus-aligned-golden-fixtures/SKILL.md`.
+- Generative parametrization for breadth (test #1) + golden bytes for depth (tests #11, #12).
+
+**Reviewer Rejection Lockout pattern:** the implementer is Diego.
+On rejection, the revision MUST go to a different agent (Maya's
+charter rule at `.squad/agents/lead/charter.md:33`). Diego does NOT
+self-revise.
+
+**Stage-4 Noor verdict comment:** posted by the **coordinator (Martin)** as
+a PR comment using the `**Stage-4 Adversarial Review — Noor**`
+marker + `VERDICT: APPROVE` line so `squad-approve.yml` (issue #47)
+can submit the `github-actions[bot]` approval. **Do NOT embed the
+verdict in this PR's body** — `squad-approve.yml` triggers on
+`issue_comment:created`, not on PR body content.
+
+**CI gate hygiene:** if implementation produces a need for a new
+top-level CI job (it should not), the `required-checks` summary
+context in `ci.yml:68-79` MUST be amended in the same PR (per
+copilot-instructions §11 / issue #51). Otherwise the new job runs
+ungated.
+
+**Pre-PR commands:**
+
+```pwsh
+cd C:\git\FinOps-assessment
+git checkout -b squad/61-playbook-reporter   # already created by Maya for this plan PR — Diego rebases off this
+finops-assess validate
+ruff check . ; ruff format --check .
+mypy src
+pytest
+python scripts/generate_docs.py --check
+```
+
+**Pre-merge dry run** (must succeed locally before opening the
+implementation PR):
+
+```pwsh
+finops-assess export playbook --input examples\demo-report.json --output .\.tmp-export\playbook.jsonl
+# Confirm: .\.tmp-export\playbook.jsonl exists, .\.tmp-export\playbook.jsonl.manifest.json exists,
+# row count matches manifest, manifest validates against playbook_manifest.schema.json,
+# manifest.output_artifacts.jsonl_sha256 matches `Get-FileHash -Algorithm SHA256 .\.tmp-export\playbook.jsonl`,
+# stderr warning fires (because demo-report.json contains M365/GitHub/ADO findings with redaction on),
+# warning appears on stderr BEFORE the "Wrote N playbook rows" stdout line.
+#
+# Crash-recovery dry run: simulate orphan, verify the pre-flight blocks it.
+Remove-Item .\.tmp-export\playbook.jsonl.manifest.json
+finops-assess export playbook --input examples\demo-report.json --output .\.tmp-export\playbook.jsonl
+# Expect: PlaybookOrphanedJSONLError; exit code != 0.
+finops-assess export playbook --input examples\demo-report.json --output .\.tmp-export\playbook.jsonl --cleanup-orphans
+# Expect: success; orphan deleted; fresh JSONL + manifest written.
+```
+
+### Section 10.3 — `docs/playbook-reporter.md` worked example outline (closes Noor amendment A4)
+
+The operator guide MUST include a "Consuming the playbook"
+subsection with a worked Python example showing the manifest-first
+consumer pattern. Skeleton (Diego implements verbatim, only the
+narrative prose is editorial):
+
+```python
+# Read the manifest FIRST. Its presence is the readiness signal.
+import json
+import hashlib
+from pathlib import Path
+
+manifest_path = Path("playbook.jsonl.manifest.json")
+jsonl_path = Path("playbook.jsonl")
+
+if not manifest_path.exists():
+    raise SystemExit(
+        "No manifest at playbook.jsonl.manifest.json — the export was "
+        "interrupted or has not run. Refusing to consume an orphaned JSONL."
+    )
+
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+# Verify the JSONL bytes against the manifest's self-attestation.
+jsonl_bytes = jsonl_path.read_bytes()
+expected_sha = manifest["output_artifacts"]["jsonl_sha256"]
+actual_sha = hashlib.sha256(jsonl_bytes).hexdigest()
+if actual_sha != expected_sha:
+    raise SystemExit(f"JSONL sha256 mismatch: expected {expected_sha}, got {actual_sha}")
+
+# Build the per-surface stability map BEFORE iterating rows.
+stability = manifest["pii_handling"]["ticket_key_stability_by_surface"]
+# stability == {"m365": "per_run", "azure": "stable", "github": "per_run", "ado": "per_run"}
+
+# Now iterate rows; bucket each by its surface's declared stability.
+import_as_idempotent: list[dict] = []   # consumer can dedup on ticket_key
+import_as_per_run:    list[dict] = []   # consumer MUST treat as new ticket every run
+for line in jsonl_bytes.decode("utf-8").splitlines():
+    row = json.loads(line)
+    if stability[row["surface"]] == "stable":
+        import_as_idempotent.append(row)
+    else:
+        import_as_per_run.append(row)
+```
+
+Narrative prose around the snippet must say:
+
+1. **Why the manifest-first order is binding** (cite §5.1 reader contract).
+2. **Why `import_as_per_run` rows duplicate on re-run** and link to issue `#73` for the eventual stable-salt fix.
+3. **What to do if `manifest_path` is missing but `jsonl_path` exists** (orphaned export; either re-run with `--cleanup-orphans` or treat as undefined state).
+4. **Schema versioning contract** (NIT N13 lift from JSON Schema description string): "row v0.1 is additive-only; new top-level keys may appear in future releases without bumping `playbook_schema_version`; consumers MUST ignore unknown keys; only a breaking change increments to `0.2`."
+
+**Implementer checklist:**
+
+- [ ] Create branch `squad/61-playbook-reporter` (already created for plan PR — implementation rebases or uses a sibling branch `squad/61-playbook-reporter-impl`).
+- [ ] Add `Rule.adapter_class` to `models.py` + loader.
+- [ ] Add `adapter_class` to all 23 rules in `src/finops_assess/data/rules/*.yaml` (mirror to top-level `data/` if the parity script demands).
+- [ ] Author 23 `.j2` templates under `src/finops_assess/data/playbooks/{surface}/`.
+- [ ] Implement `playbook_reporter.py` mirroring the structure of `focus_aligned.py`.
+- [ ] Implement the two JSON Schemas under `src/finops_assess/schemas/`.
+- [ ] Wire `@export.command("playbook")` in `cli.py`; help text matches §7.2 verbatim.
+- [ ] Author 12 enumerated tests + Yuki's hardening tests.
+- [ ] Generate `golden-cli-help.txt` from the new subcommand.
+- [ ] Generate `golden-azure.jsonl` + `.manifest.json` with `SOURCE_DATE_EPOCH=0` and the canonical `input-azure-only.json` fixture.
+- [ ] Append 4 lines to `.gitattributes`.
+- [ ] Extend `scripts/generate_docs.py` `regenerate_examples`.
+- [ ] Run `python scripts/generate_docs.py` — commit `examples/playbook.jsonl` + `.manifest.json`.
+- [ ] Update README, CHANGELOG, docs/plan.md §6, docs/schema.md, docs/user-guide.md, docs/playbook-reporter.md.
+- [ ] Open PR with `Closes #61`, label `squad:diego` for the implementation PR (this stage-3 PR carries `squad:maya`).
+
+---
+
+> **End of stage-3 plan for #61.** All four divergences closed, all
+> five OQs closed, all five Noor predictions pre-empted, all six
+> convergent amendments named in §8.1. Awaiting Noor's stage-4
+> adversarial pass.
+
+---
+
+### Stage-3 Plan Revision (Yuki, post-Noor stage-4 reject)
+
+> **Reviser:** Yuki (QA / cross-platform hardening) — model: Opus 4.7
+> **Date:** 2026-05-13 (same-day revision)
+> **Lockout:** Reviewer Rejection Lockout enforced. Maya, the original
+> plan author, was locked out of this revision per the protocol Maya
+> herself documented in §10 (lines 585–588 above). Yuki produced this
+> revision independently — no consultation with Maya, no co-authorship.
+> The Coordinator confirmed Yuki's eligibility (not the original author).
+> **Trigger:** Noor stage-4 verdict REJECT — 2 BLOCKING / 8 AMENDMENT /
+> 3 NIT (PR #72 review comment).
+
+This revision amends mechanics, not architecture. **Every locked
+architectural decision Maya made is preserved unchanged**: D1
+(adapter_hints + schema versioning), D2 (Option B-honest PII), D3
+(StrictUndefined + pre-compile), D4 (`evidence_ref` +
+`template_render_inputs`); the 5 OQ closures (OQ-1..5); the §9
+deferred-disposition table including `#73` and `#74`; the §1
+"Stage-3 corrections to the consensus" stance; the §2 file-level
+checklist's structural shape; the §4.3 "ship templates for ALL 23
+rules" coverage policy.
+
+**What changed (with citations to Noor's findings):**
+
+| # | Severity | Section(s) | Status | Resolution |
+|---|----------|------------|--------|------------|
+| B1 | BLOCKING | §1 N3, §5.1 (rewritten) | addressed | Adopted **Option C** (two-step `os.replace` with `os.fsync` durability, manifest-as-readiness-marker, `output_artifacts.jsonl_sha256` + `jsonl_byte_count` self-attestation, orphan pre-flight + `--cleanup-orphans` recovery flag). Pair atomicity is impossible at the filesystem layer; the contract instead guarantees a **safe, detectable, recoverable** failure mode. Code snippet inline in §5.1; reader contract surfaced in `docs/playbook-reporter.md` per §10.3. |
+| B2 | BLOCKING | §1 N5, §2 file #22, §6 test #16 | addressed | Added `src/finops_assess/data/playbooks/**/*.j2 text eol=lf` to the `.gitattributes` plan + added test #16 (`test_packaged_j2_templates_are_lf_only`) as the regression net. Mirrors Yuki's #58 commit `3e18275` pattern. |
+| A3 | AMENDMENT | §1 D2, §7.3 | addressed | CLI warning trigger location locked: emitted from `cli.py` `@export.command("playbook")` handler **immediately before** `write_playbook_export(...)`. Suppression rules locked: (a) `--skip-warnings`, (b) `pii_redaction=false`, (c) zero non-Azure findings. Manifest mirror: same condition populates `pii_handling.known_limitation` (durable copy for stderr-blind consumers). |
+| A4 | AMENDMENT | §10.3 (new), §8.6 | addressed | New §10.3 spec for the operator-doc worked example (manifest-first consumer pattern, sha256 verification, per-surface bucketing, orphan recovery, schema-versioning contract). `docs/playbook-reporter.md` acceptance bullet in §8.6 expanded. |
+| A5 | AMENDMENT | §3.3.1 (new) | addressed | 23-row binding table mapping every shipped rule to its `adapter_class`. Diego picks zero values; the table is the source of truth. |
+| A6 | AMENDMENT | §3.3.2 (new) | addressed | Two binding orthogonal tables: (A) severity → urgency / priority; (B) `adapter_class` → table / category / labels. Composition rule documented. `adapter_hints` SHIPS in row v0.1 (not deferred); the schema's existing `additionalProperties: true` posture handles v0.6.0 extensions. |
+| A7 | AMENDMENT | §4.1 (revised), §6 test #17 | addressed | §4.1 explicitly states `_load_playbook_environment` runs **once per `write_playbook_export` call**, scoped to `rule_ids_in_findings`, NOT cached at module-import time. Test #17 (`test_pre_compile_picks_up_new_template`) proves a fresh template added between two calls is picked up without process restart. |
+| A8 | AMENDMENT | §1 D4 (revised), §4.2, §6 test #18 | addressed | Locked `template_render_inputs` computation as **post-render access tracking** via `_AccessTrackingEvidence` dict subclass. Finalize-hook alternative explicitly rejected (wrong under `StrictUndefined`). §4.1 now also documents render-time `UndefinedError` policy: fail-fast, unlink temp, surface as `PlaybookTemplateRenderError`. Test #18 covers the render-time path. |
+| A9 | AMENDMENT | §3.1 schema | addressed | Dropped `finding_revision` from `evidence_ref`. The top-level `finding_revision` row field is the canonical hash; `evidence_ref` now carries only `report_path`. Schema's `evidence_ref.required` updated to `["report_path"]`. |
+| A10 | AMENDMENT | §5.2 sort | addressed | Added `original_index` (from a stable `enumerate(findings)`) as the FINAL tiebreaker. Sort key is now `(surface, rule_id, principal, finding_revision, original_index)`. Total order even on synthetic collisions. |
+| A11 | AMENDMENT | §6 tests #13/#14/#15 | addressed | Yuki's three #58-parity hardening tests promoted from "review sweep" to required tests #13 (NUL bytes round-trip), #14 (Unicode round-trip with `ensure_ascii=False`), #15 (4 KiB resource_id no truncation). Ship in the same PR as the reporter; gate stage-5 acceptance. |
+| A12 | AMENDMENT | §6 test #7 (revised) | addressed | Test #7 now asserts `pii_handling.known_limitation` is non-null (string, length > 0, contains `"#73"`) whenever any surface is `per_run`. Closes the "stderr-blind consumer" hole. |
+| N13 | NIT | §8.6 docs/playbook-reporter.md bullet, §10.3 outline | addressed | Lifted the "Schema versioning contract" out of the row-schema description string into a top-level operator-doc section. Cheap (≤5 min). |
+| N14 | NIT | §4.2 (added paragraph) | addressed | Added a paragraph stating JSON escaping happens at the row-assembler `json.dumps` site; templates MUST NOT use `|tojson` per-field (would double-escape). Cheap. |
+| N15 | NIT | §3.2 (added paragraph) | addressed | Added the algorithm-vs-input clarification: the reporter computes `ticket_key` with one uniform algorithm; the per-surface stability declaration is a statement about input quality, not algorithmic divergence. Cheap. |
+
+**NIT items deferred:** none. All three NITs were ≤5-minute plan
+edits and are addressed inline.
+
+**Files edited in this revision:**
+- `.squad/decisions.md` (this file — Maya's plan section in place; this revision subsection appended)
+- `.gitattributes` (added `src/finops_assess/data/playbooks/**/*.j2 text eol=lf` line — closes B2 at the actual config file, not just the plan)
+
+**Decisions explicitly preserved (unchanged from Maya's plan):**
+
+- D1 — `adapter_hints` + `playbook_schema_version` schema versioning model (only the per-rule and per-class binding tables in §3.3 are new; the model is unchanged).
+- D2 — Option B-honest per-surface stability declaration; defer stable-salt to `#73`.
+- D3 — `StrictUndefined` + per-export pre-compile.
+- D4 — `evidence_ref` + `template_render_inputs` (only the computation method and the dropped duplicate field are new mechanics).
+- OQ-1..5 closures.
+- §9 deferred-disposition table including `#73` (stable-salt) and `#74` (runtime overlay).
+- §4.3 coverage policy: ship templates for ALL 23 rules in v0.5.0.
+- §7.1 "standalone export subcommand, NOT composable with `run --format all`" semantic split.
+
+**No new architectural decisions were introduced. No scope was added.**
+The two BLOCKING fixes are mechanics (atomic-write pattern; `.gitattributes`
+glob); the eight AMENDMENT fixes either lock a value Maya left to the
+implementer or close a documentation gap; the three NIT fixes are cheap
+clarifications.
+
+**Re-review trigger:** Coordinator (Martin) posts the comment on PR #72;
+Noor opens a fresh stage-4 context with this revised plan as input.
+
+> **End of Yuki revision.** Stage-5 (Diego implementation) does NOT
+> start until Noor posts a fresh APPROVE verdict.
+
+---
+
+## Cross-Agent Notes — #61 Stage-4 Rejection & Revision Cycle
+
+### Noor Stage-4 Verdict (2026-05-13 08:55:00 UTC)
+
+**VERDICT: REJECT** (2 BLOCKING / 8 AMENDMENT / 3 NIT).
+
+- **B1:** Manifest-JSONL pair-atomicity fixed by Yuki with Option C (manifest-as-readiness-marker + fsync + sha256 self-attestation + orphan pre-flight).
+- **B2:** `.j2` LF-pin regression (exact #58 hardening precedent broken) fixed via `.gitattributes` entry added + test #16.
+
+Orchest log: `.squad/orchestration-log/2026-05-13T085500Z-noor-stage4-61.md`
+
+### Yuki Stage-3 Revision (2026-05-13 08:55:30 UTC)
+
+Yuki (QA/hardening, Opus 4.7 xhigh exception) revised under Reviewer Rejection Lockout. All 13 findings (2B/8A/3N) closed. Zero architectural tampering — D1/D2/D3/D4, OQ-1..5, §9 deferred-disposition preserved. Atomic-write Option C precedent now established for multi-file exports. `.gitattributes` hardening applied (commit 10096cb).
+
+Orchest log: `.squad/orchestration-log/2026-05-13T085530Z-yuki-stage3-revise-61.md`
+
+---
+
 ### 2026-05-13 — Stage-3 plan for #58 FOCUS-aligned advisory exporter (Maya, Opus 4.7)
 
 ## §11 Stage-3 Plan — FOCUS-aligned advisory exporter (#58)
@@ -704,6 +1753,22 @@ Copy-paste into a working branch checklist:
 1. **`evidence_key_version` future-cost.** Maya adds Rule.evidence_key_version: int = 1 without v0.5.0 use. Trade-off: forever-cost in schema vs retrofit risk when consumers pin AdvisoryFindingKey. Counter-wins: declaring migration contract now is cheaper than retrofitting. Acceptable.
 
 2. **Enum extension is not strict-additive.** v0.5.0 consumer pinning pii_handling.mode enum will REJECT v0.6.0 manifests when mode values expand. Counter-wins: consumers MUST ignore unknown fields; documented in manifest schema description. Known JSON-Schema wart, not Maya's invention. Acceptable.
+
+---
+
+## Merged from inbox
+
+### Cross-pollination: #61 stage-3 plan (Maya, 2026-05-13)
+
+Issue #61 (playbook / ticket reporter, p1, v0.5.0) stage-3 plan now locked and committed at `.squad/decisions.md:6-500`. All divergences reconciled: D1 (both-additively), D2 (Option B-honest stable-ID declaration), D3 (both-complementarily pre-compile + StrictUndefined), D4 (evidence_ref + template_render_inputs). All five research OQs closed. All five Noor predictions pre-empted. Two follow-ups filed: #73 (stable-salt engine, v0.6.0 p1), #74 (runtime overlay sandbox, v0.6.0 p2). Ready for stage-4 adversarial review; Diego + Yuki assigned for stage-5 implementation.
+
+### Triage decision: #66 + #69 paired operator-hygiene effort (2026-05-13)
+
+Route #66 (squad-info-hygiene docs) and #69 (selective-gitignore) to squad:scribe as a paired iteration with explicit dependency ordering: #66 unblocks #69. Both address "operator-visible vs. maintainer-only" boundaries. #66 establishes the `<details><summary>` convention for squad scaffolding; #69 follows up with file-tracking discipline (mid-stream churn stays local, distilled audit trail stays tracked). Implementation sequence: (1) #66 ships first (operator-visible docs, README pointer, CHANGELOG, .squad/skills/squad-pr-discipline/SKILL.md); (2) #66 verified (squad-approve.yml regex confirmed in <details> blocks); (3) #69 unblocked (.gitignore, README maintainer-section); (4) auto-approve re-verified. Not cross-blocking #67 (multi-cloud roadmap) or #68 (FinOps backlog), both independent.
+
+### Decision: Golden fixture byte-comparison requires `.gitattributes text eol=lf` (Yuki, 2026-05-13)
+
+Every golden fixture file compared byte-for-byte in tests (via `read_bytes()` or equivalent) **must** have a `text eol=lf` entry in `.gitattributes`, regardless of directory (`examples/`, `tests/fixtures/`, or other). **Rationale:** Windows-hosted GitHub Actions runners default to `core.autocrlf=true`, which rewrites LF to CRLF on checkout. Production reporters write LF-only output (enforced by `lineterminator="\n"` in CSV writers and `newline=""` in `write_text` calls). Without `eol=lf`, golden fixtures checked out with CRLF fail byte-identical comparisons exclusively on Windows (Linux/macOS pass), giving false cross-platform safety. **Scope:** applies to byte-identical comparisons in `tests/fixtures/**/*.csv`, `tests/fixtures/**/*.json`, `tests/fixtures/**/*.html`. **Checklist for future reporter PRs:** (1) Does reporter write bytes deterministically (LF-only, UTF-8)? (2) Does test compare golden fixture bytes with `read_bytes()`? (3) If both: add `text eol=lf` to `.gitattributes` for every such fixture in the same PR. (4) Verify on `windows-latest` — if conditions 1–2 met but `.gitattributes` missing, Windows CI fails while Linux/macOS pass. See `.squad/skills/focus-aligned-golden-fixtures/SKILL.md` for reusable testing pattern including `newline=""` and `.gitattributes` checklist.
 
 3. **ARM resource IDs carry resource-name PII.** ResourceId cleartext (e.g. `vm-john-test01`) encodes user names. Counter-wins: operator opted into PII redaction upstream; export echoes source_report.pii_redaction; ResourceId is the FOCUS warehouse join key — hashing defeats the purpose. Acceptable.
 
