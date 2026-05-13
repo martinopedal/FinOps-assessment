@@ -213,6 +213,7 @@ Each rule has: `id`, `surface`, `severity`, `recommendation_template`,
 - `AZ.OVERSIZED_VM`: P95 CPU & memory < 40 % for 14 d; recommend smaller SKU in same family.
 - `AZ.RESERVATION_UNDERUTILIZED`: RI/Savings Plan utilization < 80 % for 30 d.
 - `AZ.LOG_ANALYTICS_OVERINGEST`: workspace ingesting > commitment-tier sweet spot.
+- `AZ.SAVINGS_PLAN_ELIGIBLE_SPEND`: scope with uncovered on-demand spend a Savings Plan would cover (Benefit Recommendations API).
 - `AZ.DEV_TEST_SUB_PRODUCTION_PRICING`: workload tagged `env=prod` running in a Dev/Test subscription (or vice-versa).
 
 ### GitHub rules

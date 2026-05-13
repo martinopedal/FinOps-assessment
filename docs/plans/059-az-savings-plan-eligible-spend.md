@@ -24,7 +24,7 @@ The plan format mirrors PR #72 (Maya, #61 playbook reporter) and is constrained 
 - **Required scopes:** `Cost Management Reader` (already approved, see `docs/plan.md` §9). No new scope needed. **No write scope.**
 - **Top-level shape (per recommendation):**
   - `id` — ARM-style identifier of the recommendation.
-  - `properties.scope` — the scope the recommendation applies to (`Single` / `Shared`).
+  - `properties.scope` -- the **discriminator** for the recommendation variant: literal string `Single` or `Shared`. **NOT the scope ARN.** Per the [Cost Management REST contract](https://learn.microsoft.com/en-us/rest/api/cost-management/benefit-recommendations/list), the actual scope ARN comes from `properties.subscriptionId` (+ optional `properties.resourceGroup`) when the discriminator is `Single`, and from the recommendation's `id` URL path (parent of the `/providers/Microsoft.CostManagement/...` segment) when the discriminator is `Shared`. The `AzureBenefitRecommendation.scope` field carries the ARN; the `AzureBenefitRecommendation.scope_kind` field carries the discriminator. **Pattern learning from PR #85 stage-4 (Noor):** ambiguous "the scope" prose in stage-3 §1.1 briefs is the kind of soft signal that lets a stage-5 implementer mistake the discriminator for the ARN; future plan briefs that touch a polymorphic API surface should disambiguate the discriminator field from the ARN field by name.
   - `properties.term` — `P1Y` or `P3Y`.
   - `properties.lookBackPeriod` — `Last7Days` / `Last30Days` / `Last60Days`.
   - `properties.commitmentGranularity` — `Hourly`.

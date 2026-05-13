@@ -8,6 +8,7 @@ Expected files (all optional; missing files yield empty lists):
 * ``azure_resources.csv`` — :class:`AzureResource` fields.
 * ``azure_reservations.csv`` — :class:`AzureReservation` fields.
 * ``azure_log_workspaces.csv`` — :class:`AzureLogWorkspace` fields.
+* ``azure_benefit_recommendations.csv`` — :class:`AzureBenefitRecommendation` fields.
 * ``github_seats.csv`` — :class:`GitHubSeat` fields.
 * ``github_orgs.csv`` — :class:`GitHubOrg` fields.
 * ``ado_seats.csv`` — :class:`AdoSeat` fields.
@@ -32,6 +33,7 @@ from pydantic import BaseModel, ValidationError
 from finops_assess.models import (
     AdoOrgUsage,
     AdoSeat,
+    AzureBenefitRecommendation,
     AzureLogWorkspace,
     AzureReservation,
     AzureResource,
@@ -143,6 +145,9 @@ def collect_from_directory(input_dir: Path) -> NormalizedDataset:
         azure_resources=_read_csv(input_dir / "azure_resources.csv", AzureResource),
         azure_reservations=_read_csv(input_dir / "azure_reservations.csv", AzureReservation),
         azure_log_workspaces=_read_csv(input_dir / "azure_log_workspaces.csv", AzureLogWorkspace),
+        azure_benefit_recommendations=_read_csv(
+            input_dir / "azure_benefit_recommendations.csv", AzureBenefitRecommendation
+        ),
         github_seats=_read_csv(input_dir / "github_seats.csv", GitHubSeat),
         github_orgs=_read_csv(input_dir / "github_orgs.csv", GitHubOrg),
         ado_seats=_read_csv(input_dir / "ado_seats.csv", AdoSeat),

@@ -1,0 +1,32 @@
+[TITLE]
+Uncovered Azure spend eligible for Savings Plan: {{ principal }}
+
+[DESCRIPTION]
+The scope **{{ principal }}** has **${{ cost_without_benefit_usd | default('(amount unknown)') }}** of uncovered
+on-demand spend over **{{ lookback_period | default('the lookback window') }}**.
+
+Azure's Benefit Recommendations API projects **${{ net_savings_usd | default('(savings unknown)') }}**
+in savings if you commit to a **{{ term | default('P1Y') }}** Savings Plan with an hourly
+commit of **${{ recommended_hourly_commit_usd | default('(amount unknown)') }}**.
+
+Verify the workload is steady-state and not the trailing edge of a one-off
+project, then consider the Savings Plan commitment.
+
+[REMEDIATION_STEPS]
+1. Review the workload pattern for {{ principal }} over the past 60 days in Azure Cost Management to confirm steady on-demand spend.
+2. Verify this is not a temporary spike or trailing-edge workload (pilot ending, migration rollback, pre-decommission).
+3. If the spend is steady-state, evaluate the recommended Savings Plan commitment amount ({{ recommended_hourly_commit_usd | default('unknown') }}/hour).
+4. Coordinate with finance / procurement on the commitment term ({{ term | default('P1Y') }}) and approval process.
+5. Submit the Savings Plan commitment via Azure Cost Management or coordinate with your billing administrator.
+6. Schedule a 90-day follow-up review to validate actual utilisation and savings achieved.
+
+[VERIFICATION_CHECKLIST]
+- Workload pattern reviewed in Azure Cost Management (60+ days).
+- Steady-state spend confirmed (not temporary / pilot / ending workload).
+- Finance / procurement approval obtained for the commitment.
+- Savings Plan commitment submitted or scheduled.
+- 90-day follow-up review scheduled.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/azure/cost-management-billing/savings-plan/
+- https://learn.microsoft.com/en-us/azure/cost-management-billing/costs/tutorial-acm-opt-recommendations
