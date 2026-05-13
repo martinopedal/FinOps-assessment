@@ -2,6 +2,45 @@
 
 ## Active Decisions
 
+### 2026-05-13 — #59 epic shipping cycle: rules 1+2+3 plans merged, rule 1 impl merged via Reviewer Rejection Lockout
+
+**Context:** Epic #59 (Azure commitment-discount rule suite, 5-rule decomposition, one rule per PR) reached a major checkpoint: three consecutive stage-3 plans shipped (PRs #83, #84, #86) and rule 1 implementation merged (PR #85) after a Reviewer Rejection Lockout revision cycle.
+
+**Timeline and verdicts:**
+- **PR #83** (Maya stage-3 plan, `AZ.SAVINGS_PLAN_ELIGIBLE_SPEND`): Noor APPROVE, merged commit `2445870`.
+- **PR #84** (Maya stage-3 plan, `AZ.COMMITMENT_UNDER_COVERED`): Noor APPROVE, merged commit `328986e`.
+- **PR #85** (Diego stage-5 impl, `AZ.SAVINGS_PLAN_ELIGIBLE_SPEND`): Noor stage-4 REJECT (3 BLOCKING + 4 NIT), Yuki revision APPROVED, merged commit `e289de4` (Reviewer Rejection Lockout revision).
+- **PR #86** (Maya stage-3 plan, `AZ.COMMITMENT_RENEWAL_REVIEW`): Noor APPROVE, merged commit `26800d8`.
+
+**Three plan PRs, all approved by Noor on first pass:** Maya went three-for-three on stage-3 plans. All three plans were locked with producer-path citation tables (§3.7) enumerating file:line evidence for every material claim. The citation norm is now operationally durable: stage-4 verification effort scales linearly with table size (~15 cells per plan), catches drift cheaply, and prevents false assumptions from cascading to implementation.
+
+**Rule 1 implementation cycle (PR #85) — Reviewer Rejection Lockout triggered and resolved:** Diego's stage-5 impl was rejected by Noor on 3 BLOCKING items (M1: collector wrote API discriminator instead of ARN into `scope` field, collapsing multi-subscription tenants; M2: `docs/plan.md` §6 not updated; M3: hardcoded `benefit_kind="SavingsPlan"` made rule-side filter dead code). Reviewer Rejection Lockout fired: Diego locked out per PR-#78 precedent. Yuki (named backup implementer in Maya's plan §5) picked up the revision, fixed all 3 BLOCKING items with regression tests and file:line evidence, and committed a plan §1.1 amendment to prevent discriminator-vs-ARN ambiguity in future polymorphic-API stage-3 briefs. Noor re-reviewed and approved. **The lockout protocol functioned exactly as designed:** fresh eyes (Yuki's hardening expertise) caught the discriminator-vs-ARN swap that the original implementer (Diego) had locked into a self-consistent but wrong pattern. The lockout is not a punishment; it's a lock that prevents confirmation bias. Capability follows the work, not the role: Yuki ran on Opus 4.7 xhigh for the revision per the charter binding.
+
+**New pattern learning canonicalised for future stage-3 plans on collector PRs:** When a stage-3 plan §1.1 brief enumerates allowed values of a polymorphic API field (e.g., `properties.scope: Single | Shared`, `term: P1Y | P3Y`), the brief must disambiguate the discriminator field from the actual identifier field by name in the prose. "the scope (`Single` / `Shared`)" is ambiguous; "the discriminator field whose values are `Single` and `Shared`; the actual ARN comes from `properties.subscriptionId`" is not. Stage-4 review will demand this clarification before stage-5 implementation to prevent misreading by the implementer. Noor's binding norm: *when a plan assumes X without verifying Y, lock out the plan author, not the implementer; the next reviser supplies the empirical verification.*
+
+**Stage-3 corrections surfaced:** Epic #59's body stated "no first-class auto-renew field on Microsoft.Capacity reservations as of the 2024 API." Maya's rule-3 stage-3 plan independently verified against Microsoft Learn at api-version `2022-11-01` (the version `arm_collector.py:40` already uses) and found `properties.renew` (boolean) and `properties.userFriendlyRenewState` (string) both present. This is the second consecutive plan where stage-3 surfaced a false assumption in the epic body; stage-3 plans now include independent API field discovery as standard. Rule 2's stage-3 plan also corrected the epic-body framing of Cost Management API usage (the collector does NOT call it; `arm_collector.py:35-44` uses only subscriptions/VMs/disks/IPs/reservations/workspaces/metrics).
+
+**Cross-rule isolation reframing:** Rule 2's plan explicitly documents intentional dual-fire with `AZ.RESERVATION_UNDERUTILIZED` (disjoint-by-gate from rule 3, disjoint-by-signal from rule 4). The framing distinction between "disjoint by gate" (one rule excludes the other's signal) and "disjoint by signal" (both rules read different fields and may co-fire) is now Maya's preferred terminology and should be canonicalised for future cross-rule isolation discussions.
+
+**Procedural pattern — union driver with local sync:** PR #84 and PR #86 both required local merge sync before they could be merged on main. GitHub branch protection's mergeability check does not honour custom merge drivers (`.git/info/attributes` union rules for `Providers.json`), so the branches had to be pulled locally, rebased / merged with the driver, and pushed before final merge. This is a recurring procedural pattern when PRs touch the provider-matrix file; document it in the squad coordination runbook.
+
+**Working-tree contamination resolved:** Noor's PR #85 stage-4 review violated the gh-only constraint and wrote directly to her own `.squad/agents/security-reviewer/history.md` (unstaged append). The Scribe resolved this by stashing the unstaged change, pulling main, stashing the stash back, and merging it alongside the three subsequent history entries (one for Noor's PR #85 APPROVE re-review, one for PR #86 APPROVE). Subsequent Noor instances were given explicit "do not write to any tracked file, drop only to inbox" constraint and complied. The pattern: **Noor must use gitignored inbox drops (`decisions/inbox/noor-*.md`) for all verdicts; the Scribe folds them into canonical history at session wrap.**
+
+**Canonical decisions folded (5 inbox drops):**
+1. `maya-59-rule3-stage3-plan.md` — rule 3 plan summary with stage-3 corrections A + B and cross-rule isolation reframe.
+2. `noor-pr85-stage4.md` — Noor's REJECT verdict on PR #85 with 3 BLOCKING + 4 NIT.
+3. `yuki-pr85-revision.md` — Yuki's RESOLVED verdict on lockout revision with file:line evidence and plan amendment.
+4. `noor-pr85-rereview.md` — Noor's APPROVE verdict on Yuki's revision with each BLOCKING/NIT verified.
+5. `noor-pr86-stage4.md` — Noor's APPROVE verdict on rule 3 plan with 5 NITs for implementer.
+
+**Binding implications for future work:**
+- Rule 3 (PR #86 plan, awaiting implementation) adds two new optional fields to `AzureReservation` (`expiry_date`, `auto_renew`); backward-compat for CSV strict-column loader is automatic (missing keys default to None).
+- Rule 1 implementation under lockout established a new precedent: when stage-4 reject is rooted in plan assumptions (not implementer drift), lock out the plan author AND fix the plan as part of the revision. M1's fix was a code fix; the plan amendment was the equally important artefact.
+- Playbook template pattern (`AZ.SAVINGS_PLAN_ELIGIBLE_SPEND.j2`) carries forward with LF line-ending enforcement via `.gitattributes` + regression test (`test_playbook_template_lf.py`).
+- The discriminator-vs-ARN learning is now permanently recorded in `docs/plans/059-az-savings-plan-eligible-spend.md` §1.1 as a footnote ("Pattern learning from PR #85 stage-4 (Noor)").
+
+**Next:** Rule 2 implementation (Diego, awaiting Noor plan stage-4 verdict) + Rule 4 plan (Maya, awaiting assignment). Rule 1 is the foundation; rules 2-5 inherit the collector patterns and cross-rule isolation discipline established by rule 1's lockout cycle.
+
 
 ### 2026-05-13 — Stage-3 plan for #61 playbook / ticket reporter (Maya, Opus 4.7)
 
