@@ -303,6 +303,9 @@ def savings_plan_eligible_spend(ctx: RuleContext) -> Iterable[Finding]:
     Recommendations API projects could be reduced via a Savings Plan.
     """
     min_uncovered = ctx.rule.min_uncovered_usd or 50.0
+    # N2 (Noor stage-4 PR #85, RESOLVED PASS): cross-rule isolation vs
+    # AZ.RESERVATION_UNDERUTILIZED is safe by construction -- the two rules
+    # consume disjoint dataset slices (azure_reservations vs azure_benefit_recommendations).
     seen: set[tuple[str, str]] = set()
 
     for rec in ctx.dataset.azure_benefit_recommendations:

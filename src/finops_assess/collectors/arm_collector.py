@@ -267,6 +267,112 @@ def _collect_benefit_recommendations(client: _ArmClient, sub_id: str) -> list[di
         return []
 
 
+# Allowed enum values from the Azure Cost Management Benefit Recommendations API.
+# Reference: https://learn.microsoft.com/en-us/rest/api/cost-management/benefit-recommendations/list
+_BR_SCOPE_KINDS = {"Single", "Shared"}
+_BR_TERMS = {"P1Y", "P3Y"}
+_BR_LOOKBACKS = {"Last7Days", "Last30Days", "Last60Days"}
+_BR_SUPPORTED_KINDS = {"SavingsPlan", "Reservation"}
+
+
+def _benefit_recommendation_scope_arn(rec: dict[str, Any], sub_id: str) -> str:
+    """Derive the ARN-shaped scope identifier from a Benefit Recommendation row.
+
+    ``properties.scope`` is the discriminator (literal ``"Single"`` or ``"Shared"``)
+    and MUST NOT be used as the scope ARN. The actual identifier comes from:
+
+    * ``properties.subscriptionId`` (+ optional ``properties.resourceGroup``) when
+      ``properties.scope == "Single"``;
+    * the recommendation's ``id`` URL path (parent of the
+      ``/providers/Microsoft.CostManagement/...`` segment) when
+      ``properties.scope == "Shared"`` (billing-account / billing-profile rooted).
+
+    Falls back to the per-iteration ``/subscriptions/{sub_id}`` when the API
+    omits the discriminator or the discriminator-specific fields.
+    """
+    props = rec.get("properties") or {}
+    discriminator = props.get("scope") or ""
+
+    if discriminator == "Single":
+        sub_from_props = props.get("subscriptionId") or sub_id
+        rg = props.get("resourceGroup")
+        if rg:
+            return f"/subscriptions/{sub_from_props}/resourceGroups/{rg}"
+        return f"/subscriptions/{sub_from_props}"
+
+    if discriminator == "Shared":
+        rid = rec.get("id") or ""
+        marker = "/providers/Microsoft.CostManagement/"
+        if marker in rid:
+            return rid.split(marker, 1)[0]
+        return f"/subscriptions/{sub_id}"
+
+    return f"/subscriptions/{sub_id}"
+
+
+def _normalise_benefit_recommendation(rec: dict[str, Any], sub_id: str) -> dict[str, Any] | None:
+    """Convert a raw Benefit Recommendation API row into the CSV row shape.
+
+    Returns ``None`` (and emits a warning) when the row has an enum value the
+    downstream pydantic model would reject. Defensive boundary filtering keeps
+    a future API enum addition (e.g. ``term=P5Y``) from crashing the collector.
+    """
+    rid = rec.get("id") or ""
+    props = rec.get("properties") or {}
+    discriminator = props.get("scope") or ""
+    term = props.get("term") or ""
+    lookback = props.get("lookBackPeriod") or ""
+    kind = rec.get("kind") or ""
+
+    if discriminator and discriminator not in _BR_SCOPE_KINDS:
+        logger.warning(
+            "Skipping benefit recommendation %s in %s: unrecognised scope %r",
+            rid,
+            sub_id,
+            discriminator,
+        )
+        return None
+    if term and term not in _BR_TERMS:
+        logger.warning(
+            "Skipping benefit recommendation %s in %s: unrecognised term %r",
+            rid,
+            sub_id,
+            term,
+        )
+        return None
+    if lookback and lookback not in _BR_LOOKBACKS:
+        logger.warning(
+            "Skipping benefit recommendation %s in %s: unrecognised lookBackPeriod %r",
+            rid,
+            sub_id,
+            lookback,
+        )
+        return None
+    if kind and kind not in _BR_SUPPORTED_KINDS:
+        logger.warning(
+            "Skipping benefit recommendation %s in %s: unsupported kind %r",
+            rid,
+            sub_id,
+            kind,
+        )
+        return None
+
+    details = props.get("recommendationDetails") or {}
+    return {
+        "recommendation_id": rid,
+        "scope": _benefit_recommendation_scope_arn(rec, sub_id),
+        "scope_kind": discriminator,
+        "term": term,
+        "lookback_period": lookback,
+        "arm_sku_name": props.get("armSkuName") or "",
+        "cost_without_benefit_usd": str(details.get("costWithoutBenefit") or ""),
+        "recommended_hourly_commit_usd": str(details.get("recommendedQuantity") or ""),
+        "net_savings_usd": str(details.get("netSavings") or ""),
+        "wastage_usd": str(details.get("wastage") or ""),
+        "benefit_kind": kind or "SavingsPlan",
+    }
+
+
 def _collect_log_workspaces(client: _ArmClient, sub_id: str) -> list[dict[str, Any]]:
     url = (
         f"{_ARM_BASE}/subscriptions/{sub_id}/providers/Microsoft.OperationalInsights/"
@@ -520,17 +626,21 @@ def collect_arm(
             _ = current_tier  # reserved for future use
 
     # ---- Benefit Recommendations (per-subscription) -------------------------
+    # M1/M3 fix: row construction lives in `_normalise_benefit_recommendation` so
+    # the discriminator-vs-ARN derivation and friendly enum guards are unit-testable
+    # without a live ARM client.
     benefit_recs_by_key: dict[tuple[str, str], dict[str, Any]] = {}
     lookback_priority = {"Last60Days": 3, "Last30Days": 2, "Last7Days": 1}
 
     for sub_id in sub_ids:
         for rec in _collect_benefit_recommendations(client, sub_id):
-            rid = rec.get("id") or ""
-            props = rec.get("properties") or {}
-            scope_val = props.get("scope") or f"/subscriptions/{sub_id}"
-            term = props.get("term") or ""
-            lookback = props.get("lookBackPeriod") or ""
-            details = props.get("recommendationDetails") or {}
+            row = _normalise_benefit_recommendation(rec, sub_id)
+            if row is None:
+                continue
+
+            scope_val = row["scope"]
+            term = row["term"]
+            lookback = row["lookback_period"]
 
             key = (scope_val, term)
             priority = lookback_priority.get(lookback, 0)
@@ -544,26 +654,14 @@ def collect_arm(
                     pass  # Replace existing
                 elif priority == existing_priority:
                     # Tie: prefer higher net savings
-                    existing_savings = benefit_recs_by_key[key].get("net_savings_usd") or 0.0
-                    new_savings = float(details.get("netSavings") or 0.0)
+                    existing_savings = float(benefit_recs_by_key[key].get("net_savings_usd") or 0.0)
+                    new_savings = float(row["net_savings_usd"] or 0.0)
                     if new_savings <= existing_savings:
                         continue
                 else:
                     continue  # Keep existing
 
-            benefit_recs_by_key[key] = {
-                "recommendation_id": rid,
-                "scope": scope_val,
-                "scope_kind": props.get("scope") or "",
-                "term": term,
-                "lookback_period": lookback,
-                "arm_sku_name": props.get("armSkuName") or "",
-                "cost_without_benefit_usd": str(details.get("costWithoutBenefit") or ""),
-                "recommended_hourly_commit_usd": str(details.get("recommendedQuantity") or ""),
-                "net_savings_usd": str(details.get("netSavings") or ""),
-                "wastage_usd": str(details.get("wastage") or ""),
-                "benefit_kind": "SavingsPlan",  # Default; can parse from props.kind if needed
-            }
+            benefit_recs_by_key[key] = row
 
     benefit_rec_rows = list(benefit_recs_by_key.values())
 
