@@ -1,0 +1,26 @@
+[TITLE]
+Inactive Azure DevOps Basic seat (90 days): {{ principal }}
+
+[DESCRIPTION]
+The user **{{ principal }}** holds an **ADO Basic** seat but has recorded no
+work-item, code, or pipeline activity in the last 90 days.
+
+Azure DevOps Basic seats are billed per user. Inactive seats can be reclaimed
+at no loss of historical data — work items, code, and pipelines remain
+accessible.
+
+[REMEDIATION_STEPS]
+1. Verify the inactivity signal in the Azure DevOps organisation settings (Users > Access levels > Last activity).
+2. Contact {{ principal }} or their manager to determine if there is a legitimate reason for inactivity (extended leave, role change, cross-project move).
+3. If no legitimate reason exists, consider changing the access level from Basic to Stakeholder (free), or removing the user from the organisation.
+4. Note: downgrading to Stakeholder limits the user to read-only board access; they cannot create or edit work items in advanced boards, push code, or run pipelines.
+
+[VERIFICATION_CHECKLIST]
+- Inactivity confirmed in ADO Users view for 90+ days.
+- User or manager consulted.
+- No open PRs, assigned work items in sprint, or on-call pipeline ownership identified.
+- Access level changed to Stakeholder or user removed; decision documented.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/azure/devops/organizations/billing/buy-basic-access-add-users
+- https://learn.microsoft.com/en-us/azure/devops/organizations/security/access-levels

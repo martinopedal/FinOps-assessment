@@ -106,7 +106,11 @@ _SEVERITY_TO_ADAPTER: dict[str, dict[str, Any]] = {
     },
     "medium": {
         "servicenow": {"category": "Cloud Cost Optimisation", "urgency": 2, "priority": 2},
-        "jira": {"issuetype": "Task", "priority": "Medium", "labels": ["finops", "severity:medium"]},
+        "jira": {
+            "issuetype": "Task",
+            "priority": "Medium",
+            "labels": ["finops", "severity:medium"],
+        },
         "github": {"labels": ["finops", "severity:medium"]},
     },
     "low": {
@@ -281,8 +285,8 @@ def _template_source_for_rule(rule_id: str) -> str:
     expected_str = f"data/playbooks/{surface_dir}/{rule_id}.j2"
     try:
         return resource_path.read_text(encoding="utf-8")
-    except (FileNotFoundError, TypeError, AttributeError):
-        raise PlaybookTemplateNotFoundError(rule_id, expected_str)
+    except (FileNotFoundError, TypeError, AttributeError) as exc:
+        raise PlaybookTemplateNotFoundError(rule_id, expected_str) from exc
 
 
 def _adapter_hints(severity: str) -> dict[str, Any]:
@@ -468,7 +472,7 @@ def find_orphaned_jsonl(directory: Path) -> list[Path]:
             actual_sha = _sha256_file(jsonl_path)
             if actual_sha != expected_sha:
                 orphans.append(jsonl_path)
-        except Exception:  # noqa: BLE001
+        except Exception:
             orphans.append(jsonl_path)
     return orphans
 
@@ -551,9 +555,12 @@ def write_playbook_export(
         with os.fdopen(fd, "w", encoding="utf-8", newline="") as fh:
             for row in sorted_rows:
                 fh.write(json.dumps(row, ensure_ascii=False, sort_keys=False) + "\n")
-        # fsync before atomic rename — on Linux/macOS this ensures on-disk state
-        # matches the manifest sha256 claim. On Windows os.fsync is best-effort.
-        with open(tmp_jsonl, "rb") as fh:
+            # fsync inside the write-mode context so the OS buffer is flushed
+            # before rename. On Linux/macOS this is required; on Windows it is
+            # best-effort (MoveFileEx is not guaranteed to be durable on
+            # power-loss without a parent-dir sync, but this is an honest
+            # constraint documented in the plan §5.1).
+            fh.flush()
             os.fsync(fh.fileno())
         os.replace(tmp_jsonl, output_jsonl)
         tmp_jsonl = None  # Rename succeeded; no cleanup needed.
@@ -588,7 +595,7 @@ def write_playbook_export(
         payload = json.dumps(manifest, indent=2, sort_keys=False, ensure_ascii=False)
         with os.fdopen(fd2, "w", encoding="utf-8", newline="") as fh:
             fh.write(payload + "\n")
-        with open(tmp_manifest, "rb") as fh:
+            fh.flush()
             os.fsync(fh.fileno())
         os.replace(tmp_manifest, manifest_path)
         tmp_manifest = None
@@ -622,5 +629,5 @@ def _build_adapter_class_map() -> dict[str, str]:
 
         rules = load_rules()
         return {r.id: r.adapter_class for r in rules}
-    except Exception:  # noqa: BLE001
+    except Exception:
         return {}

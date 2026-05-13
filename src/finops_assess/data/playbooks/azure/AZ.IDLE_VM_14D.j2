@@ -1,0 +1,29 @@
+[TITLE]
+Idle virtual machine: {{ principal }}
+
+[DESCRIPTION]
+The virtual machine **{{ principal }}** has averaged
+**{{ avg_cpu_pct if avg_cpu_pct is defined else 'very low' }}% CPU** and
+**{{ avg_net_kbps if avg_net_kbps is defined else 'negligible' }} KB/s network**
+over the last 14 days. This level of utilisation suggests the VM may be
+idle or running a dormant workload.
+
+Deallocating or right-sizing an idle VM eliminates compute and potential
+disk-allocation charges.
+
+[REMEDIATION_STEPS]
+1. Verify the workload owner: check resource tags (Owner, CostCenter, Environment) on {{ principal }}.
+2. Confirm the low-utilisation signal in Azure Monitor metrics (CPU, network, disk IOPS) over 14+ days.
+3. Contact the workload owner and ask whether the VM is needed. Provide the utilisation evidence.
+4. If the VM is unused: consider deallocating (preserves the disk and config) or deleting (releases all charges). If it is needed but oversized, consider right-sizing to a smaller SKU instead.
+5. Schedule a follow-up review in 30 days if the workload owner requests more time.
+
+[VERIFICATION_CHECKLIST]
+- Workload owner identified via resource tags.
+- Utilisation data confirmed in Azure Monitor.
+- Workload owner consulted and decision documented.
+- VM deallocated / deleted / right-sized, or explicit keep decision recorded.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/azure/cost-management-billing/costs/tutorial-acm-opt-recommendations
+- https://learn.microsoft.com/en-us/azure/virtual-machines/resize-vm

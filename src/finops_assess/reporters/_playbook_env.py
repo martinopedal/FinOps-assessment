@@ -87,7 +87,7 @@ def _build_env() -> Environment:
         source = j2_path.read_text(encoding="utf-8")
         try:
             env.parse(source)  # syntax-check only; get_template() caches the compiled code
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             _log.warning("Playbook template syntax error in %s: %s", rel, exc)
             raise
         # Trigger actual compilation + caching inside Jinja2.
@@ -104,7 +104,7 @@ def get_playbook_env() -> Environment:
     for the common single-threaded CLI use case.  The function is idempotent
     — repeated calls return the same object.
     """
-    global _ENV  # noqa: PLW0603
+    global _ENV
     if _ENV is None:
         _ENV = _build_env()
     return _ENV
@@ -121,5 +121,5 @@ def extract_template_vars(source: str) -> list[str]:
     """
     env = get_playbook_env()
     parsed = env.parse(source)
-    names: set[str] = {node.name for node in parsed.find_all(nodes.Name)}  # type: ignore[attr-defined]
+    names: set[str] = {node.name for node in parsed.find_all(nodes.Name)}
     return sorted(names)

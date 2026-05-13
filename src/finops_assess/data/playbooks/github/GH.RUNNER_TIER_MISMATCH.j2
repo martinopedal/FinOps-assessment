@@ -1,0 +1,30 @@
+[TITLE]
+GitHub runner-minute tier mismatch: {{ principal }}
+
+[DESCRIPTION]
+The GitHub organisation **{{ principal }}** consumed
+**{{ used_minutes if used_minutes is defined else 'a mismatched number of' }}**
+runner minutes in the last billing period against
+**{{ included_minutes if included_minutes is defined else 'the included' }}**
+included minutes.
+
+A significant gap between consumed and included minutes indicates either:
+- Over-provisioned plan: you are paying for runner minutes that go unused, or
+- Under-provisioned plan: you are regularly exceeding the included quota and incurring overage charges.
+
+[REMEDIATION_STEPS]
+1. Review the runner-minute usage chart in GitHub organisation Billing & plans.
+2. Determine whether usage is consistently above or below the included quota.
+3. If consistently over the quota: consider upgrading to a higher tier or switching to self-hosted runners for cost-intensive workflows.
+4. If consistently under the quota: consider downgrading to a lower tier at the next billing renewal.
+5. Set usage alerts in GitHub billing settings to trigger at 80% of the included quota.
+
+[VERIFICATION_CHECKLIST]
+- Runner-minute usage trend reviewed over 3+ billing periods.
+- Consistent over- or under-utilisation confirmed.
+- Self-hosted runner feasibility assessed if overages are frequent.
+- Tier change planned and approved by budget owner.
+
+[REFERENCES]
+- https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions
+- https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners

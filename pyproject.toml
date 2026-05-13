@@ -65,6 +65,7 @@ finops_assess = [
     "data/personas.yaml",
     "data/catalog/*/*.yaml",
     "data/rules/*.yaml",
+    "data/playbooks/*/*.j2",
     "demo/*.csv",
     "demo/*.yaml",
     "reporters/templates/*.html.j2",

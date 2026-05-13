@@ -1,0 +1,25 @@
+[TITLE]
+Over-licensed user vs persona: {{ principal }}
+
+[DESCRIPTION]
+The user **{{ principal }}** is classified as persona **{{ persona if persona is defined else 'unknown' }}** but holds
+**{{ current_sku }}**, which provides capabilities beyond what this persona
+requires. A lower-cost SKU may be sufficient.
+
+Verify the persona classification is accurate before acting.
+
+[REMEDIATION_STEPS]
+1. Confirm the persona classification for {{ principal }} is accurate (check job title, department, and group membership).
+2. Review which features {{ principal }} actively uses versus what {{ current_sku }} provides.
+3. If the persona classification is correct and the extra features are unused, consider migrating to {{ recommended_sku if recommended_sku else 'a lower-tier SKU' }}.
+4. Coordinate the SKU change with the user and their manager to avoid service disruption.
+
+[VERIFICATION_CHECKLIST]
+- Persona classification confirmed accurate.
+- User or manager consulted about feature requirements.
+- No business-critical workload depends on the extra features in {{ current_sku }}.
+- Migration window planned to avoid disruption.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/microsoft-365/admin/misc/licenses-overview
+- https://learn.microsoft.com/en-us/microsoft-365/admin/manage/assign-licenses-to-users

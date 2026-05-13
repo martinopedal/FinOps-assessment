@@ -1,0 +1,26 @@
+[TITLE]
+Disabled account with active license: {{ principal }}
+
+[DESCRIPTION]
+The account **{{ principal }}** has been disabled (accountEnabled = false) but
+still carries **{{ current_sku }}**. Disabled accounts do not consume services,
+so the license is accruing charges without delivering value.
+
+Reclaim the license unless a compliance hold or offboarding policy requires
+it to remain assigned temporarily.
+
+[REMEDIATION_STEPS]
+1. Confirm the account is genuinely disabled and not temporarily suspended (check Azure AD / Entra sign-in logs).
+2. Check for compliance holds (eDiscovery, litigation hold, or retention policy) that may require the mailbox to remain licensed.
+3. If no hold exists, consider removing {{ current_sku }} and returning the license to the pool.
+4. Archive or soft-delete the account according to your offboarding policy.
+
+[VERIFICATION_CHECKLIST]
+- Account confirmed disabled in Entra ID.
+- No active eDiscovery or retention hold on the mailbox.
+- License reclaimed and returned to pool.
+- Offboarding record updated in HR / ITSM.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/microsoft-365/admin/add-users/delete-a-user
+- https://learn.microsoft.com/en-us/purview/ediscovery-holds

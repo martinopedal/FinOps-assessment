@@ -1,0 +1,29 @@
+[TITLE]
+Dev/test subscription mismatch: {{ principal }}
+
+[DESCRIPTION]
+The resource **{{ principal }}** is tagged
+**env={{ env_tag if env_tag is defined else 'unknown' }}** but resides in
+subscription **{{ subscription_id if subscription_id is defined else 'unknown' }}**
+(offer: **{{ subscription_offer if subscription_offer is defined else 'unknown' }}**).
+The environment tag and subscription offer disagree, which may indicate:
+
+- A production workload running in a dev/test subscription (compliance and SLA risk), or
+- A dev/test workload in a production subscription (missed pricing discount).
+
+[REMEDIATION_STEPS]
+1. Verify the environment tag on {{ principal }} is accurate (check with the workload owner).
+2. Verify the subscription offer type is correct for the intended workload class.
+3. If a production workload is in a dev/test subscription: plan migration to a production subscription. Dev/test offers may lack SLAs and are not covered by Microsoft's 99.9% uptime commitments.
+4. If a dev/test workload is in a production subscription: plan migration to a dev/test subscription to take advantage of discounted pricing.
+5. Update the resource tag or subscription placement and document the change.
+
+[VERIFICATION_CHECKLIST]
+- Workload owner confirmed environment classification.
+- Subscription offer type verified with subscription admin.
+- Mismatch type (prod-in-devtest vs devtest-in-prod) documented.
+- Migration plan created or tag corrected, with timeline.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/dev-test-subscriptions
+- https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/landing-zone/design-area/resource-org-subscriptions

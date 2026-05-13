@@ -1,0 +1,28 @@
+[TITLE]
+Inactive GitHub seat (90 days): {{ principal }}
+
+[DESCRIPTION]
+The GitHub user **{{ principal }}** holds a **{{ current_sku if current_sku else 'paid' }}**
+seat but has recorded no commits, pull-request reviews, issue activity, or
+sign-ins in the last 90 days.
+
+Inactive seats incur per-seat charges without delivering developer productivity
+value. Reclaim the seat or move the user to a free-tier access level if
+appropriate.
+
+[REMEDIATION_STEPS]
+1. Verify the inactivity signal in the GitHub organisation's People view (filter by last activity).
+2. Contact {{ principal }} or their manager to confirm whether they still require a paid seat.
+3. If the user has left the organisation or no longer needs GitHub access: consider removing them from the organisation (releases the seat).
+4. If the user needs read-only access (e.g. for viewing repos): outside collaborator access does not consume a paid seat.
+5. Document the decision in the GitHub access management record.
+
+[VERIFICATION_CHECKLIST]
+- Inactivity confirmed in GitHub org People view for 90+ days.
+- User or manager consulted.
+- No pending code review, open PR, or on-call dependency identified.
+- Seat reclaimed or access level changed, decision documented.
+
+[REFERENCES]
+- https://docs.github.com/en/organizations/managing-membership-in-your-organization
+- https://docs.github.com/en/billing/managing-billing-for-your-github-account/about-billing-for-github-accounts
