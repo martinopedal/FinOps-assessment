@@ -1,7 +1,7 @@
 ---
-updated_at: 2026-05-13T11:59:00.000Z
-focus_area: PR #78 (#61 playbook reporter) REJECTED — Yuki revises; PR #79 housekeeping awaits Martin; PR #80 Noor history housekeeping
-active_issues: [61, 73, 75, 76]
+updated_at: 2026-05-13T13:30:00.000Z
+focus_area: PR #78 Yuki revision pushed (5bf48e8) — awaiting Noor stage-4 re-review; PR #79/#80 still pending Martin's manual approval
+active_issues: [61, 73, 75, 76, 81, 82]
 open_prs: [78, 79, 80]
 locked_out_for_61_revision: [diego, maya]
 ---
@@ -10,129 +10,109 @@ locked_out_for_61_revision: [diego, maya]
 
 ## TL;DR for next coordinator session
 
-Three open PRs, three distinct gates blocking each:
+PR #78 stage-4 reject-revise cycle COMPLETED on Yuki's side. Revision commit `5bf48e8` on `squad/61-impl-diego` addresses Noor's BLOCKING #1 + 3 amendments + 2 NITs AND Yuki's own 7 amendments + 3 NITs (the latter partially deferred to follow-ups #81/#82). All 10 CI checks green. Test count 444 to 476 (+32). Now awaiting **Noor's stage-4 re-review** to clear the gate.
 
-- **PR #78** (`squad/61-impl-diego` @ `eef9b10`) — Diego's stage-5 implementation of the playbook/ticket reporter (#61). 49 files, +3583/−122, 11/11 CI green. **Noor REJECTED** at 11:56 — 1 BLOCKING + 3 AMENDMENT + 2 NIT. Verdict comment posted: PR #78 comment 4439705231 (workflow markers `**Stage-4 Adversarial Review — Noor**` + `VERDICT: REJECT`). Yuki's hardening review still running at session end (~14 min, 0 output files yet).
-- **PR #79** (`squad/post-pr72-rescue-housekeeping` @ `9af52a3`) — coordinator rescue commit surfacing the 6 `.squad/` files Scribe orphaned after the PR #72 cycle. NIT-only. CI green. Awaiting Martin's manual approval (his choice — see PR #79 below).
-- **PR #80** (`squad/noor-pr78-stage4-housekeeping`, draft) — Noor's own `.squad/agents/security-reviewer/history.md` learnings entry (+2 lines). Same gate situation as PR #79.
+Three PRs still open, three different gates:
 
-Local main is clean at `f96a5e9`. PR #72 (locked stage-3 plan for #61) merged earlier this session.
+- **PR #78** (`squad/61-impl-diego` @ `5bf48e8`) — Yuki's stage-5 lockout revision. CI 10/10 green. Awaiting Noor re-review (use the Stage-5 Revision marker to trigger her). PR comment 4440148120 has Yuki's revision summary.
+- **PR #79** (`squad/post-pr72-rescue-housekeeping` @ `9af52a3`) — coordinator rescue commit, NIT-only. CI green. Awaiting Martin's manual approval.
+- **PR #80** (`squad/noor-pr78-stage4-housekeeping`) — squad-housekeeping bundle (Noor history + Yuki hardening + handoff snapshots + Yuki revision learnings + post-revision focus snapshot). CI green. Awaiting Martin's manual approval. Now broader than just Noor's +2 lines — see commits.
 
-## PR #78 — REJECTED, Yuki revises
+Local main is clean at `f96a5e9`. PR #72 merged earlier in prior session.
 
-**Noor's verdict on disk:** `.squad/decisions/inbox/noor-pr78-stage4.md` (12 KB, full diagnostic). Also posted as PR #78 comment 4439705231.
+## PR #78 — Yuki revision pushed, Noor re-review next
 
-**The BLOCKING (#1)** — manifest contract violation:
-- Diego implemented the locked plan literally: `_STABLE_SURFACES = frozenset({"azure"})`, manifest emits `azure: stable` regardless of `pii_redaction`.
-- But `engine.py:70-75` `RuleContext.redact()` per-run-salts ANY principal when `redact_pii=True` (default). Azure principals reach the reporter as `sha256:<16-hex>` strings hashed with the per-run salt.
-- Empirical proof in Noor's verdict: two runs produced different `ticket_key` for the same Azure finding while manifest claimed `azure: stable`.
-- Visible in shipped demo `examples/playbook.jsonl.manifest.json`: three statements (`mode: salted_hash`, `pii_redaction: true`, `azure: stable`) cannot all be true given current engine.
-- **Defect origin (Noor's self-note):** plan-level. "Yuki's revision and my consensus pass both assumed Azure principals were cleartext at the reporter boundary; neither traced through `redact()`. Diego implemented the locked plan faithfully."
+**What Yuki delivered (commit `5bf48e8`):**
 
-**Fix Path A (Noor's recommended, in-PR):**
+- BLOCKING #1 fix: `pii_handling.ticket_key_stability_by_surface` is now pii-aware in BOTH `playbook.py` and `focus_aligned.py`. All four surfaces emit `per_run` when `pii_redaction=True`, `stable` when `pii_redaction=False`.
+- Regression test `tests/test_playbook_cross_run_stability.py` runs the real engine TWICE and asserts manifest claim matches actual cross-run ticket_key behaviour. This is the test that would have caught the bug before merge.
+- AMEND #1 (perf): `@functools.cache`-wrapped `_template_vars_cached(rule_id, source)` — AST parse once per rule, not once per finding.
+- AMEND #2 (render boundary): evidence dict spread FIRST, reserved keys spread SECOND, so reserved wins on conflict. 3 regression tests in `test_playbook_render_context_boundary.py`.
+- AMEND #3: `_playbook_env.py` docstring matches the lazy-init reality.
+- NIT #1 (Noor) + B2 (Yuki own): `pii_handling.note` renamed to `pii_handling.known_limitation` per plan A12. Schema updated.
+- B7 scope (a): only Yuki-authored files are LF. Repo-wide hygiene deferred to **#81 (squad:maya, go:needs-research)**.
+- B8/B9/B10 NITs deferred to **#82 (squad:yuki, go:needs-research)**.
+- Examples + golden manifests regenerated from honest semantics.
 
-```python
-stability = {
-    "azure":  "stable" if not pii_redaction else "per_run",
-    "ado":    "stable" if not pii_redaction else "per_run",
-    "github": "stable" if not pii_redaction else "per_run",
-    "m365":   "stable" if not pii_redaction else "per_run",
-}
-```
+**Locked-plan deviations carried forward** (not re-litigated):
+- A8 `_AccessTrackingEvidence` to static AST walk (cheaper plan-compliant path; documented).
+- A12 field name reverted to plan (`known_limitation`).
 
-Plus: update `_STABLE_SURFACES` comment, the `pii_handling.note`, and add a regression test that re-runs the engine end-to-end (NOT a hand-crafted cleartext fixture — that's the test gap that let it slip past, see Noor's NIT #1).
+**False-assumption norm proposed by Yuki:** "Any plan that claims a manifest field's value MUST cite the producer code path (file:line) that establishes it." This should be promoted to a stage-1 brief checklist item in future plans. Worth a Maya stage-3 amendment or a SKILL.md.
 
-**Other findings (ship in same revision commit):**
-
-- AMENDMENT #1 — `extract_template_vars()` re-parses every render → memoize on `rule_id` (perf cliff at 10K findings)
-- AMENDMENT #2 — `**evidence` spread overrides reserved render-context keys → spread evidence FIRST then reserved keys, OR namespace as `ctx["evidence"]`
-- AMENDMENT #3 — `_playbook_env.py` docstring claims module-import init but `get_playbook_env()` is lazy → either change docstring or call at import
-- NIT #1 — fix the test coverage gap that allowed BLOCKING #1 to slip
-- NIT #2 — same false assumption in `focus_aligned.py` (PR #70 inheritance) → fold into BLOCKING #1 fix or file follow-up
-
-**Reviewer Rejection Lockout — STRICT.** Diego is locked out. Maya is also locked out from this artifact (she owned the original stage-3 plan with the false assumption, then was locked out by Noor's first reject; the Yuki-revised plan also carried the assumption). **Yuki owns the revision** — deepest plan-revision context AND her hardening review at session end may surface related issues.
-
-**Spawn for next session (template):**
+**Spawn template for Noor re-review:**
 
 ```
 agent_type: general-purpose
-model: claude-opus-4.7-xhigh   # surgical correctness on PII contract
+model: claude-opus-4.7-xhigh
 mode: background
-description: "🧪 Yuki: Revise PR #78 per Noor REJECT (BLOCKING #1 + 3 amendments)"
-prompt: "You are Yuki. Read .squad/decisions/inbox/noor-pr78-stage4.md (or
-  decisions.md if Scribe merged). Diego is locked out. Maya is locked out.
-  Apply Fix Path A on branch squad/61-impl-diego. Add regression test that
-  uses a real engine run (not hand-crafted fixture) and asserts cross-run
-  ticket_key stability under default redaction. Address all 3 amendments.
-  Update _STABLE_SURFACES comment + pii_handling.note. Commit + push to
-  the same branch — PR #78 picks up the new commit. Then post a comment on
-  PR #78 summarizing the revision so Noor's re-review has context."
+description: "🛡️ Noor: Stage-4 re-review of PR #78 revision (commit 5bf48e8)"
+prompt: |
+  You are Noor. Read your prior verdict at .squad/decisions.md (Scribe should
+  have merged it from inbox/noor-pr78-stage4.md). Diego still locked out.
+  Maya still locked out. Yuki authored the revision (5bf48e8 on squad/61-impl-diego).
+  Re-review against your original BLOCKING #1 + 3 amendments + 2 NITs:
+    - BLOCKING #1: did the manifest stability dict become pii-aware?
+    - Did the NEW regression test prove cross-run behaviour matches the claim?
+    - Was the focus_aligned mirror applied?
+    - Were AMEND #1/#2/#3 addressed?
+  Read PR #78 comment 4440148120 (Yuki's revision summary) for context.
+  Post stage-4 verdict comment using markers:
+    **Stage-4 Adversarial Review — Noor**
+    VERDICT: APPROVE | APPROVE_WITH_CHANGES | REJECT
+  If APPROVE, the squad-approve workflow auto-applies github-actions[bot]
+  approval and Martin can `gh pr merge 78 --squash --delete-branch`.
 ```
 
 ## PR #79 — Housekeeping rescue, awaiting Martin's approval
 
-NIT-only `.squad/` diff (52 lines added). The 6 files Scribe orphaned: `.squad/decisions.md` §11 subsection, `.squad/log/2026-05-13T085500Z-61-stage4-reject-revise-cycle.md`, four agent history entries.
+NIT-only `.squad/` diff. Martin's choice: approve manually (no fake-Noor verdict).
 
-**Martin's choice:** approve manually rather than have the coordinator post a fake-Noor verdict (impersonating a reviewer for a PR she never reviewed feels wrong). Once approved + CI green: `gh pr merge 79 --squash --delete-branch`.
+## PR #80 — Squad-housekeeping bundle (broader now)
 
-If Martin hasn't approved by session start, gentle nudge: *"PR #79 still needs your approval — NIT-only docs rescue."*
+This branch's commits (NIT-only `.squad/` housekeeping):
+- `b472b9b` — Noor's stage-4 verdict on PR #78 history entry
+- `a2858ac` — Yuki PR #78 hardening entry + handoff snapshot rescue
+- `7eca300` — Yuki PR #78 stage-5 lockout revision learnings
+- (this snapshot) — post-Yuki-revision focus update + Scribe wrap
 
-## PR #80 — Noor's history.md housekeeping
+Awaiting Martin's manual approval.
 
-Single-file diff: `.squad/agents/security-reviewer/history.md` (+2 lines, +0 deletions). Branch `squad/noor-pr78-stage4-housekeeping`, draft. Opened by Noor at end of stage-4 review for her own learnings entry. Same approval gate as PR #79.
-
-## Background agents at session end
-
-| ID | Status | Action for next session |
-|---|---|---|
-| `noor-stage4-78` | IDLE — done at 11:58, full result captured (REJECT, comment posted, PR #80 opened) | Nothing — fully done |
-| `yuki-hardening-78` | RUNNING (~14 min, 0 output files yet) | `read_agent yuki-hardening-78` once on session start; if BLOCKER, fold into Yuki revision scope |
-
-If Yuki produces a hardening BLOCKER on top of Noor's REJECT, fold both findings into the same Yuki revision spawn. If Yuki finds nothing or only NITs, just do the BLOCKING #1 fix.
-
-## Decision-inbox state at session end
+## Decision-inbox state
 
 ```
 .squad/decisions/inbox/
-  noor-61-stage4-rereview.md                    (1.5 KB, 11:04 — orphan from earlier #61 cycle, Scribe missed)
-  noor-pr78-stage4.md                           (12 KB, 11:56 — NEW, Noor's REJECT verdict on PR #78)
-  copilot-session-handoff-2026-05-13T1158Z.md   (NEW, this handoff record)
+  noor-61-stage4-rereview.md                    (1.5 KB, 11:04 — orphan from earlier #61 cycle)
+  noor-pr78-stage4.md                           (12 KB, 11:56 — Noor's REJECT verdict)
+  copilot-session-handoff-2026-05-13T1158Z.md   (handoff record from prior session)
+  yuki-pr78-revision.md                         (5.6 KB, 12:48 — Yuki's revision drop file)
 ```
 
-**First action for next coordinator:** spawn Scribe to merge inbox into `decisions.md` so Yuki on revision can read it from the canonical ledger. Or just point Yuki at the inbox file directly — the verdict is too important to risk Scribe missing it again.
+Scribe spawn this session is responsible for merging all four into decisions.md and clearing the inbox.
 
-Note: `now.md` (this file) and `wisdom.md` were also discovered IN `.squad/decisions/inbox/` during the status check — they're misplaced. Coordinator may want to investigate why; not blocking.
+## Other in-flight backlog
 
-## Other in-flight backlog (parked)
-
-After PR #78 ships, these are queued (Maya's triage from earlier in v0.5.0 cycle):
+After PR #78 ships, queued (Maya's triage from v0.5.0 cycle):
 
 - #59 Azure commitment-discount rules (next v0.5.0 work)
 - #62 unit-economics card (v0.5.0)
 - #66, #67, #68, #69, #71 — labeled and queued for v0.6.0+
-- #73 (engine tenant-stable PII salt) — explicitly the architectural fix Noor's BLOCKING #1 defers to; PR #78's fix is a temporary honest-declaration band-aid until #73 lands
+- #73 (engine tenant-stable PII salt) — the architectural fix that PR #78's manifest band-aid defers to
 - #74 (runtime template overlay), #75 (Scribe-vs-Stage-4 race), #76 (Scribe charter branch-handling)
+- **#81 NEW** Repo-wide CRLF hygiene (Maya, go:needs-research)
+- **#82 NEW** Playbook nit cleanups (Yuki, go:needs-research)
 
-## Squash log of recent merges (this cycle)
+## Lessons promoted
 
-- PR #55 → `23da547` — docs-voice SKILL (closed #53)
-- PR #70 → focus_aligned reporter for #58
-- PR #72 → `f96a5e9` — locked stage-3 plan for #61 (Maya base + Yuki revision after Noor REJECT)
-- PR #78, #79, #80 — open (this session)
-
-## Lessons promoted (already in decisions.md from earlier batches)
-
-- **Reviewer Rejection Lockout binds to artifact, not role** — Maya was the locked-out plan author; Yuki revised; Noor approved on re-review. Same pattern now applies to implementation: Diego implemented, Yuki revises.
-- **Multi-file reporter outputs use Option C atomic-write contract** — manifest as readiness marker, `os.fsync` before `os.replace`, sha256 self-attestation, `--cleanup-orphans` for crash recovery. Diego's PR #78 implements this faithfully (Noor's review confirms).
-- **Stage-4 must prove per-surface invariants empirically** — Noor's self-note in the verdict: when a plan asserts a per-surface invariant, prove it with a two-run end-to-end fixture, not a single-fixture spot check. This is the lesson from PR #78 BLOCKING #1.
+- **Reviewer Rejection Lockout binds to artifact, not role** — Maya was the locked-out plan author; Yuki revised stage-3; Noor approved on re-review. Same pattern now applies at stage-5: Diego implemented, Yuki revised under Opus xhigh exception, Noor re-reviews.
+- **Multi-file reporter outputs use Option C atomic-write contract** — implemented faithfully in PR #78 per Noor's clean-record.
+- **Stage-4 must prove per-surface invariants empirically** — caught its first false-assumption in PR #78 BLOCKING #1.
+- **NEW (Yuki) — Stage-3 plans must cite producer code paths.** Any plan claiming a manifest field's value MUST cite the producer code path (file:line) that establishes it. Both PR #72 (Maya) and PR #72 revision (Yuki) failed this discipline; Noor caught it at stage-4 against the engine's `redact()` reality. Promote to stage-3 checklist or new SKILL.md.
 
 ## Next entry point for new session
 
-1. `gh pr view 78 --comments` → confirm Noor's REJECT comment is visible
-2. `gh pr view 79` → check if Martin approved
-3. `gh pr view 80` → understand Noor's housekeeping PR scope (already inspected: +2 lines in security-reviewer/history.md)
-4. `read_agent yuki-hardening-78` once → collect her verdict; if BLOCKER, fold into Yuki revision scope
-5. Spawn Scribe to merge the 3 inbox files into `decisions.md`
-6. Spawn Yuki on Opus 4.7 xhigh for the PR #78 revision per spawn template above
-7. Once #79 approved by Martin + CI green: `gh pr merge 79 --squash --delete-branch`
-8. Once #80 approved by Martin + CI green: `gh pr merge 80 --squash --delete-branch`
+1. `gh pr view 78 --comments` to confirm Yuki's revision comment landed; check if Noor has re-reviewed
+2. If Noor has not yet re-reviewed: spawn Noor on Opus 4.7 xhigh per the template above
+3. If Noor APPROVED: auto-approve workflow should fire; then `gh pr merge 78 --squash --delete-branch` (Martin or coordinator)
+4. If Martin approved PR #79 + #80: merge with `gh pr merge {N} --squash --delete-branch`
+5. After PR #78 ships, pick next v0.5.0 work — likely #59 (Azure commitment-discount rules to Diego)
