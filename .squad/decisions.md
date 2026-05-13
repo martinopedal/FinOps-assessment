@@ -1,4 +1,4 @@
-# Squad Decisions
+﻿# Squad Decisions
 
 ## Active Decisions
 
@@ -2332,3 +2332,135 @@ Until that PATCH lands, this PR itself still requires one final `enforce_admins`
 - Document architectural decisions here
 - Keep history focused on work, decisions focused on direction
 - The drop-box pattern: agents write to `.squad/decisions/inbox/{name}-{slug}.md`; Scribe merges into this file at session end and clears the inbox (which is gitignored)
+
+
+## 2026-05-13 — Maya stage-3 plan: AZ.SAVINGS_PLAN_ELIGIBLE_SPEND (#59 rule 1/5, PR #83)
+
+
+**Date:** 2026-05-13
+**Author:** Maya (Lead / FinOps PM, Opus 4.7)
+**For Scribe to merge into:** `.squad/decisions.md` next wrap.
+
+### TL;DR
+
+§11 stage-3 plan for the **first** rule of epic #59 — `AZ.SAVINGS_PLAN_ELIGIBLE_SPEND`. One rule, one PR. Other four rules in #59 each get their own stage-3 plan later. Plan committed at `docs/plans/059-az-savings-plan-eligible-spend.md` and pasted into the PR body. Branch `squad/59-plan-maya-savings-plan-eligible`. Stage-4 reviewer Noor (squad:noor). Stage-5 implementer Diego (Yuki backup).
+
+### Cross-cutting decisions
+
+1. **New normalised input row type required.** `AzureBenefitRecommendation` model must be added to `src/finops_assess/models.py`. The existing `AzureReservation` describes a **realised** purchase; a Benefit Recommendation has a **distinct** primary key (`recommendation_id`) and distinct fields (`cost_without_benefit_usd`, `recommended_hourly_commit_usd`, `net_savings_usd`, `lookback_period`, `term`). Reusing `AzureReservation` was considered (R3 in §2.6) and rejected — `extra="forbid"` would become a footgun with 80% mutually-exclusive fields. The collector and CSV file are sibling-shaped to `azure_reservations.csv`.
+2. **No catalogue YAML change.** Savings Plans are not modelled as catalogue SKUs in `data/catalog/azure/*.yaml` and we do not add one in this PR. They cut across many SKUs and have no `list_price_usd_month` we can publish without redistributing Microsoft pricing pages (hard rule #3 / #5). The rule body uses API-derived dollar values verbatim (operator's own tenant data, not third-party copy).
+3. **No engine change.** The rule is a pure additive `@register("AZ.SAVINGS_PLAN_ELIGIBLE_SPEND")`; `RuleContext` is consumed unchanged. Issue #73 (engine-level stable-salt) is referenced but does not block.
+4. **No new ARM scope.** Cost Management Reader on the existing `https://management.azure.com/.default` audience is sufficient. `arm_collector.py:31` (`_ARM_SCOPES`) is unchanged. Hard rule #1 upheld.
+
+### Binding producer-path citations (per post-PR-#78 norm)
+
+The plan asserts every value the rule emits against a producer code path. Stage-4 reviewer (Noor) will reject if any cell is wrong.
+
+| Claim | Producer (file:line) |
+|---|---|
+| `principal` is salted-hashed by default | `src/finops_assess/engine.py:70-75` (`RuleContext.redact`) |
+| `principal` is **not** stable across runs with default redaction | `src/finops_assess/engine.py:151` (`run_rules`, per-run `secrets.token_hex(16)`) |
+| `principal` is the recommendation **scope** (an ARM ID, not a user identifier) | `src/finops_assess/models.py:235-250` (`AzureReservation`, same convention) |
+| The CSV collector contract | `src/finops_assess/collectors/csv_collector.py:144` (existing reservation read) |
+| Read-only ARM scope | `src/finops_assess/collectors/arm_collector.py:31` (`_ARM_SCOPES`) |
+| The reservation collector pattern this implementation mirrors | `src/finops_assess/collectors/arm_collector.py:244-253` (`_collect_reservations`) |
+| The CSV writer pattern | `src/finops_assess/collectors/arm_collector.py:559-569` |
+
+### What Noor must steelman
+
+10 invariants enumerated in §4 of the plan. Highlights:
+
+- Producer-path citations correct against `main` SHA `0942872`.
+- Rule abstains on E1-E8 (no recommendations / negative savings / micro-spend / short lookback / dedup).
+- `ctx.redact()` invoked **twice** in the rule body (Finding.principal + render template).
+- No new write scope.
+- E2E regression test (`test_savings_plan_e2e_through_run_rules`) uses the real `run_rules` engine, not a mocked rule callable — pattern reference `tests/test_playbook_cross_run_stability.py` (the Yuki-net that caught BLOCKING #1 in PR #78).
+- Conservative wording ("verify ... then consider"; no "purchase / buy / must").
+- `scripts/generate_docs.py --check` passes with all regenerated artefacts committed.
+- Adversarial alternative (R1, derived-view from existing data) considered and rejected with rationale.
+
+### Stage-5 implementer
+
+Diego (primary, Azure specialist). Yuki backup. Implementation lives on `squad/59-impl-savings-plan-eligible` (separate PR, opens after Noor approves the plan).
+
+### Reviewer Rejection Lockout note
+
+If Noor REJECTs this stage-3 plan, revision routes to a **different** agent (likely Yuki or Diego, never Maya). The Lockout pattern is canonicalised in `.squad/decisions.md` from the PR #78 lessons.
+
+### Files added in this PR (plan-only, no product code)
+
+- `docs/plans/059-az-savings-plan-eligible-spend.md` — the full plan (~36 KB, LF-pinned).
+- `.squad/identity/now.md` — focus snapshot updated.
+- `.squad/agents/lead/history.md` — appended Maya learning.
+- `.squad/decisions/inbox/maya-59-stage3-plan.md` — this drop file.
+
+No `src/`, `tests/`, `data/`, `examples/`, `samples/`, or workflow files touched. Implementation is Diego's at stage 5.
+
+### PR labels
+
+- `squad`
+- `squad:maya`
+- `type:plan` (new label, created via `gh label create type:plan --color FBCA04 --description "§11 stage-3 plan PR"` if missing)
+## 2026-05-13 — Noor stage-4 verdict: APPROVE for AZ.SAVINGS_PLAN_ELIGIBLE_SPEND (#59 rule 1/5, PR #83)
+
+### Noor stage-4 verdict — PR #83 (AZ.SAVINGS_PLAN_ELIGIBLE_SPEND, #59 rule 1/5)
+
+**Verdict:** APPROVE
+**Date:** 2026-05-13
+**Reviewer:** Noor (Opus 4.7)
+**PR:** https://github.com/martinopedal/FinOps-assessment/pull/83
+**Branch:** `squad/59-plan-maya-savings-plan-eligible`
+**Plan file:** `docs/plans/059-az-savings-plan-eligible-spend.md` (~36 KB)
+**Main SHA verified against:** `0942872`
+
+### What I verified
+
+1. **Producer-path citations correct against main `0942872`.** PASS. Every cited line confirmed by `git show origin/main:<path>` reads: `engine.py:70-75` is the `RuleContext.redact()` helper (`if not self.redact_pii: return principal`; otherwise salted SHA-256 truncated to 16 hex chars); `engine.py:151` is the per-run `salt_value = salt if salt is not None else secrets.token_hex(16)` line that explains why Azure findings are not stable across runs by default; `models.py:235-250` is the `AzureReservation` model with `extra="forbid"` (the convention reference for the new `AzureBenefitRecommendation`); `csv_collector.py:144` is the existing `azure_reservations` reader; `arm_collector.py:31` is `_ARM_SCOPES = ["https://management.azure.com/.default"]` (read-only ARM audience, unchanged); `arm_collector.py:244-253` is the `_collect_reservations` pattern the new collector mirrors; `arm_collector.py:559-569` is the existing CSV writer.
+
+2. **Rule abstains on the 8 enumerated edge cases (E1–E8).** PASS. Plan §3.5 pseudocode explicitly enforces E1 (null `cost_without_benefit`), E2 (`net_savings_usd <= 0` or `None`), E3 (`< \` micro-spend), E4 (`Last7Days` short-lookback), and E5 ((scope, term) dedup). E6 (Dev/Test policy), E7 (mixed RI+SP), and E8 (region rollouts) are deliberately not auto-suppressed — the rule surfaces evidence and lets the operator make the call, which is the conservative posture and matches peer-rule behaviour.
+
+3. **`ctx.redact()` invoked TWICE in the rule body.** PASS. Plan §3.5 pseudocode lines explicitly call `ctx.redact(rec.scope)` at both the `Finding.principal` field and the `principal=` kwarg of the `render(...)` template helper. §3.7 makes this binding ("**Both invocations of `rec.scope` MUST go through `ctx.redact()`**").
+
+4. **No new write scope.** PASS. Plan §3.7 explicitly states `_ARM_SCOPES` is unchanged; verified `_ARM_SCOPES = ["https://management.azure.com/.default"]` in `arm_collector.py:31` on main. The Benefit Recommendations endpoint sits inside the `Microsoft.CostManagement` namespace which is a read-only data plane on the existing audience. Cost Management Reader is already approved per `docs/plan.md` §9. **Hard rule #1 upheld.**
+
+5. **E2E regression test uses real `run_rules` engine.** PASS. Plan §3.8 row 9 (`test_savings_plan_e2e_through_run_rules`) commits to the Yuki-net pattern: builds a real `NormalizedDataset`, calls real `run_rules(...)`, asserts exactly one finding emerges with the expected rule_id. Pattern reference `tests/test_playbook_cross_run_stability.py:42-60` verified — that file does indeed wire the real `run_rules` engine into the playbook reporter and runs the full pipeline twice, which is the exact non-vacuity standard set by my PR #78 verdict.
+
+6. **Conservative wording in `recommendation_template`.** PASS. Plan §3.6 uses "**Verify** the workload is steady-state and not the trailing edge of a one-off project, then **consider** the commitment purchase." Verb directives are `Verify` and `consider`; no imperative `Purchase`/`Buy`/`Must`. The substantive test ("does this tell the operator to spend money?") is satisfied. NIT #1 below flags that the noun "purchase" still appears in the object phrase ("the commitment purchase") — Diego may consider rephrasing to "consider the commitment" to fully satisfy the literal substring filter, but I do not block on this.
+
+7. **`scripts/generate_docs.py --check` will pass with regenerated artefacts.** PASS at the planning level. Plan §3.9 enumerates every artefact requiring regen: `docs/rules.md`, `examples/demo-report.{json,html,csv}`, `examples/demo-triage.{json,csv}`, `examples/playbook.jsonl{,.manifest.json}`, the new `src/finops_assess/data/playbooks/AZ.SAVINGS_PLAN_ELIGIBLE_SPEND.j2` template (LF-pinned per the existing `.gitattributes` rule), and `examples/focus-aligned.csv{,.manifest.json}`. The actual `--check` pass is a stage-5 acceptance criterion that Diego owns.
+
+8. **Adversarial alternative R1 considered and rejected with rationale.** PASS. Plan §2.6 R1 ("Compute eligibility ourselves from `azure_resources.csv` + `azure_reservations.csv`") is rejected on the principled grounds that we would re-implement Microsoft's hourly-bucketing/term-vs-lookback/region-normalisation modelling with worse data than they have access to. R2 (catalogue SKU) and R3 (reuse `AzureReservation`) are also rejected with hard-rule and `extra="forbid"-footgun rationale respectively.
+
+9. **`AzureBenefitRecommendation` has `extra="forbid"` and matches existing model conventions.** PASS. Plan §3.2 pseudocode includes `model_config = ConfigDict(extra="forbid")` on line 173. Field shape mirrors `AzureReservation`: `recommendation_id: str = Field(..., min_length=1)` (primary-key convention), `Field(default=None, ge=0)` for monetary fields, `Literal[...]` for enum-like fields. Confirmed `Literal` is already imported in `models.py:5` (`from typing import Any, Literal`). New model placement (after `AzureLogWorkspace`) and `NormalizedDataset` field placement (after `azure_log_workspaces` near line 385) both follow the existing surface-grouped convention.
+
+10. **No catalogue YAML change; no engine change; no new ARM scope.** PASS. Plan §1.3 explicitly confirms zero `data/catalog/azure/*.yaml` change (Savings Plans cut across many SKUs and have no publishable `list_price_usd_month` we could anchor without redistributing Microsoft pricing pages — hard rules #3 / #5). §3.5 confirms the rule is a pure additive `@register(...)`; `RuleContext` is unchanged; issue #73 (engine-level stable-salt) is referenced but does not block. §3.7 confirms `_ARM_SCOPES` is unchanged. The only ARM-collector mutation is an additive `_API_VERSIONS["benefitRecommendations"] = "2022-10-01"` entry — same audience, same credential.
+
+### Additional probes (beyond the 10 invariants)
+
+- **Source URL cited is public docs (no copyright concern).** Plan §1.1 cites `https://learn.microsoft.com/en-us/rest/api/cost-management/benefit-recommendations/list` — Microsoft Learn, public. **Hard rule #3 upheld.**
+- **PII / GDPR posture.** Plan §2.5 correctly identifies that the `principal` is an Azure subscription / billing-account ARN — not a personal identifier. Subscription ARNs are not Article-9 personal data. The redaction call still fires (defence in depth), and evidence values are all numerical / API-derived strings (no user identifiers). **Hard rule #4 upheld.**
+- **Defence-in-depth on dedup.** Plan §3.4 collector keeps the longest-lookback row per `(scope, term)` and §3.5 rule additionally dedups on `(scope, term)` — two layers, defensible.
+- **CRLF / line-endings hygiene.** Plan §3.9 explicitly LF-pins the new playbook `.j2` template per existing `.gitattributes` rule. Carries forward the PR #78 / #58 hardening precedent (the cross-referential check Maya was meant to add to her stage-3 checklist after my PR #61 reject).
+- **Cross-run stability declaration.** Plan §3.7 explicitly states "no new reporter contract" — `examples/playbook.jsonl.manifest.json` per-surface stability declaration is unchanged. The PR #78 surface (where I caught BLOCKING #1) is not regressed.
+- **No new credential surface.** No client secrets, no PATs, no tenant IDs, no GUIDs in fixtures (the sample CSV uses the documented null-GUID family `00000000-0000-0000-0000-00000000000{1,2}` as test scopes). **Hard rule #2 upheld.**
+- **API-shape robustness against `null` `recommendationDetails`.** Plan §1.1 + §2.2 E2 acknowledges the API can return `null` recommendations and the rule abstains. Good.
+
+### Stage-5 follow-ups for Diego (NIT — non-blocking)
+
+1. **Recommendation wording — `purchase` substring.** §3.6 wording uses "consider the commitment purchase" (noun phrase). Substantively conservative, but the literal substring "purchase" still appears. Consider rewording to "consider the commitment" or "consider the Savings Plan commitment" to fully satisfy the self-imposed substring filter in invariant 6. Not blocking — verb directives are conservative.
+
+2. **Filter on `benefit_kind`.** The `AzureBenefitRecommendation.benefit_kind` field defaults to `"SavingsPlan"` but is `Literal["SavingsPlan", "Reservation"]`. The rule §3.5 does not filter on `benefit_kind`, yet the recommendation_template hard-codes "Savings Plan with an hourly commit" and the rule ID is explicitly `AZ.SAVINGS_PLAN_ELIGIBLE_SPEND`. If a Reservation recommendation came through, the wording would mislead. Add `if rec.benefit_kind != "SavingsPlan": continue` in the rule body. The future `AZ.RESERVATION_*` rule (epic #59 child #4) can consume the same model with `benefit_kind == "Reservation"`.
+
+3. **Threshold tunability.** `_SP_MIN_UNCOVERED_USD = 50.0` is a Python module constant. Peer rules like `AZ.IDLE_VM_14D` expose `inactivity_days: 14` via the YAML rule entry, making them tunable per deployment. Consider exposing `min_uncovered_usd: 50.0` as a YAML rule field (with a `min_uncovered_usd` attribute on the `Rule` model if not already present) so operators can tune the noise floor without a code change.
+
+4. **`Literal` strictness against future API additions.** `Literal["P1Y", "P3Y"]` and `Literal["Last7Days", "Last30Days", "Last60Days"]` will hard-fail (pydantic `ValidationError`) if Microsoft adds a new term value (e.g. `P5Y`) or lookback window (`Last90Days`). This is intentionally strict and defensible, but the collector should surface a clear error message ("unrecognised Benefit Recommendation `term`/`lookBackPeriod` — file an issue") so operators can file a fast follow-up issue rather than seeing a raw pydantic stack trace.
+
+5. **`test_engine.py` `REQUIRED_RULES` set.** Plan §3.8 row 10 correctly identifies that `tests/test_engine.py:23` is the `REQUIRED_RULES` set; verified — it currently lists 7 Azure rules. The new ID is the 8th.
+
+### Reviewer Rejection Lockout — N/A
+
+Verdict is APPROVE. No lockout activated. Maya retains ownership of the next four `AZ.*` rule plans in epic #59.
+
+### Stage-5 spawn
+
+Diego is cleared for stage-5 implementation on the `squad/59-impl-savings-plan-eligible` branch. Yuki backup remains valid. Five non-blocking NITs above for Diego to consider during implementation; none of them gate the implementation PR. The implementation PR will return to me for stage-4 on its own diff.
