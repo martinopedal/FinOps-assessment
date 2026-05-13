@@ -1,22 +1,20 @@
-# FOCUS correlation mapping (exploratory)
+# FOCUS correlation mapping
 
-> **Status:** `exploratory` , documentation only. This file is the first
-> implementation slice of the *FinOps Toolkit / FOCUS / Hubs alignment* epic
-> from [`docs/roadmap/README.md`](README.md). It does **not** ship a new
-> schema, a new reporter, a FOCUS-formatted output, or a Hubs connector. No
-> code, rule, collector, model, CSV column, or workflow changes are made by
-> introducing this document.
+> **Status:** `partially shipped (Azure-only, v0.5.0)`. The
+> `finops-assess export focus-aligned` command ships in v0.5.0 for Azure findings.
+> M365 / GitHub / ADO findings are skipped with a per-surface count in the sidecar
+> manifest and will ship in v0.6.0 once the stable-principal-salt feature lands.
+> See [`docs/focus-export.md`](../focus-export.md) for the full operator-facing
+> reference.
 >
-> **FOCUS target version:** 1.2. If later research updates the target, this
-> document and the roadmap index move together in the same PR.
+> **FOCUS target version:** 1.3. The exporter aligns to FOCUS 1.3 column names
+> and semantics; the manifest declares `conformance_level: "non-conformant"` because
+> advisory savings rows are not billed cost rows.
 
->  **Non-contract notice.** This document is exploratory and advisory.
-> Nothing here commits the project to ship a FOCUS exporter, a Hubs
-> connector, or any specific CLI surface, and nothing here freezes the
-> current `Finding` or `run` field set. If a future PR renames or removes
-> a field cited below, this document moves with it in the same PR. The
-> FOCUS specification and FinOps Toolkit / Hubs documentation remain with
-> their owners , see *Sources* below for the authoritative references.
+> **Non-contract notice.** Nothing here freezes the current `Finding` or `run`
+> field set. If a future PR renames or removes a field cited below, this document
+> moves with it in the same PR. The FOCUS specification and FinOps Toolkit / Hubs
+> documentation remain with their owners — see *Sources* below.
 
 ## Why this exists
 
@@ -28,7 +26,7 @@ duplicating, replacing, or reshaping their cost dataset.
 
 This mapping is the **operator-side correlation guide**. It says:
 
-- which FOCUS 1.2 columns a reader can use to filter their own cost dataset
+- which FOCUS 1.3 columns a reader can use to filter their own cost dataset
   for the principal, SKU, surface, or charge a finding refers to;
 - which FOCUS columns we **cannot** populate today, and why;
 - which guardrails apply if and when a future PR adds an actual export.
@@ -85,7 +83,7 @@ this document drifts with them in the same PR.
 | `confidence` | enum | `high` \| `medium` \| `low`. |
 | `evidence` | object | Rule-specific signals (activity counters, persona, etc.). |
 
-## FOCUS 1.2 correlation table
+## FOCUS 1.3 correlation table
 
 For each FOCUS column the *Source field* column shows the closest field that
 exists in a finding **today**. *Mapping* describes how a reader would join

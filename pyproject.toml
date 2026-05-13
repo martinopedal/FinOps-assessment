@@ -35,6 +35,7 @@ dev = [
     "mypy>=1.10",
     "types-PyYAML>=6.0.12",
     "types-requests>=2.31.0",
+    "jsonschema>=4.21",
 ]
 pdf = [
     # WeasyPrint renders the print-tuned HTML to a deterministic PDF.
@@ -68,6 +69,7 @@ finops_assess = [
     "demo/*.yaml",
     "reporters/templates/*.html.j2",
     "reporters/templates/*.pdf.html.j2",
+    "schemas/*.json",
 ]
 
 [tool.ruff]
@@ -105,4 +107,8 @@ ignore_missing_imports = true
 # but the runtime package may not be installed in the base CI environment.
 [[tool.mypy.overrides]]
 module = ["requests"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["jsonschema", "jsonschema.*"]
 ignore_missing_imports = true

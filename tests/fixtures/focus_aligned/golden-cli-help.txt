@@ -1,0 +1,14 @@
+Usage: finops-assess export focus-aligned [OPTIONS]
+
+  Emit a FOCUS-aligned advisory CSV from a finops-assess findings report.
+
+  This export is NOT a FOCUS 1.3 conformant Cost-and-Usage dataset. Rows
+  describe corrective recommendations, not billed consumption. Cost columns
+  (BilledCost, ContractedCost, EffectiveCost, ListCost) are intentionally
+  empty; advisory savings are surfaced in EstimatedMonthlySavingsUsd. See the
+  sidecar manifest.json and docs/focus-export.md before loading.
+
+Options:
+  --input FILE   Canonical findings JSON from `finops-assess run`.  [required]
+  --output FILE  Destination CSV path; manifest written alongside.  [required]
+  --help         Show this message and exit.

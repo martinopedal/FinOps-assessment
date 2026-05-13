@@ -66,6 +66,10 @@ finops-assess run --input ./samples --format csv --csv-output ./findings.csv
 # Build an advisory analyst triage pack from an existing JSON report.
 finops-assess triage --input ./report.json --output-dir ./triage
 
+# Export findings to a FOCUS-aligned advisory CSV for joining to
+# FinOps Hubs / Cloudability / your warehouse:
+finops-assess export focus-aligned --input ./report.json --output ./focus-aligned.csv
+
 # Run against your CSVs and emit JSON, HTML, CSV, and PDF together
 # (the PDF step needs the optional [pdf] extra; see "PDF reports" below).
 finops-assess run --input ./samples --output ./report.json --format all \
@@ -74,7 +78,9 @@ finops-assess run --input ./samples --output ./report.json --format all \
 
 The data contract for `samples/` (CSV columns the collector expects)
 is documented in [`docs/schema.md`](docs/schema.md). The full rule
-reference is in [`docs/rules.md`](docs/rules.md).
+reference is in [`docs/rules.md`](docs/rules.md). Export findings to
+a FOCUS-aligned advisory CSV with
+`finops-assess export focus-aligned` ([details](docs/focus-export.md)).
 
 ## PDF reports (optional `[pdf]` extra)
 

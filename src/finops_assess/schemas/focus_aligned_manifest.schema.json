@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/martinopedal/FinOps-assessment/blob/main/src/finops_assess/schemas/focus_aligned_manifest.schema.json",
+  "title": "FOCUS-aligned advisory export manifest (v0.1)",
+  "description": "Sidecar contract for finops-assess export focus-aligned output. manifest_schema_version '0.1' is additive-only: new top-level keys may be added in future releases without a version bump; consumers MUST ignore unknown keys. Enum values on existing keys (e.g. pii_handling.mode, conformance_level) may also expand under additive releases — strict consumers MUST widen their accepted value set rather than treating unknown enum values as errors. A breaking change (field rename, removal, type change, or incompatible semantic shift) increments manifest_schema_version to '0.2' and is documented in CHANGELOG.md.",
+  "type": "object",
+  "required": [
+    "manifest_schema_version",
+    "tool",
+    "generated_at",
+    "source_report",
+    "dataset_type",
+    "focus_version",
+    "conformance_level",
+    "conformance_rationale",
+    "surfaces_included",
+    "surfaces_skipped",
+    "row_count",
+    "unsupported_columns",
+    "join_keys",
+    "pii_handling",
+    "non_additive_warning",
+    "column_order",
+    "evidence_key_fields",
+    "evidence_key_algorithm"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "manifest_schema_version": {
+      "type": "string",
+      "const": "0.1",
+      "description": "Schema version. '0.1' for v0.5.0. Bump to '0.2' only on a breaking change."
+    },
+    "tool": {
+      "type": "object",
+      "required": ["name", "version"],
+      "additionalProperties": true,
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "finops-assess"
+        },
+        "version": {
+          "type": "string",
+          "description": "SemVer string read from finops_assess.__version__."
+        }
+      }
+    },
+    "generated_at": {
+      "type": "string",
+      "description": "RFC 3339 UTC ISO-8601 timestamp at second precision. Honours SOURCE_DATE_EPOCH."
+    },
+    "source_report": {
+      "type": "object",
+      "required": ["path", "schema_version", "pii_redaction"],
+      "additionalProperties": true,
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path to the source report JSON (may be redacted by upstream run)."
+        },
+        "schema_version": {
+          "type": "string",
+          "description": "schema_version from the source report run block."
+        },
+        "pii_redaction": {
+          "type": "boolean",
+          "description": "Echoes pii_redaction from the source report run block."
+        }
+      }
+    },
+    "dataset_type": {
+      "type": "string",
+      "const": "advisory",
+      "description": "Distinguishes advisory datasets from FOCUS billing Cost-and-Usage datasets."
+    },
+    "focus_version": {
+      "type": "string",
+      "const": "1.3",
+      "description": "FOCUS spec version this export is shaped against."
+    },
+    "conformance_level": {
+      "type": "string",
+      "description": "FOCUS conformance level. Only 'non-conformant' is legal in v0.5.0. Future values: 'partial', 'conformant'. Consumers MUST accept unknown values (forward-compatible read).",
+      "enum": ["non-conformant"]
+    },
+    "conformance_rationale": {
+      "type": "string",
+      "description": "Human-readable explanation of why this export is non-conformant."
+    },
+    "surfaces_included": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Alphabetically sorted list of cloud surfaces included in this export. v0.5.0: ['azure']."
+    },
+    "surfaces_skipped": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 },
+      "description": "Per-surface count of findings filtered out. Keys are alphabetically ordered."
+    },
+    "row_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of rows in the sibling CSV (excluding header)."
+    },
+    "unsupported_columns": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "FOCUS columns that are intentionally empty or absent in this export."
+    },
+    "join_keys": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["column", "joins_to", "stability"],
+        "additionalProperties": true,
+        "properties": {
+          "column": { "type": "string" },
+          "joins_to": { "type": ["string", "null"] },
+          "stability": {
+            "type": "string",
+            "description": "Stability contract. Known values: 'stable', 'per_run', 'best_effort'. Consumers MUST accept unknown values.",
+            "enum": ["stable", "per_run", "best_effort"]
+          },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "pii_handling": {
+      "type": "object",
+      "required": ["mode"],
+      "additionalProperties": true,
+      "description": "PII handling policy for this export. v0.5.0 shape: {'mode': 'azure_resource_id_cleartext'}. v0.6.0 will add 'salt_source', 'principal_hash_algorithm', and broaden the mode enum. Consumers MUST accept unknown keys and unknown mode values (forward-compatible read).",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "description": "PII handling mode. v0.5.0 value: 'azure_resource_id_cleartext'. v0.6.0 will add 'stable_salt', 'ephemeral_salt', 'cleartext'. Consumers MUST accept unknown values.",
+          "enum": ["azure_resource_id_cleartext"]
+        }
+      }
+    },
+    "non_additive_warning": {
+      "type": "boolean",
+      "const": true,
+      "description": "Always true: summing EstimatedMonthlySavingsUsd across rows may double-count when conflict classes fire."
+    },
+    "column_order": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Authoritative declaration of CSV column order."
+    },
+    "evidence_key_fields": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Hash inputs for AdvisoryFindingKey. v0.5.0: ['rule_id','resource_id','normalized_evidence']. Will extend in v0.6.0 if evidence_key_version is mixed in."
+    },
+    "evidence_key_algorithm": {
+      "type": "string",
+      "description": "Free-form description of the AdvisoryFindingKey hash algorithm."
+    }
+  }
+}
