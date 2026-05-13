@@ -84,6 +84,7 @@ from finops_assess.reporters._determinism import generated_at_iso
 from finops_assess.reporters._playbook_env import (
     extract_template_vars,
     get_playbook_env,
+    preflight_validate,
 )
 
 _log = logging.getLogger(__name__)
@@ -359,26 +360,49 @@ def _template_vars_cached(rule_id: str, template_source: str) -> tuple[str, ...]
 # ---------------------------------------------------------------------------
 
 
-def render_row(finding: dict[str, Any], adapter_class: str = "generic") -> dict[str, Any]:
+def render_row(
+    finding: dict[str, Any],
+    adapter_class: str = "generic",
+    overlay_dir: Path | None = None,
+) -> dict[str, Any]:
     """Render a single finding dict into a playbook row dict.
 
-    The Jinja2 template is loaded from package data via the cached environment.
+    The Jinja2 template is loaded from package data via the cached environment,
+    or from the overlay directory when ``overlay_dir`` is provided.
     Template variables are the merged finding fields (top-level) plus all keys
     from the finding's ``evidence`` dict.
 
+    When ``overlay_dir`` is ``None`` (default), behaviour is identical to
+    v0.5.0: the wheel template is used, plain ``Environment``.
+
+    When ``overlay_dir`` is provided, the sandboxed overlay environment is
+    used.  The template source resolved from the overlay-first search path is
+    used for ``template_render_inputs`` extraction, so the field reflects the
+    ACTUAL template that rendered the row (overlay or wheel fallback).
+
     Raises ``PlaybookTemplateNotFoundError`` if no template exists for
-    ``finding["rule_id"]``.
+    ``finding["rule_id"]`` in either the overlay or the wheel.
     Raises ``jinja2.UndefinedError`` if the template references a variable not
     present in the merged context (StrictUndefined).
     """
     rule_id: str = finding.get("rule_id", "")
     severity: str = finding.get("severity", "info")
 
-    env = get_playbook_env()
+    env = get_playbook_env(overlay_dir)
     rel_path = _template_rel_path(rule_id)
 
-    # Fail-fast if template is missing.
-    template_source = _template_source_for_rule(rule_id)
+    if overlay_dir is not None:
+        # Resolve template source via the overlay env's loader (may be overlay or wheel).
+        assert env.loader is not None  # always set in overlay mode
+        try:
+            template_source, _filename, _uptodate = env.loader.get_source(env, rel_path)
+        except Exception as exc:
+            raise PlaybookTemplateNotFoundError(
+                rule_id, f"overlay:{overlay_dir}/{rel_path} or wheel:{rel_path}"
+            ) from exc
+    else:
+        # Wheel-only path: identical to v0.5.0.
+        template_source = _template_source_for_rule(rule_id)
 
     tmpl = env.get_template(rel_path)
 
@@ -451,10 +475,16 @@ def build_playbook_manifest(
     jsonl_byte_count: int,
     surfaces: list[str],
     pii_redaction: bool,
+    template_sources: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Build the sidecar manifest dict for a playbook JSONL export.
 
-    Manifest schema version ``"0.1"`` is additive-only in v0.5.0.
+    Manifest schema version ``"0.1"`` is additive-only in v0.5.0 / v0.6.0.
+
+    When ``template_sources`` is non-``None`` (overlay mode), the manifest
+    includes a ``template_sources`` array recording the per-template SHA-256
+    provenance.  When ``None`` (default / no overlay), the key is omitted for
+    backward compatibility with v0.5.0 consumers.
 
     PII / stability contract
     ------------------------
@@ -513,6 +543,7 @@ def build_playbook_manifest(
         "surfaces": sorted(surfaces),
         "sort_key": "(surface, rule_id, ticket_key, evidence_ref)",
         "templates_source": "importlib.resources:finops_assess.data.playbooks",
+        **({} if template_sources is None else {"template_sources": template_sources}),
     }
 
 
@@ -550,6 +581,69 @@ def find_orphaned_jsonl(directory: Path) -> list[Path]:
 
 
 # ---------------------------------------------------------------------------
+# Template sources builder (overlay provenance — v0.6.0)
+# ---------------------------------------------------------------------------
+
+
+def _build_template_sources(
+    rule_ids: list[str],
+    overlay_dir: Path,
+) -> list[dict[str, Any]]:
+    """Build the ``template_sources[]`` provenance list for the manifest.
+
+    For each rule_id rendered during the export, resolves which template was
+    actually loaded (overlay or wheel), reads its source, and records the
+    SHA-256 of the raw ``.j2`` body (UTF-8 bytes).
+
+    Determination of ``source``:
+    - If a file at ``overlay_dir/{surface}/{rule_id}.j2`` exists, it was the
+      overlay template (first-match in ``FileSystemLoader`` search path).
+    - Otherwise the wheel template was used.
+
+    Returns a list of ``template_sources`` dicts conforming to the
+    ``playbook_manifest.schema.json`` ``template_sources`` item schema.
+    """
+    from finops_assess.reporters._playbook_env import _playbook_templates_root
+
+    wheel_root = Path(_playbook_templates_root())
+    entries: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    for rule_id in rule_ids:
+        if rule_id in seen:
+            continue
+        seen.add(rule_id)
+
+        surface = _surface_for_rule_id(rule_id)
+
+        overlay_candidate = overlay_dir / surface / f"{rule_id}.j2"
+        if overlay_candidate.is_file():
+            source_text = overlay_candidate.read_text(encoding="utf-8")
+            source_label = "overlay"
+        else:
+            wheel_candidate = wheel_root / surface / f"{rule_id}.j2"
+            if not wheel_candidate.is_file():
+                _log.warning(
+                    "Template source not found for rule '%s'; skipping provenance.", rule_id
+                )
+                continue
+            source_text = wheel_candidate.read_text(encoding="utf-8")
+            source_label = "wheel"
+
+        sha256 = hashlib.sha256(source_text.encode("utf-8")).hexdigest()
+        entries.append(
+            {
+                "rule_id": rule_id,
+                "surface": surface,
+                "source": source_label,
+                "sha256": sha256,
+            }
+        )
+
+    return entries
+
+
+# ---------------------------------------------------------------------------
 # Primary writer
 # ---------------------------------------------------------------------------
 
@@ -559,10 +653,20 @@ def write_playbook_export(
     output_jsonl: Path,
     *,
     skip_warnings: bool = False,
+    overlay_dir: Path | None = None,
 ) -> tuple[Path, Path]:
     """Write a playbook JSONL export and sidecar manifest using atomic-write Option C.
 
     Returns ``(jsonl_path, manifest_path)`` — both as resolved ``Path`` objects.
+
+    When ``overlay_dir`` is provided, operator overlay templates are used with
+    first-match precedence over wheel templates.  Pre-flight validation runs
+    before any rows are rendered — a pre-flight failure aborts the export
+    entirely (no partial JSONL is written).  The manifest gains a
+    ``template_sources[]`` array recording the per-template SHA-256 provenance.
+
+    When ``overlay_dir`` is ``None`` (default), behaviour is byte-identical
+    to v0.5.0: plain ``Environment``, no ``template_sources[]`` in manifest.
 
     Atomic-write contract (Option C)
     ---------------------------------
@@ -586,6 +690,18 @@ def write_playbook_export(
     all_findings: list[dict[str, Any]] = report.get("findings", [])
     pii_redaction: bool = report.get("run", {}).get("pii_redaction", True)
 
+    # Pre-flight validation when overlay is enabled (fail-fast before any I/O).
+    if overlay_dir is not None:
+        from finops_assess.reporters._playbook_env import (
+            _build_fixture_finding,
+            _playbook_templates_root,
+        )
+
+        env = get_playbook_env(overlay_dir)
+        wheel_root = _playbook_templates_root()
+        fixture = _build_fixture_finding(wheel_root)
+        preflight_validate(env, overlay_dir, fixture)
+
     # PII warning: non-Azure findings with redaction on yield per_run ticket_keys.
     non_azure = [f for f in all_findings if f.get("surface") != "azure"]
     if non_azure and pii_redaction and not skip_warnings:
@@ -605,7 +721,7 @@ def write_playbook_export(
         rule_id = finding.get("rule_id", "")
         adapter_class = rule_id_to_adapter.get(rule_id, "generic")
         try:
-            row = render_row(finding, adapter_class=adapter_class)
+            row = render_row(finding, adapter_class=adapter_class, overlay_dir=overlay_dir)
             rows.append(row)
         except PlaybookTemplateNotFoundError:
             raise
@@ -615,6 +731,12 @@ def write_playbook_export(
 
     sorted_rows = sorted(rows, key=_sort_key)
     surfaces = sorted({r.get("surface", "") for r in sorted_rows if r.get("surface")})
+
+    # Build per-template provenance when overlay is enabled.
+    template_sources: list[dict[str, Any]] | None = None
+    if overlay_dir is not None:
+        rendered_rule_ids = [r["rule_id"] for r in sorted_rows]
+        template_sources = _build_template_sources(rendered_rule_ids, overlay_dir)
 
     # --- Atomic write: JSONL ---
     tmp_jsonl: str | None = None
@@ -653,6 +775,7 @@ def write_playbook_export(
         jsonl_byte_count=jsonl_byte_count,
         surfaces=surfaces,
         pii_redaction=pii_redaction,
+        template_sources=template_sources,
     )
     manifest_path = output_jsonl.parent / (output_jsonl.name + ".manifest.json")
 

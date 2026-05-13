@@ -254,6 +254,84 @@ this warning in automated pipelines that have already acknowledged the posture.
 - [`examples/playbook.jsonl.manifest.json`](../examples/playbook.jsonl.manifest.json)
   — matching sidecar manifest.
 
+## Template overlay for playbook tickets
+
+Operators can supply custom Jinja2 templates that override the bundled per-rule
+`.j2` files. Use this when your ticket destination (ServiceNow, Jira, GitHub
+Issues, etc.) requires a different layout, additional fields, or translated
+wording.
+
+```console
+$ finops-assess run \
+    --input ./samples \
+    --format playbook \
+    --playbook-output ./playbook-export.jsonl \
+    --allow-template-overlay ./my-overlays
+```
+
+### Overlay directory layout
+
+The overlay directory must mirror the bundled template layout: one sub-directory
+per surface (`m365/`, `azure/`, `github/`, `ado/`), and one file per rule ID:
+
+```
+my-overlays/
+  m365/
+    M365.DISABLED_USER_LICENSED.j2
+    M365.OVER_LICENSED_VS_PERSONA.j2
+  azure/
+    AZ.IDLE_VM_14D.j2
+```
+
+Only the rules you want to customise need a file; all others continue using the
+bundled template. Extra files in the overlay directory are silently ignored.
+
+### Pre-flight validation
+
+Before writing a single byte of output, the exporter:
+
+1. **Syntax-checks** every overlay template with the Jinja2 parser. A
+   `TemplateSyntaxError` aborts the run with a clear message and exit code 1.
+2. **Renders a fixture finding** through each overlay to catch missing variables
+   or logic errors at run time, before the JSONL is written.
+3. **Records provenance** — each `template_sources` entry in the manifest
+   sidecar carries `source: "wheel"` or `source: "overlay"` and the
+   SHA-256 of the template file.
+
+```json
+"template_sources": [
+  {
+    "rule_id": "M365.DISABLED_USER_LICENSED",
+    "surface": "m365",
+    "source": "overlay",
+    "sha256": "a3b4c5..."
+  }
+]
+```
+
+### Security sandbox
+
+Overlay templates run in a `jinja2.sandbox.SandboxedEnvironment` with these
+restrictions enforced before any render:
+
+- **`{% include %}` and `{% import %}`** are rejected at AST parse time.
+  An operator template that attempts either raises
+  `jinja2.TemplateSyntaxError` and the run aborts.
+- Arbitrary **callable invocation** is blocked at the sandbox level
+  (`is_safe_callable → False`).
+- Templates are loaded **from the file system only** (`FileSystemLoader`);
+  the exporter never calls `from_string()` on operator content.
+
+These controls mirror Noor's Stage-4 review conditions (C1/C2/C3). Do not
+relax them without a new security review.
+
+### Acceptable use
+
+Overlay templates are for **layout and wording customisation only**. They
+receive the same template context as bundled templates (rule metadata, finding
+fields, evidence dict). They may not import Python modules, include other
+templates, or invoke callables.
+
 ## Exporting findings to a FOCUS-aligned advisory CSV
 
 `finops-assess` can project findings onto a CSV shaped like the FinOps Foundation

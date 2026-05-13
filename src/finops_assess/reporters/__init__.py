@@ -10,6 +10,7 @@ JSONL file (one row per finding) alongside a sidecar manifest, using
 atomic-write Option C (tempfile + fsync + os.replace).
 """
 
+from finops_assess.reporters._playbook_env import PlaybookPreflightError
 from finops_assess.reporters.csv_reporter import COLUMNS as CSV_COLUMNS
 from finops_assess.reporters.csv_reporter import write_csv_report
 from finops_assess.reporters.focus_aligned import (
@@ -39,6 +40,7 @@ __all__ = [
     "CSV_COLUMNS",
     "TRIAGE_CSV_COLUMNS",
     "Branding",
+    "PlaybookPreflightError",
     "PlaybookTemplateNotFoundError",
     "build_focus_aligned_manifest",
     "build_html_report",

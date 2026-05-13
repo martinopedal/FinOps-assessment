@@ -124,6 +124,29 @@
     "templates_source": {
       "type": "string",
       "description": "Describes where the Jinja2 templates were loaded from."
+    },
+    "template_sources": {
+      "type": "array",
+      "description": "Per-template provenance. Present only when --allow-template-overlay is used. Each entry records which template was loaded and its SHA-256 body hash.",
+      "items": {
+        "type": "object",
+        "required": ["rule_id", "surface", "source", "sha256"],
+        "additionalProperties": false,
+        "properties": {
+          "rule_id": { "type": "string" },
+          "surface": { "type": "string" },
+          "source": {
+            "type": "string",
+            "enum": ["wheel", "overlay"],
+            "description": "Whether this template came from the built-in wheel ('wheel') or the operator overlay directory ('overlay')."
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 hex digest of the raw .j2 template body (UTF-8 bytes)."
+          }
+        }
+      }
     }
   }
 }

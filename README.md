@@ -86,6 +86,8 @@ a FOCUS-aligned advisory CSV with
 `finops-assess export focus-aligned` ([details](docs/focus-export.md)).
 Export findings as playbook tickets with
 `finops-assess run --format playbook` ([details](docs/user-guide.md#playbook--ticket-export)).
+Override bundled templates with `--allow-template-overlay <dir>` for custom ticket layouts
+([details](docs/user-guide.md#template-overlay-for-playbook-tickets)).
 
 ## PDF reports (optional `[pdf]` extra)
 

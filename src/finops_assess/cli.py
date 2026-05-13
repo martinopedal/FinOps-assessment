@@ -315,6 +315,22 @@ def triage(
     "Requires the optional 'pdf' extra (pip install 'finops-assess[pdf]').",
 )
 @click.option(
+    "--allow-template-overlay",
+    "overlay_dir",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=None,
+    help=(
+        "Enable operator template overlay. "
+        "PATH must be a directory containing .j2 files that shadow the built-in "
+        "playbook templates (layout: {surface}/{rule_id}.j2). "
+        "Overlay templates are rendered in a restricted Jinja2 sandbox — "
+        "{% include %} / {% import %} are blocked. "
+        "Pre-flight validation runs before any rows are written; a failure "
+        "aborts the entire export. "
+        "See docs/security.md for the full threat model."
+    ),
+)
+@click.option(
     "--playbook-output",
     "playbook_output",
     type=click.Path(dir_okay=False, path_type=Path),
@@ -390,6 +406,7 @@ def run(
     html_output: Path | None,
     csv_output: Path | None,
     pdf_output: Path | None,
+    overlay_dir: Path | None,
     playbook_output: Path | None,
     cleanup_orphans: bool,
     skip_warnings: bool,
@@ -483,7 +500,7 @@ def run(
                 click.echo(f"Removing orphaned JSONL (no matching manifest): {orphan}", err=True)
                 orphan.unlink()
         jsonl_path, manifest_path = write_playbook_export(
-            report, resolved_playbook, skip_warnings=skip_warnings
+            report, resolved_playbook, skip_warnings=skip_warnings, overlay_dir=overlay_dir
         )
         wrote_any_file = True
         click.echo(
