@@ -14,7 +14,7 @@ Agent devsurfaces-specialist initialized for the FinOps-assessment squad. See `.
 ## Learnings
 
 - **2026-05-12** , Issue #26 (D.3: squad-cli upstream audit) now in backlog; label drift `squad:devsurfaces-specialist`→`squad:sam` is fixed. This is a maintenance spike to verify no breaking changes in @bradygaster/squad-cli before rolling out squad to other orgs.
-
+- **2026-05-13 08:55Z** , Issue #61 (playbook / ticket reporter) stage-5 implementation DELAYED pending Noor stage-4 re-review. Implementer Diego is blocked; committed to `.squad/orchestration-log/` for transparency. **Context:** (1) Noor stage-4 REJECTED Maya's stage-3 plan on 2B/8A/3N findings. (2) Reviewer Rejection Lockout fired; Maya locked out. (3) Yuki (QA/hardening) revised under Opus 4.7 xhigh exception; all 13 findings closed 100%. (4) Noor re-review spawned, verdict in flight. **Atomic-write Option C established as binding precedent:** manifest-as-readiness-marker + `os.fsync` + `output_artifacts.jsonl_sha256` self-attestation + orphan pre-flight + `--cleanup-orphans` recovery. Pattern is reusable for any multi-file export sidecar (reporters, future collectors). **.gitattributes LF-pinning hardening applied:** `src/finops_assess/data/playbooks/**/*.j2 text eol=lf` added (commit 10096cb); test #16 regression net added to prevent B2 pattern recurrence. **ETA for stage-5 kickoff:** depends on Noor re-review verdict comment timestamp. Once re-review approves, Diego resumes at `.squad/decisions.md:6-1060` section "Stage-5: Implementation (Diego, v0.5.0 + test regression net)". No other blocker dependencies.
 
 ## 2026-05-12 Learnings
 

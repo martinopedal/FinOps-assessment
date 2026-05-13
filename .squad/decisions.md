@@ -1031,6 +1031,26 @@ Noor opens a fresh stage-4 context with this revised plan as input.
 > **End of Yuki revision.** Stage-5 (Diego implementation) does NOT
 > start until Noor posts a fresh APPROVE verdict.
 
+---
+
+## Cross-Agent Notes — #61 Stage-4 Rejection & Revision Cycle
+
+### Noor Stage-4 Verdict (2026-05-13 08:55:00 UTC)
+
+**VERDICT: REJECT** (2 BLOCKING / 8 AMENDMENT / 3 NIT).
+
+- **B1:** Manifest-JSONL pair-atomicity fixed by Yuki with Option C (manifest-as-readiness-marker + fsync + sha256 self-attestation + orphan pre-flight).
+- **B2:** `.j2` LF-pin regression (exact #58 hardening precedent broken) fixed via `.gitattributes` entry added + test #16.
+
+Orchest log: `.squad/orchestration-log/2026-05-13T085500Z-noor-stage4-61.md`
+
+### Yuki Stage-3 Revision (2026-05-13 08:55:30 UTC)
+
+Yuki (QA/hardening, Opus 4.7 xhigh exception) revised under Reviewer Rejection Lockout. All 13 findings (2B/8A/3N) closed. Zero architectural tampering — D1/D2/D3/D4, OQ-1..5, §9 deferred-disposition preserved. Atomic-write Option C precedent now established for multi-file exports. `.gitattributes` hardening applied (commit 10096cb).
+
+Orchest log: `.squad/orchestration-log/2026-05-13T085530Z-yuki-stage3-revise-61.md`
+
+---
 
 ### 2026-05-13 — Stage-3 plan for #58 FOCUS-aligned advisory exporter (Maya, Opus 4.7)
 
