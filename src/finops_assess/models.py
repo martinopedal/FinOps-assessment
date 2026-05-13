@@ -52,6 +52,7 @@ class Rule(BaseModel):
     summary: str
     recommendation_template: str
     inactivity_days: int | None = Field(default=None, ge=1)
+    min_uncovered_usd: float | None = Field(default=None, ge=0)
     enabled: bool = True
     evidence_key_version: int = Field(
         default=1,
@@ -271,6 +272,33 @@ class AzureLogWorkspace(BaseModel):
     monthly_cost_usd: float | None = Field(default=None, ge=0)
 
 
+class AzureBenefitRecommendation(BaseModel):
+    """A normalised Azure Benefit Recommendations API observation.
+
+    Each row represents one (scope, term, lookback_period) recommendation
+    returned by the Cost Management ``benefitRecommendations`` endpoint.
+    Rules consume these to surface uncovered on-demand spend that could
+    be moved under a Savings Plan or Reservation commitment.
+
+    The collector emits one row per unique (scope, term, lookback_period);
+    the rule de-duplicates to one finding per (scope, term).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    recommendation_id: str = Field(..., min_length=1)
+    scope: str = Field(..., min_length=1)
+    scope_kind: Literal["Single", "Shared"] | None = None
+    term: Literal["P1Y", "P3Y"]
+    lookback_period: Literal["Last7Days", "Last30Days", "Last60Days"]
+    arm_sku_name: str | None = None
+    cost_without_benefit_usd: float | None = Field(default=None, ge=0)
+    recommended_hourly_commit_usd: float | None = Field(default=None, ge=0)
+    net_savings_usd: float | None = Field(default=None, ge=0)
+    wastage_usd: float | None = Field(default=None, ge=0)
+    benefit_kind: Literal["SavingsPlan", "Reservation"] = "SavingsPlan"
+
+
 GitHubSeatType = Literal[
     "enterprise",
     "team",
@@ -383,6 +411,7 @@ class NormalizedDataset(BaseModel):
     azure_resources: list[AzureResource] = Field(default_factory=list)
     azure_reservations: list[AzureReservation] = Field(default_factory=list)
     azure_log_workspaces: list[AzureLogWorkspace] = Field(default_factory=list)
+    azure_benefit_recommendations: list[AzureBenefitRecommendation] = Field(default_factory=list)
     github_seats: list[GitHubSeat] = Field(default_factory=list)
     github_orgs: list[GitHubOrg] = Field(default_factory=list)
     ado_seats: list[AdoSeat] = Field(default_factory=list)

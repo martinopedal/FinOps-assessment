@@ -63,3 +63,16 @@
     subscription {subscription_id} ({subscription_offer}). Move the
     workload to a subscription with the matching offer to avoid
     mispricing or compliance risk.
+
+- id: AZ.SAVINGS_PLAN_ELIGIBLE_SPEND
+  surface: azure
+  severity: medium
+  summary: Scope has uncovered on-demand spend the Benefit Recommendations API would move under a Savings Plan.
+  recommendation_template: >
+    Scope {principal} shows uncovered on-demand spend of
+    ${cost_without_benefit_usd} over {lookback_period}. Azure's Benefit
+    Recommendations API projects ${net_savings_usd} in savings if you
+    verify the workload is steady-state and not the trailing edge of a
+    one-off project, then consider a {term} Savings Plan commitment with
+    an hourly commit of ${recommended_hourly_commit_usd}.
+  min_uncovered_usd: 50.0

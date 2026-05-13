@@ -289,3 +289,77 @@ def dev_test_sub_mismatch(ctx: RuleContext) -> Iterable[Finding]:
                 "location": resource.location,
             },
         )
+
+
+# ---------------------------------------------------------------------------
+# AZ.SAVINGS_PLAN_ELIGIBLE_SPEND
+# ---------------------------------------------------------------------------
+_SP_MIN_LOOKBACK_PERIODS = {"Last30Days", "Last60Days"}
+
+
+@register("AZ.SAVINGS_PLAN_ELIGIBLE_SPEND")
+def savings_plan_eligible_spend(ctx: RuleContext) -> Iterable[Finding]:
+    """Flag scopes with uncovered on-demand spend that the Azure Benefit
+    Recommendations API projects could be reduced via a Savings Plan.
+    """
+    min_uncovered = ctx.rule.min_uncovered_usd or 50.0
+    # N2 (Noor stage-4 PR #85, RESOLVED PASS): cross-rule isolation vs
+    # AZ.RESERVATION_UNDERUTILIZED is safe by construction -- the two rules
+    # consume disjoint dataset slices (azure_reservations vs azure_benefit_recommendations).
+    seen: set[tuple[str, str]] = set()
+
+    for rec in ctx.dataset.azure_benefit_recommendations:
+        # NIT #2: Filter to SavingsPlan only
+        if rec.benefit_kind != "SavingsPlan":
+            continue
+
+        # E4: Abstain on short lookback
+        if rec.lookback_period not in _SP_MIN_LOOKBACK_PERIODS:
+            continue
+
+        # E2: Abstain on zero or negative savings
+        if rec.net_savings_usd is None or rec.net_savings_usd <= 0:
+            continue
+
+        # E1 / null path: Abstain on missing cost data
+        if rec.cost_without_benefit_usd is None:
+            continue
+
+        # E3: Abstain on micro uncovered spend (tunable threshold)
+        if rec.cost_without_benefit_usd < min_uncovered:
+            continue
+
+        # E5: Dedup per (scope, term)
+        key = (rec.scope, rec.term)
+        if key in seen:
+            continue
+        seen.add(key)
+
+        yield Finding(
+            rule_id=ctx.rule.id,
+            surface="azure",
+            severity=ctx.rule.severity,
+            principal=ctx.redact(rec.scope),
+            current_sku=None,
+            estimated_monthly_savings_usd=_round(rec.net_savings_usd),
+            recommendation=render(
+                ctx.rule.recommendation_template,
+                principal=ctx.redact(rec.scope),
+                cost_without_benefit_usd=round(rec.cost_without_benefit_usd, 2),
+                lookback_period=rec.lookback_period,
+                net_savings_usd=round(rec.net_savings_usd, 2),
+                term=rec.term,
+                recommended_hourly_commit_usd=round(rec.recommended_hourly_commit_usd or 0.0, 4),
+            ),
+            evidence={
+                "scope_kind": rec.scope_kind,
+                "term": rec.term,
+                "lookback_period": rec.lookback_period,
+                "arm_sku_name": rec.arm_sku_name,
+                "cost_without_benefit_usd": rec.cost_without_benefit_usd,
+                "recommended_hourly_commit_usd": rec.recommended_hourly_commit_usd,
+                "net_savings_usd": rec.net_savings_usd,
+                "wastage_usd": rec.wastage_usd,
+                "benefit_kind": rec.benefit_kind,
+            },
+        )

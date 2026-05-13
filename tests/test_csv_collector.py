@@ -19,6 +19,16 @@ def test_collect_samples_directory_loads_all_files() -> None:
     assert len(dataset.azure_resources) == 5
     assert len(dataset.azure_reservations) == 2
     assert len(dataset.azure_log_workspaces) == 2
+    assert len(dataset.azure_benefit_recommendations) == 2
+    rec = dataset.azure_benefit_recommendations[0]
+    assert rec.recommendation_id.startswith(
+        "/providers/Microsoft.CostManagement/benefitRecommendations/"
+    )
+    assert rec.scope.startswith("/subscriptions/")
+    assert rec.scope_kind == "Single"
+    assert rec.term in ("P1Y", "P3Y")
+    assert rec.lookback_period in ("Last7Days", "Last30Days", "Last60Days")
+    assert rec.benefit_kind in ("SavingsPlan", "Reservation")
     assert len(dataset.github_seats) == 4
     assert len(dataset.github_orgs) == 1
     assert len(dataset.ado_seats) == 5
@@ -34,6 +44,7 @@ def test_collect_handles_missing_files(tmp_path: Path) -> None:
     assert dataset.azure_resources == []
     assert dataset.azure_reservations == []
     assert dataset.azure_log_workspaces == []
+    assert dataset.azure_benefit_recommendations == []
     assert dataset.github_seats == []
     assert dataset.github_orgs == []
     assert dataset.ado_seats == []
@@ -83,4 +94,48 @@ def test_collect_rejects_rows_with_extra_cells(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     with pytest.raises(ValueError, match="beyond the declared header columns"):
+        collect_from_directory(tmp_path)
+
+
+def test_azure_benefit_recommendations_csv_round_trip(tmp_path: Path) -> None:
+    """Plan §3.1 + §3.8 test #11: strict-column round-trip for the new file.
+
+    Asserts every model field populates correctly through the strict-column
+    loader and that an unknown column triggers the `extra="forbid"` rejection.
+    """
+    (tmp_path / "azure_benefit_recommendations.csv").write_text(
+        "recommendation_id,scope,scope_kind,term,lookback_period,arm_sku_name,"
+        "cost_without_benefit_usd,recommended_hourly_commit_usd,net_savings_usd,"
+        "wastage_usd,benefit_kind\n"
+        "/providers/Microsoft.CostManagement/benefitRecommendations/r1,"
+        "/subscriptions/00000000-0000-0000-0000-000000000001,Single,P1Y,Last30Days,"
+        "Microsoft.Compute/virtualMachines/Standard_D4s_v5,1450.00,1.85,180.50,12.40,SavingsPlan\n",
+        encoding="utf-8",
+    )
+    dataset = collect_from_directory(tmp_path)
+    assert len(dataset.azure_benefit_recommendations) == 1
+    rec = dataset.azure_benefit_recommendations[0]
+    assert rec.recommendation_id == (
+        "/providers/Microsoft.CostManagement/benefitRecommendations/r1"
+    )
+    assert rec.scope == "/subscriptions/00000000-0000-0000-0000-000000000001"
+    assert rec.scope_kind == "Single"
+    assert rec.term == "P1Y"
+    assert rec.lookback_period == "Last30Days"
+    assert rec.arm_sku_name == "Microsoft.Compute/virtualMachines/Standard_D4s_v5"
+    assert rec.cost_without_benefit_usd == 1450.00
+    assert rec.recommended_hourly_commit_usd == 1.85
+    assert rec.net_savings_usd == 180.50
+    assert rec.wastage_usd == 12.40
+    assert rec.benefit_kind == "SavingsPlan"
+
+
+def test_azure_benefit_recommendations_csv_rejects_unknown_column(tmp_path: Path) -> None:
+    """Strict-column contract: unknown header rejected with a clear error."""
+    (tmp_path / "azure_benefit_recommendations.csv").write_text(
+        "recommendation_id,scope,term,lookback_period,unknown_col\n"
+        "rec-1,/subscriptions/x,P1Y,Last30Days,oops\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="unknown CSV column"):
         collect_from_directory(tmp_path)
