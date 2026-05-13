@@ -337,6 +337,9 @@ def commitment_under_covered(ctx: RuleContext) -> Iterable[Finding]:
         )
 
         for sibling_sub, on_demand in sibling_spend.items():
+            # E11: Single-scope reservations may include the owner sub as a "sibling"
+            # -- conservative over-count documented in plan §2.2 / §2.5;
+            # sharpens once rule 4 lands appliedScopeSubscriptionIds.
             if on_demand < _SIBLING_MIN_ON_DEMAND_USD:
                 continue  # E3
             key = (reservation.reservation_id, sibling_sub)
