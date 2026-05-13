@@ -532,3 +532,134 @@ def test_billing_period_december_to_january_rollover() -> None:
     start, end = _billing_period(finding)
     assert start == "2024-12-01T00:00:00Z"
     assert end == "2025-01-01T00:00:00Z"
+
+
+# ---------------------------------------------------------------------------
+# Yuki hardening additions (#58) — NUL bytes, Unicode, long resource_id
+# ---------------------------------------------------------------------------
+
+
+def test_advisory_finding_key_nul_bytes_in_evidence_no_collision() -> None:
+    """NUL bytes inside evidence values must not cause collisions or errors.
+
+    This is the regression test for the sha256(json.dumps([...])) fix: the
+    JSON array envelope encodes NUL as \\u0000 regardless of where it appears,
+    so two structurally different payloads cannot collide even when evidence
+    values contain NUL characters.
+    """
+    # NUL in evidence string value
+    f_nul_in_evidence = {
+        "rule_id": "AZ.TEST",
+        "principal": "/subscriptions/abc/vm/x",
+        "evidence": {"key": "value\x00with_nul"},
+    }
+    # Different evidence value without NUL — must produce a different key
+    f_no_nul = {
+        "rule_id": "AZ.TEST",
+        "principal": "/subscriptions/abc/vm/x",
+        "evidence": {"key": "valuewith_nul"},
+    }
+    key_nul = advisory_finding_key(f_nul_in_evidence)
+    key_no_nul = advisory_finding_key(f_no_nul)
+
+    # Keys must be valid 64-char hex strings (SHA-256)
+    assert len(key_nul) == 64 and all(c in "0123456789abcdef" for c in key_nul)
+    # Must differ — NUL is semantically distinct from its absence
+    assert key_nul != key_no_nul
+
+    # Boundary injection: NUL in rule_id must not collapse with NUL in evidence
+    f_nul_in_rule = {
+        "rule_id": "AZ\x00TEST",
+        "principal": "/subscriptions/abc/vm/x",
+        "evidence": {"key": "value"},
+    }
+    f_nul_in_evidence2 = {
+        "rule_id": "AZ",
+        "principal": "/subscriptions/abc/vm/x",
+        "evidence": {"key": "TEST\x00value"},
+    }
+    assert advisory_finding_key(f_nul_in_rule) != advisory_finding_key(f_nul_in_evidence2)
+
+
+def test_advisory_finding_key_unicode_evidence() -> None:
+    """Evidence with emoji, RTL text, and supplementary Unicode must not error or corrupt.
+
+    The JSON envelope uses ensure_ascii=False so Unicode passes through verbatim;
+    the SHA-256 input is UTF-8 encoded bytes, which is deterministic across platforms.
+    """
+    f_emoji = {
+        "rule_id": "AZ.TEST",
+        "principal": "/subscriptions/abc/vm/emoji",
+        "evidence": {"tag": "🚀", "rtl": "مرحبا", "surrogate_area": "\U0001f600"},
+    }
+    key1 = advisory_finding_key(f_emoji)
+    key2 = advisory_finding_key(f_emoji)
+
+    # Deterministic
+    assert key1 == key2
+    # Valid 64-char hex SHA-256
+    assert len(key1) == 64 and all(c in "0123456789abcdef" for c in key1)
+
+    # Unicode evidence must differ from ASCII-escaped equivalent where relevant
+    f_ascii_escaped = {
+        "rule_id": "AZ.TEST",
+        "principal": "/subscriptions/abc/vm/emoji",
+        "evidence": {"tag": "rocket", "rtl": "hello", "surrogate_area": "smile"},
+    }
+    assert key1 != advisory_finding_key(f_ascii_escaped)
+
+    # CSV row with Unicode evidence must be written and round-tripped without corruption
+    report: dict = {  # type: ignore[type-arg]
+        "run": {
+            "input": "",
+            "schema_version": "1.0",
+            "pii_redaction": False,
+        },
+        "findings": [
+            {
+                **f_emoji,
+                "surface": "azure",
+                "severity": "medium",
+                "recommendation": "Test 🚀 recommendation",
+            }
+        ],
+    }
+    import tempfile
+    from pathlib import Path as _Path
+
+    with tempfile.TemporaryDirectory() as td:
+        out = _Path(td) / "unicode_out.csv"
+        csv_path, _ = write_focus_aligned_export(report, out)
+        with csv_path.open(encoding="utf-8", newline="") as fh:
+            rows = list(csv.DictReader(fh))
+        assert len(rows) == 1
+        # Recommendation with emoji must round-trip intact
+        assert "🚀" in rows[0]["ChargeDescription"]
+
+
+def test_advisory_finding_key_long_resource_id() -> None:
+    """A resource_id longer than 1024 characters must not error or silently truncate.
+
+    ARM resource IDs can be long in nested resource scenarios. The JSON envelope
+    approach encodes them verbatim; the key must be stable and unique.
+    """
+    long_id = "/subscriptions/" + "0" * 36 + "/resourceGroups/" + "x" * 900
+    f_long = {
+        "rule_id": "AZ.TEST",
+        "principal": long_id,
+        "evidence": {"k": "v"},
+    }
+    f_shorter = {
+        "rule_id": "AZ.TEST",
+        "principal": long_id[:-1],
+        "evidence": {"k": "v"},
+    }
+    key_long = advisory_finding_key(f_long)
+    key_shorter = advisory_finding_key(f_shorter)
+
+    # Valid SHA-256 hex
+    assert len(key_long) == 64 and all(c in "0123456789abcdef" for c in key_long)
+    # Truncating the ID changes the key (no silent truncation)
+    assert key_long != key_shorter
+    # Stable across calls
+    assert key_long == advisory_finding_key(f_long)

@@ -18,3 +18,8 @@ examples/demo-triage.csv text eol=lf
 examples/demo-triage.json text eol=lf
 examples/focus-aligned.csv text eol=lf
 examples/focus-aligned.csv.manifest.json text eol=lf
+# Test golden fixtures for the FOCUS-aligned reporter — byte-compared in tests
+# 1 & 2 (test_golden_csv_byte_identical / test_golden_manifest_byte_identical).
+# Must be LF on all platforms or the comparison fails on Windows-hosted runners.
+tests/fixtures/focus_aligned/golden-azure.csv text eol=lf
+tests/fixtures/focus_aligned/golden-azure.manifest.json text eol=lf
