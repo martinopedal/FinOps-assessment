@@ -85,3 +85,19 @@ Maya's triage queue:
 2. Ask Martin: "Want me to merge #79 and #80? They're NIT-only docs/housekeeping bundles." If yes, follow option (a) or use the workflow path with proper labels.
 3. If yes to "next work": pick #59 (Azure commitment-discount rules) and route to Diego for v0.5.0 continuation.
 4. If `decisions.md` exceeds ~200KB by now, archive entries older than 30 days (Scribe deferred this in commit `22905af`).
+
+## 2026-05-13: Issue #59 rule-2 stage-3 plan in flight (Maya, parallel with rule-1)
+
+**Status:** stage-3 plan committed on squad/59-plan-maya-commitment-under-covered; draft PR opened; awaiting Noor stage-4 verdict. Rule-1 plan remains in flight on squad/59-plan-maya-savings-plan-eligible (also awaiting Noor). Both plans can sit in stage-4 simultaneously, they touch disjoint surface area.
+
+**Rule:** `AZ.COMMITMENT_UNDER_COVERED` (child 2 of 5 in epic #59).
+
+**Headline decision (different from rule 1):** zero schema changes. The rule is a derived view over existing `AzureReservation` + `AzureResource` rows, aggregating `monthly_cost_usd` per `subscription_id`. Three R-alternatives (extend `AzureReservation`, add `AzureSubscriptionCost`, reuse `AzureBenefitRecommendation`) all rejected with rationale in the plan §2.7. Rule-3 owns `expiry_date`; rule-4 owns `applied_scope_subscription_ids`. Rule-2 ships with a documented E11 over-count limitation (cannot identify Single-scope reservation owner sub from current schema) that resolves once rule-4 lands.
+
+**Stage-3 correction surfaced explicitly (per `.squad/agents/lead/history.md` lines 31-33 norm):** the epic body says "Cost Mgmt + reservation list, no new collector needed" but `arm_collector.py` on main SHA `0942872` does NOT actually call Cost Management. The rule operates on per-resource `monthly_cost_usd` (CSV-mode populated; live ARM mode emits empty cells today). Cost Management collector deferred to a separate v0.6.0 issue. Noor stage-4 is asked to verify this correction independently.
+
+**Implementer:** Diego (primary, Azure specialist), Yuki backup. Implementation will live on `squad/59-impl-commitment-under-covered` once Noor approves.
+
+**Inbox drop:** `.squad/decisions/inbox/maya-59-rule2-stage3-plan.md` (gitignored, awaiting Scribe wrap into `decisions.md`).
+
+**Next coordinator entry point:** check Noor verdicts on both plan PRs (rule 1 + rule 2). Apply `squad:noor` label on rule-2 PR before Noor posts the verdict comment so the auto-approve workflow fires.
