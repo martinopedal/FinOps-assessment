@@ -18,12 +18,12 @@
   "pii_handling": {
     "mode": "cleartext",
     "ticket_key_stability_by_surface": {
+      "ado": "stable",
       "azure": "stable",
-      "ado": "per_run",
-      "github": "per_run",
-      "m365": "per_run"
+      "github": "stable",
+      "m365": "stable"
     },
-    "note": "ticket_key is per_run for M365/GitHub/ADO when PII redaction is on because the principal is hashed with a per-run salt. Engine-level stable-salt deferred to #73."
+    "known_limitation": null
   },
   "surfaces": [
     "azure"

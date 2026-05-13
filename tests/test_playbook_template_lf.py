@@ -63,6 +63,20 @@ def test_template_is_utf8_no_bom(tmpl_path: Path) -> None:
     raw.decode("utf-8")  # raises UnicodeDecodeError if not valid UTF-8
 
 
+@pytest.mark.parametrize("tmpl_path", _ALL_TEMPLATES, ids=[p.name for p in _ALL_TEMPLATES])
+def test_template_has_no_nul_bytes(tmpl_path: Path) -> None:
+    """Every shipped .j2 template must be free of NUL bytes (Yuki PR #78 A-5).
+
+    A stray NUL byte in a template would survive ``str.encode("utf-8")``
+    and end up in JSONL output, where many downstream consumers treat
+    it as a string terminator (and several text editors corrupt the
+    file on save).  Pin it at the byte level so a future template
+    addition can't slip a NUL past the LF / BOM checks.
+    """
+    raw = tmpl_path.read_bytes()
+    assert b"\x00" not in raw, f"{tmpl_path.name}: NUL byte found"
+
+
 # ---------------------------------------------------------------------------
 # Test 3 — expected template count matches shipped rule count
 # ---------------------------------------------------------------------------

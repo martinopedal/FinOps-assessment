@@ -130,12 +130,16 @@
       "type": "object",
       "required": ["mode"],
       "additionalProperties": true,
-      "description": "PII handling policy for this export. v0.5.0 shape: {'mode': 'azure_resource_id_cleartext'}. v0.6.0 will add 'salt_source', 'principal_hash_algorithm', and broaden the mode enum. Consumers MUST accept unknown keys and unknown mode values (forward-compatible read).",
+      "description": "PII handling policy for this export. v0.5.0 emits 'azure_resource_id_cleartext' when --no-pii-redaction is set, and 'azure_resource_id_per_run_salted_hash' under default redaction (engine salts every principal — including Azure resource IDs — with a per-run secret; see #73 for engine tenant-stable salting). 'known_limitation' is non-null whenever the mode produces per-run instability. Consumers MUST accept unknown keys and unknown mode values (forward-compatible read).",
       "properties": {
         "mode": {
           "type": "string",
-          "description": "PII handling mode. v0.5.0 value: 'azure_resource_id_cleartext'. v0.6.0 will add 'stable_salt', 'ephemeral_salt', 'cleartext'. Consumers MUST accept unknown values.",
-          "enum": ["azure_resource_id_cleartext"]
+          "description": "PII handling mode. v0.5.0 values: 'azure_resource_id_cleartext' (--no-pii-redaction) or 'azure_resource_id_per_run_salted_hash' (default redaction). v0.6.0 will add 'stable_salt'. Consumers MUST accept unknown values.",
+          "enum": ["azure_resource_id_cleartext", "azure_resource_id_per_run_salted_hash"]
+        },
+        "known_limitation": {
+          "type": ["string", "null"],
+          "description": "Non-null when the mode produces per-run instability (Azure resource IDs hashed with a per-run salt). The string MUST reference issue #73 and warn that re-runs will produce duplicate advisory rows. Null when the mode is cleartext."
         }
       }
     },

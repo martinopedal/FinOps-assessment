@@ -1,7 +1,8 @@
 """Jinja2 environment factory for the playbook reporter.
 
-A single ``Environment`` is built once at module import and cached.  The
-environment is configured with:
+A single ``Environment`` is built lazily on the first call to
+``get_playbook_env()`` and cached at module level for the rest of the
+process lifetime.  The environment is configured with:
 
 * ``undefined=StrictUndefined`` — a template that references a variable not
   present in the render context raises ``jinja2.UndefinedError`` immediately
@@ -14,10 +15,16 @@ environment is configured with:
   the value in a JSONL row.
 
 Every ``.j2`` template shipped under ``src/finops_assess/data/playbooks/``
-is pre-compiled when this module is first imported (loaded from
-``importlib.resources``).  Pre-compilation catches syntax errors at startup
-rather than at render time, and amortises the parse cost across multiple
-findings that share the same rule.
+is pre-compiled the first time the environment is built (loaded from
+``importlib.resources``).  Pre-compilation catches syntax errors at the
+point of first use rather than at render time, and amortises the parse
+cost across multiple findings that share the same rule.
+
+Lazy initialisation note (Noor PR #78 AMENDMENT #3): pre-compilation does
+NOT run at module-import time, only on the first ``get_playbook_env()``
+call.  This keeps ``import finops_assess.reporters.playbook`` cheap (no
+filesystem I/O at import) and avoids surprising side-effects when the
+module is imported for symbol introspection (e.g. by mypy or pdoc).
 
 Usage::
 
