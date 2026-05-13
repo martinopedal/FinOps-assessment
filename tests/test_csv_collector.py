@@ -139,3 +139,74 @@ def test_azure_benefit_recommendations_csv_rejects_unknown_column(tmp_path: Path
     )
     with pytest.raises(ValueError, match="unknown CSV column"):
         collect_from_directory(tmp_path)
+
+
+def test_azure_reservations_csv_round_trip_with_renewal_columns(tmp_path: Path) -> None:
+    """Plan §3.8 test #15(a): round-trip the new ``expiry_date`` + ``auto_renew`` columns.
+
+    Pin the strict-column loader's handling of the two renewal-review fields:
+    ``expiry_date`` lands as the verbatim ISO 8601 string, ``auto_renew`` lands
+    as a parsed boolean. Drives the AZ.COMMITMENT_RENEWAL_REVIEW evidence
+    contract end-to-end through the loader.
+    """
+    (tmp_path / "azure_reservations.csv").write_text(
+        "reservation_id,reservation_name,sku,scope,utilization_pct,monthly_cost_usd,"
+        "expiry_date,auto_renew\n"
+        "/providers/Microsoft.Capacity/reservationOrders/o-1/reservations/r-1,"
+        "RI-VM-D4s,Standard_D4s_v5,shared,72.0,1450.00,2026-07-12,false\n"
+        "/providers/Microsoft.Capacity/reservationOrders/o-2/reservations/r-2,"
+        "RI-SQL,GP_Gen5_8,single,85.0,720.00,2026-08-30,true\n",
+        encoding="utf-8",
+    )
+    dataset = collect_from_directory(tmp_path)
+    assert len(dataset.azure_reservations) == 2
+    a, b = dataset.azure_reservations
+    assert a.expiry_date == "2026-07-12"
+    assert a.auto_renew is False
+    assert b.expiry_date == "2026-08-30"
+    assert b.auto_renew is True
+
+
+def test_azure_reservations_csv_legacy_loads_with_null_renewal_fields(tmp_path: Path) -> None:
+    """Plan §3.8 test #15(b): backward-compat for legacy CSVs.
+
+    A CSV written before the renewal-review fields existed (no ``expiry_date``
+    or ``auto_renew`` columns) MUST still load through the strict-column loader,
+    with both new fields defaulting to ``None``. The rule abstains on those
+    rows; the operator can refresh the file via the live ARM collector when
+    ready. Pinned by docs/plans/059-az-commitment-renewal-review.md §3.7.
+    """
+    (tmp_path / "azure_reservations.csv").write_text(
+        "reservation_id,reservation_name,sku,scope,utilization_pct,monthly_cost_usd\n"
+        "/providers/Microsoft.Capacity/reservationOrders/o-1/reservations/r-1,"
+        "RI-legacy,Standard_D4s_v5,shared,55.0,500.00\n",
+        encoding="utf-8",
+    )
+    dataset = collect_from_directory(tmp_path)
+    assert len(dataset.azure_reservations) == 1
+    legacy = dataset.azure_reservations[0]
+    assert legacy.expiry_date is None
+    assert legacy.auto_renew is None
+    # Existing fields still populate.
+    assert legacy.utilization_pct == 55.0
+    assert legacy.monthly_cost_usd == 500.0
+
+
+def test_azure_reservations_csv_empty_renewal_cells_become_null(tmp_path: Path) -> None:
+    """Plan §3.7 implementer caveat: empty cells must resolve to ``None``,
+    NOT to ``False`` via ``_BOOL_FALSE``. The strict-column loader's
+    missing-key path treats blank cells as absent so pydantic applies the
+    field default; the boolean coercion path never sees the empty string.
+    """
+    (tmp_path / "azure_reservations.csv").write_text(
+        "reservation_id,reservation_name,sku,scope,utilization_pct,monthly_cost_usd,"
+        "expiry_date,auto_renew\n"
+        "/providers/Microsoft.Capacity/reservationOrders/o-1/reservations/r-1,"
+        "RI-blank,Standard_D4s_v5,shared,72.0,1450.00,,\n",
+        encoding="utf-8",
+    )
+    dataset = collect_from_directory(tmp_path)
+    assert len(dataset.azure_reservations) == 1
+    row = dataset.azure_reservations[0]
+    assert row.expiry_date is None
+    assert row.auto_renew is None  # MUST be None, not False

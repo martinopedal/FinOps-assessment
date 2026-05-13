@@ -118,6 +118,22 @@ def _resource_group(resource_id: str) -> str:
         return ""
 
 
+def _renew_to_str(value: object) -> str:
+    """Render the Microsoft.Capacity reservations API ``renew`` flag as a CSV cell.
+
+    ``True`` / ``False`` map to lowercase strings the strict-column loader's
+    ``_BOOL_TRUE`` / ``_BOOL_FALSE`` sets recognise. ``None`` and any other
+    value map to the empty string so the strict-column loader treats the
+    cell as missing and pydantic applies the model default
+    (``auto_renew = None``, signal absent).
+    """
+    if value is True:
+        return "true"
+    if value is False:
+        return "false"
+    return ""
+
+
 def _now_utc() -> datetime:
     return datetime.now(tz=UTC)
 
@@ -667,8 +683,13 @@ def collect_arm(
 
     # ---- Reservations (tenant-level) ----------------------------------------
     for res in _collect_reservations(client):
-        rid = res.get("id") or ""
         props = res.get("properties") or {}
+        # Skip cancelled / failed / expired / pending rows -- only Succeeded
+        # reservations are actionable as a renewal-review signal. See
+        # docs/plans/059-az-commitment-renewal-review.md §2.2 (E9).
+        if (props.get("displayProvisioningState") or "").lower() != "succeeded":
+            continue
+        rid = res.get("id") or ""
         sku_info = res.get("sku") or {}
         util = None
         util_data = props.get("utilization") or {}
@@ -690,6 +711,8 @@ def collect_arm(
                 "scope": props.get("appliedScopeType") or "",
                 "utilization_pct": "" if util is None else str(round(float(util), 2)),
                 "monthly_cost_usd": "",
+                "expiry_date": props.get("expiryDate") or "",
+                "auto_renew": _renew_to_str(props.get("renew")),
             }
         )
 
@@ -725,6 +748,8 @@ def collect_arm(
             "scope",
             "utilization_pct",
             "monthly_cost_usd",
+            "expiry_date",
+            "auto_renew",
         ],
         reservation_rows,
     )

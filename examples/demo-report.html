@@ -79,8 +79,8 @@
   <section>
     <h2>Summary</h2>
     <div class="cards">
-      <div class="card"><div class="label">Findings</div><div class="value">36</div></div>
-      <div class="card"><div class="label">Rules fired</div><div class="value">24</div></div>
+      <div class="card"><div class="label">Findings</div><div class="value">37</div></div>
+      <div class="card"><div class="label">Rules fired</div><div class="value">25</div></div>
       <div class="card"><div class="label">Estimated monthly savings</div><div class="value">$1512.65</div></div>
       <div class="card"><div class="label">Principals</div><div class="value">11</div></div>
     </div>
@@ -777,6 +777,33 @@
                     <details>
                       <summary>Evidence (high confidence)</summary>
                       <pre>{
+  "monthly_cost_usd": 500.0,
+  "reservation_name": "RI-VM-D4s-EastUS",
+  "scope": "shared",
+  "sku": "Standard_D4s_v5",
+  "utilization_pct": 45.0
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">AZ.COMMITMENT_RENEWAL_REVIEW</td>
+                <td class="mono">sha256:efb1eb6d0c6c0952</td>
+                <td class="mono">Standard_D4s_v5</td>
+                <td class="mono">—</td>
+                <td>—</td>
+                <td>
+                  Reservation sha256:efb1eb6d0c6c0952 (Standard_D4s_v5) expires on 2026-06-12 (in 30 days) and is not configured to auto-renew. Verify whether the workload still needs reserved capacity. If yes, consider renewing or exchanging the reservation before the expiry date. If no, plan for the workload to fall back to on-demand pricing on 2026-06-12 and capture the projected on-demand cost in your forecast.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "auto_renew": false,
+  "days_until_expiry": 30,
+  "expiry_date": "2026-06-12",
   "monthly_cost_usd": 500.0,
   "reservation_name": "RI-VM-D4s-EastUS",
   "scope": "shared",
