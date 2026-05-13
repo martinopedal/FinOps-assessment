@@ -665,3 +665,61 @@ def reservation_scope_mismatch(ctx: RuleContext) -> Iterable[Finding]:
                 "monthly_cost_usd": reservation.monthly_cost_usd,
             },
         )
+
+
+# ---------------------------------------------------------------------------
+# AZ.AHB_ELIGIBLE — Windows VMs running pay-as-you-go without Azure Hybrid
+# Benefit applied.
+# ---------------------------------------------------------------------------
+
+_AHB_LICENCE_TYPES: frozenset[str] = frozenset(
+    {
+        "Windows_Server",
+        "Windows_Client",
+    }
+)
+
+
+@register("AZ.AHB_ELIGIBLE")
+def az_ahb_eligible(ctx: RuleContext) -> Iterable[Finding]:
+    """Flag Windows VMs that lack Azure Hybrid Benefit.
+
+    A VM is eligible when:
+    * ``resource_type`` is ``virtualMachine``
+    * ``os_type`` is ``"Windows"``
+    * ``license_type`` is *not* in ``_AHB_LICENCE_TYPES``
+    """
+    for resource in ctx.dataset.azure_resources:
+        if resource.resource_type != "virtualMachine":
+            continue
+        if resource.os_type != "Windows":
+            continue
+        if resource.license_type in _AHB_LICENCE_TYPES:
+            continue
+
+        principal = ctx.redact(resource.resource_id)
+
+        yield Finding(
+            rule_id=ctx.rule.id,
+            surface="azure",
+            severity=ctx.rule.severity,
+            principal=principal,
+            current_sku=resource.sku or None,
+            recommended_sku=None,
+            estimated_monthly_savings_usd=None,
+            recommendation=render(
+                ctx.rule.recommendation_template,
+                principal=principal,
+                sku=resource.sku or "(unknown)",
+                location=resource.location or "(unknown)",
+                license_type=resource.license_type or "(none)",
+            ),
+            confidence="high",
+            evidence={
+                "resource_id": ctx.redact(resource.resource_id),
+                "os_type": resource.os_type,
+                "license_type": resource.license_type,
+                "sku": resource.sku,
+                "location": resource.location,
+            },
+        )

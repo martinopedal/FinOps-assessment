@@ -556,6 +556,9 @@ def collect_arm(
                     "subscription_id": sub_id,
                     "subscription_offer": sub_offer or "",
                     "env_tag": env_tag or "",
+                    "os_type": (props.get("storageProfile", {}).get("osDisk", {}).get("osType"))
+                    or "",
+                    "license_type": props.get("licenseType") or "",
                 }
             )
 
@@ -753,6 +756,8 @@ def collect_arm(
             "subscription_id",
             "subscription_offer",
             "env_tag",
+            "os_type",
+            "license_type",
         ],
         resource_rows,
     )

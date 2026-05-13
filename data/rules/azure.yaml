@@ -118,3 +118,16 @@
     workloads can absorb unused reserved capacity, or verify the narrow
     scope is intentional (e.g., chargeback isolation).
   min_uncovered_usd: 50.0
+
+- id: AZ.AHB_ELIGIBLE
+  surface: azure
+  severity: info
+  summary: >
+    Windows VM running pay-as-you-go without Azure Hybrid Benefit applied.
+    Enabling AHB can reduce Windows Server licence costs on eligible VMs.
+  recommendation_template: >
+    VM {principal} ({sku}, {location}) has os_type=Windows but
+    license_type={license_type}. Consider enabling Azure Hybrid Benefit
+    (Windows_Server) to reduce the Windows Server licence cost component.
+    Verify that the organisation holds sufficient Windows Server SA or
+    subscription licences before toggling.
