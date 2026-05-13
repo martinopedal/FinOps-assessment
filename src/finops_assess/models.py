@@ -239,6 +239,11 @@ class AzureReservation(BaseModel):
     ``utilization_pct`` is the average utilization over the trailing 30 days
     (0-100). Rules abstain when the signal is absent rather than assuming
     zero utilization.
+
+    ``expiry_date`` is the commitment expiration date (ISO 8601 YYYY-MM-DD).
+    ``auto_renew`` is the operator's renewal-intent flag; ``None`` means the
+    signal is absent (CSV-mode operators may leave it blank). Both fields
+    drive ``AZ.COMMITMENT_RENEWAL_REVIEW``; rules abstain on ``None``.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -249,6 +254,8 @@ class AzureReservation(BaseModel):
     scope: str | None = None
     utilization_pct: float | None = Field(default=None, ge=0, le=100)
     monthly_cost_usd: float | None = Field(default=None, ge=0)
+    expiry_date: str | None = Field(default=None, min_length=10, max_length=10)
+    auto_renew: bool | None = None
 
 
 class AzureLogWorkspace(BaseModel):

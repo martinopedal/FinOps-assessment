@@ -77,6 +77,13 @@ PLAYBOOK_BASENAME = "playbook"
 # regenerations of the example reports. NEVER reuse this in a live run.
 _DOCS_FIXED_SALT = "finops-assess-docs-fixture-salt-v1"
 
+# Anchor "today" for AZ.COMMITMENT_RENEWAL_REVIEW so the example reports
+# stay deterministic across rebuilds. The rule's ``_today_utc`` honors this
+# env var (see ``finops_assess.rules_impl.azure_rules``). Keep in sync with
+# ``tests/test_engine.py::SAMPLES_TODAY_OVERRIDE`` and the expiry dates
+# pinned in ``samples/azure_reservations.csv``.
+_DOCS_FIXED_TODAY = "2026-05-13"
+
 # Stable placeholder written into ``run.input`` of the example report so
 # the tempdir leaf name from ``materialise_demo_data`` doesn't pollute
 # the committed artefact. Mirrors the redacted shape the JSON reporter
@@ -210,7 +217,9 @@ def regenerate_examples(target_dir: Path) -> None:
     """
     target_dir.mkdir(parents=True, exist_ok=True)
     previous_epoch = os.environ.get("SOURCE_DATE_EPOCH")
+    previous_today = os.environ.get("FINOPS_NOW_OVERRIDE")
     os.environ["SOURCE_DATE_EPOCH"] = "0"
+    os.environ["FINOPS_NOW_OVERRIDE"] = _DOCS_FIXED_TODAY
     try:
         with tempfile.TemporaryDirectory(prefix="finops-docs-") as tmp:
             demo_input = materialise_demo_data(Path(tmp))
@@ -257,6 +266,10 @@ def regenerate_examples(target_dir: Path) -> None:
             os.environ.pop("SOURCE_DATE_EPOCH", None)
         else:
             os.environ["SOURCE_DATE_EPOCH"] = previous_epoch
+        if previous_today is None:
+            os.environ.pop("FINOPS_NOW_OVERRIDE", None)
+        else:
+            os.environ["FINOPS_NOW_OVERRIDE"] = previous_today
 
 
 def _write_if_changed(path: Path, contents: str) -> bool:

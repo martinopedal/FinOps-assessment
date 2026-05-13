@@ -55,6 +55,22 @@ release.
 
 ### Added
 
+- `AZ.COMMITMENT_RENEWAL_REVIEW` rule: surfaces Azure reservations expiring
+  within 60 days whose operator has NOT configured auto-renew on the
+  Microsoft.Capacity reservations API. The rule reads the API's
+  `properties.expiryDate` and `properties.renew` fields directly (no
+  heuristic) and abstains on missing signals, malformed dates, already-expired
+  reservations, and reservations with auto-renew already on. Recommendation
+  wording asks the operator to verify whether the workload still needs reserved
+  capacity before renewing, exchanging, or planning the on-demand fallback.
+  Adds two optional fields to the `AzureReservation` model: `expiry_date`
+  (ISO 8601 `YYYY-MM-DD` string) and `auto_renew` (tri-state boolean).
+  Legacy `azure_reservations.csv` files without the new columns load
+  unchanged and the rule abstains on those rows. ARM collector now also
+  filters out reservations whose `displayProvisioningState` is not
+  `Succeeded`. New `FINOPS_NOW_OVERRIDE` env var anchors the rule's "today"
+  for deterministic demo-report regeneration and the engine smoke test;
+  production runs leave it unset and use the wall clock. (#59)
 - Operator-facing agentic-FinOps architecture guide (`docs/agentic-finops.md`)
   explaining how the tool's read-only audit half plus an operator-controlled
   remediation-PR-against-IaC-repo add-on form a clean base for an agentic

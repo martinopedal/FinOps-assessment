@@ -38,6 +38,7 @@ REQUIRED_RULES = {
     "AZ.DEV_TEST_SUB_MISMATCH",
     "AZ.SAVINGS_PLAN_ELIGIBLE_SPEND",
     "AZ.COMMITMENT_UNDER_COVERED",
+    "AZ.COMMITMENT_RENEWAL_REVIEW",
     "GH.INACTIVE_SEAT_90D",
     "GH.COPILOT_INACTIVE_30D",
     "GH.GHAS_OVER_PROVISIONED",
@@ -48,6 +49,12 @@ REQUIRED_RULES = {
     "ADO.TEST_PLANS_UNUSED",
 }
 
+# Anchor "today" so AZ.COMMITMENT_RENEWAL_REVIEW fires deterministically
+# against the dates pinned in samples/azure_reservations.csv. The override
+# env var is read by `finops_assess.rules_impl.azure_rules._today_utc`.
+# Production runs leave it unset and use the real wall clock.
+SAMPLES_TODAY_OVERRIDE = "2026-05-13"
+
 
 @pytest.fixture(scope="module")
 def run_against_samples() -> tuple[dict[str, int], list[object]]:
@@ -56,15 +63,17 @@ def run_against_samples() -> tuple[dict[str, int], list[object]]:
     personas = load_personas()
     rules = load_rules()
     persona_assignments = assign_personas(dataset, personas)
-    findings, _summary = run_rules(
-        rules=rules,
-        catalog=catalog,
-        personas=personas,
-        persona_assignments=persona_assignments,
-        dataset=dataset,
-        redact_pii=False,
-        salt="test",
-    )
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setenv("FINOPS_NOW_OVERRIDE", SAMPLES_TODAY_OVERRIDE)
+        findings, _summary = run_rules(
+            rules=rules,
+            catalog=catalog,
+            personas=personas,
+            persona_assignments=persona_assignments,
+            dataset=dataset,
+            redact_pii=False,
+            salt="test",
+        )
     counts: dict[str, int] = defaultdict(int)
     for f in findings:
         counts[f.rule_id] += 1

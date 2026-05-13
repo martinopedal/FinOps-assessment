@@ -9,10 +9,15 @@ from the snapshot when present and degrade gracefully to ``None`` otherwise
 
 from __future__ import annotations
 
+import logging
+import os
 from collections.abc import Iterable
+from datetime import UTC, date, datetime
 
 from finops_assess.engine import RuleContext, register, render
 from finops_assess.models import Finding
+
+logger = logging.getLogger(__name__)
 
 
 def _round(value: float | None) -> float | None:
@@ -444,5 +449,109 @@ def savings_plan_eligible_spend(ctx: RuleContext) -> Iterable[Finding]:
                 "net_savings_usd": rec.net_savings_usd,
                 "wastage_usd": rec.wastage_usd,
                 "benefit_kind": rec.benefit_kind,
+            },
+        )
+
+
+# ---------------------------------------------------------------------------
+# AZ.COMMITMENT_RENEWAL_REVIEW
+# ---------------------------------------------------------------------------
+# Surfaces reservations expiring within the near-expiry window whose operator
+# has NOT configured auto-renew. The rule is forward-looking: already-expired
+# reservations and reservations with auto_renew=True are abstained on. The
+# decision (renew, exchange, or let lapse) belongs to the operator and depends
+# on whether the workload still needs reserved capacity.
+#
+# See docs/plans/059-az-commitment-renewal-review.md (Maya, stage-3 plan).
+# Cross-rule isolation: disjoint by signal from AZ.RESERVATION_UNDERUTILIZED
+# (different fields drive each gate); co-firing on the same reservation is
+# intentional and complementary (rebalance scope + decide on renewal).
+_RENEWAL_REVIEW_DEFAULT_WINDOW_DAYS = 60
+# Env var the demo-regen script and tests set to anchor "today" to a fixed
+# date so the example reports and the REQUIRED_RULES smoke test stay
+# deterministic without forcing operators to refresh ``samples/`` quarterly.
+# Production runs leave this unset and use the real wall clock.
+_TODAY_OVERRIDE_ENV = "FINOPS_NOW_OVERRIDE"
+
+
+def _today_utc() -> date:
+    """Return today's date in UTC, honoring ``FINOPS_NOW_OVERRIDE`` if set.
+
+    Single call site so tests can either monkeypatch this helper or set
+    ``FINOPS_NOW_OVERRIDE=YYYY-MM-DD`` to anchor evaluation to a fixed day.
+    Invalid override values fall back to the wall clock with a warning.
+    """
+    override = os.environ.get(_TODAY_OVERRIDE_ENV)
+    if override:
+        try:
+            return date.fromisoformat(override)
+        except ValueError:
+            logger.warning(
+                "AZ.COMMITMENT_RENEWAL_REVIEW: invalid %s=%r; using wall clock",
+                _TODAY_OVERRIDE_ENV,
+                override,
+            )
+    return datetime.now(UTC).date()
+
+
+def _parse_expiry(value: str) -> date | None:
+    """Parse an ISO 8601 YYYY-MM-DD expiry date; log WARN and return ``None`` on bad input.
+
+    Pydantic's ``min_length=10, max_length=10`` constraint rejects strings of
+    the wrong length at load time. Anything that passes that gate but is not
+    a valid date (e.g. ``"not-a-date"``) is caught here so the rule abstains
+    on the row rather than crashing the whole rule run.
+    """
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        logger.warning("AZ.COMMITMENT_RENEWAL_REVIEW: malformed expiry_date %r; abstaining", value)
+        return None
+
+
+@register("AZ.COMMITMENT_RENEWAL_REVIEW")
+def commitment_renewal_review(ctx: RuleContext) -> Iterable[Finding]:
+    """Flag reservations expiring within the near-expiry window with auto-renew off."""
+    window_days = ctx.rule.inactivity_days or _RENEWAL_REVIEW_DEFAULT_WINDOW_DAYS
+    today = _today_utc()
+    for reservation in ctx.dataset.azure_reservations:
+        if reservation.expiry_date is None:
+            continue  # E2: signal absent
+        if reservation.auto_renew is None:
+            continue  # E5: signal absent
+        if reservation.auto_renew is True:
+            continue  # E6: renewal already configured
+        expiry = _parse_expiry(reservation.expiry_date)
+        if expiry is None:
+            continue  # E11: malformed date
+        days_until_expiry = (expiry - today).days
+        if days_until_expiry < 0:
+            continue  # E4: already expired
+        if days_until_expiry > window_days:
+            continue  # E3: not yet near expiry
+
+        yield Finding(
+            rule_id=ctx.rule.id,
+            surface="azure",
+            severity=ctx.rule.severity,
+            principal=ctx.redact(reservation.reservation_id),
+            current_sku=reservation.sku,
+            estimated_monthly_savings_usd=None,
+            recommendation=render(
+                ctx.rule.recommendation_template,
+                principal=ctx.redact(reservation.reservation_id),
+                expiry_date=reservation.expiry_date,
+                days_until_expiry=days_until_expiry,
+                term=reservation.sku or "?",
+            ),
+            evidence={
+                "reservation_name": reservation.reservation_name,
+                "sku": reservation.sku,
+                "scope": reservation.scope,
+                "expiry_date": reservation.expiry_date,
+                "days_until_expiry": days_until_expiry,
+                "auto_renew": reservation.auto_renew,
+                "utilization_pct": reservation.utilization_pct,
+                "monthly_cost_usd": reservation.monthly_cost_usd,
             },
         )
