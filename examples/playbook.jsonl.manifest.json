@@ -1,0 +1,36 @@
+{
+  "playbook_schema_version": "0.1",
+  "tool": {
+    "name": "finops-assess",
+    "version": "0.1.0"
+  },
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "source_report": {
+    "path": "<redacted>/demo",
+    "schema_version": "1.0",
+    "pii_redaction": true
+  },
+  "row_count": 34,
+  "output_artifacts": {
+    "jsonl_sha256": "59985f55db6a6094ce55cf2cc66a38b0c709572a927a04631124dddf262771d1",
+    "jsonl_byte_count": 71553
+  },
+  "pii_handling": {
+    "mode": "salted_hash",
+    "ticket_key_stability_by_surface": {
+      "ado": "per_run",
+      "azure": "per_run",
+      "github": "per_run",
+      "m365": "per_run"
+    },
+    "known_limitation": "ticket_key is per_run for ALL surfaces when PII redaction is on (the engine salts every principal — including Azure resource IDs — with a per-run secret).  Cross-run deduplication is unsafe under this mode.  Engine tenant-stable salting is deferred to #73; until then, run with --no-pii-redaction or accept that re-runs will produce duplicate tickets."
+  },
+  "surfaces": [
+    "ado",
+    "azure",
+    "github",
+    "m365"
+  ],
+  "sort_key": "(surface, rule_id, ticket_key, evidence_ref)",
+  "templates_source": "importlib.resources:finops_assess.data.playbooks"
+}

@@ -1,0 +1,25 @@
+[TITLE]
+Unassociated public IP address: {{ principal }}
+
+[DESCRIPTION]
+The Standard public IP address **{{ principal }}** is not associated with any
+resource (load balancer, VM NIC, NAT gateway, etc.) and is accruing reservation
+charges.
+
+Releasing an unused public IP address removes ongoing charges immediately.
+
+[REMEDIATION_STEPS]
+1. Confirm the IP is unassociated in the Azure portal (Networking > Public IP addresses).
+2. Check Azure Activity Log and DNS records to determine whether any external system depends on this IP.
+3. If no external dependency exists, consider releasing (deleting) the public IP.
+4. If the IP is reserved for a future deployment, document the planned use case and timeline.
+
+[VERIFICATION_CHECKLIST]
+- IP confirmed unassociated in Azure portal.
+- Activity Log and DNS reviewed for any dependency.
+- No active external dependency identified.
+- IP released or hold documented with planned use case and review date.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/azure/virtual-network/public-ip-addresses
+- https://azure.microsoft.com/en-us/pricing/details/ip-addresses/

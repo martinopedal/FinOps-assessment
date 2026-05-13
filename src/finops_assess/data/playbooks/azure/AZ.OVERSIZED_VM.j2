@@ -1,0 +1,29 @@
+[TITLE]
+Oversized virtual machine: {{ principal }}
+
+[DESCRIPTION]
+The virtual machine **{{ principal }}** (currently **{{ current_sku }}**) shows
+P95 CPU of **{{ p95_cpu_pct if p95_cpu_pct is defined else 'low' }}%** and
+P95 memory of **{{ p95_mem_pct if p95_mem_pct is defined else 'low' }}%** over
+14 days. Both metrics remain well below 40%, suggesting the VM is significantly
+over-provisioned.
+
+Right-sizing to a smaller SKU in the same family can reduce compute charges
+while maintaining adequate headroom.
+
+[REMEDIATION_STEPS]
+1. Review 14-day CPU and memory percentiles in Azure Monitor for {{ principal }}.
+2. Identify the recommended target SKU ({{ recommended_sku if recommended_sku else 'smaller SKU in same family' }}) and confirm it is available in the VM's current region.
+3. Schedule a maintenance window with the workload owner.
+4. Resize the VM and monitor for 48 hours to confirm performance is acceptable.
+5. Revert if performance degrades.
+
+[VERIFICATION_CHECKLIST]
+- P95 CPU and memory confirmed below 40% over 14 days in Azure Monitor.
+- Target SKU availability confirmed in the VM's region.
+- Workload owner approved resize.
+- Resize performed and monitored for 48 hours without regression.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/azure/virtual-machines/resize-vm
+- https://learn.microsoft.com/en-us/azure/azure-monitor/vm/vminsights-performance

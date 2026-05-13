@@ -1,0 +1,27 @@
+[TITLE]
+Unattached managed disk: {{ principal }}
+
+[DESCRIPTION]
+The managed disk **{{ principal }}** has been unattached (not mounted to any VM)
+for 7 or more days. Unattached disks continue to accrue storage reservation
+charges even when no data is being read or written.
+
+Snapshot the disk and delete it if the data is no longer needed, or attach
+it to the appropriate VM if detachment was unintentional.
+
+[REMEDIATION_STEPS]
+1. Identify the disk owner from resource tags (Owner, CostCenter) on {{ principal }}.
+2. Check Azure Activity Log to determine when the disk was last detached and from which VM.
+3. Contact the owner and ask whether the disk contents are still needed.
+4. If data is no longer needed: consider creating a final snapshot (for recovery), then deleting the disk.
+5. If data is still needed but detachment was unintentional: re-attach the disk to the correct VM.
+
+[VERIFICATION_CHECKLIST]
+- Owner identified via resource tags.
+- Activity Log reviewed to confirm detach event and duration.
+- Owner consulted.
+- Disk deleted (with optional snapshot) or re-attached, decision documented.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/azure/virtual-machines/disks-find-unattached-portal-powershell
+- https://learn.microsoft.com/en-us/azure/virtual-machines/snapshot-copy-managed-disk
