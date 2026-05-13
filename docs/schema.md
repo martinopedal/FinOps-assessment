@@ -165,6 +165,8 @@ rule engine reads). Every live collector (`graph`, `arm`, `github`,
 | `subscription_id` | `str \| null` | Azure subscription ID |
 | `subscription_offer` | `str \| null` | `"DevTest"` etc. |
 | `env_tag` | `str \| null` | Value of the `env` resource tag |
+| `os_type` | `"Windows" \| "Linux" \| null` | OS type from ARM `storageProfile.osDisk.osType` |
+| `license_type` | `str \| null` | ARM `licenseType` (`"Windows_Server"` = AHB active) |
 
 ### `AzureReservation`: `samples/azure_reservations.csv`
 

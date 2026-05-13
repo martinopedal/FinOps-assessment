@@ -79,8 +79,8 @@
   <section>
     <h2>Summary</h2>
     <div class="cards">
-      <div class="card"><div class="label">Findings</div><div class="value">39</div></div>
-      <div class="card"><div class="label">Rules fired</div><div class="value">26</div></div>
+      <div class="card"><div class="label">Findings</div><div class="value">40</div></div>
+      <div class="card"><div class="label">Rules fired</div><div class="value">27</div></div>
       <div class="card"><div class="label">Estimated monthly savings</div><div class="value">$2012.65</div></div>
       <div class="card"><div class="label">Principals</div><div class="value">11</div></div>
     </div>
@@ -1032,6 +1032,30 @@
                       <pre>{
   "associated": false,
   "location": "eastus"
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-info">info</span></td>
+                <td class="mono">AZ.AHB_ELIGIBLE</td>
+                <td class="mono">sha256:f54ac37e8807851e</td>
+                <td class="mono">Standard_D4s_v5</td>
+                <td class="mono">—</td>
+                <td>—</td>
+                <td>
+                  VM sha256:f54ac37e8807851e (Standard_D4s_v5, eastus) has os_type=Windows but license_type=(none). Consider enabling Azure Hybrid Benefit (Windows_Server) to reduce the Windows Server licence cost component. Verify that the organisation holds sufficient Windows Server SA or subscription licences before toggling.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "license_type": null,
+  "location": "eastus",
+  "os_type": "Windows",
+  "resource_id": "sha256:f54ac37e8807851e",
+  "sku": "Standard_D4s_v5"
 }</pre>
                     </details>
                   

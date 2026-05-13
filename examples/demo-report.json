@@ -25,6 +25,7 @@
       "AZ.COMMITMENT_UNDER_COVERED": 3,
       "AZ.COMMITMENT_RENEWAL_REVIEW": 1,
       "AZ.RESERVATION_SCOPE_MISMATCH": 1,
+      "AZ.AHB_ELIGIBLE": 1,
       "GH.INACTIVE_SEAT_90D": 1,
       "GH.COPILOT_INACTIVE_30D": 1,
       "GH.GHAS_OVER_PROVISIONED": 1,
@@ -39,10 +40,10 @@
       "M365.E5_FEATURES_UNUSED": 2
     },
     "rules_skipped_no_impl": [],
-    "total_findings": 39,
+    "total_findings": 40,
     "principals_evaluated": 11,
     "assignments_evaluated": 13,
-    "azure_resources_evaluated": 7,
+    "azure_resources_evaluated": 10,
     "persona_distribution": {
       "frontline_worker": 1,
       "information_worker": 4,
@@ -359,6 +360,25 @@
         "non_owner_monthly_usd": 500.0,
         "utilization_pct": 92.0,
         "monthly_cost_usd": 800.0
+      }
+    },
+    {
+      "rule_id": "AZ.AHB_ELIGIBLE",
+      "surface": "azure",
+      "severity": "info",
+      "principal": "sha256:f54ac37e8807851e",
+      "current_sku": "Standard_D4s_v5",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": null,
+      "recommendation": "VM sha256:f54ac37e8807851e (Standard_D4s_v5, eastus) has os_type=Windows but license_type=(none). Consider enabling Azure Hybrid Benefit (Windows_Server) to reduce the Windows Server licence cost component. Verify that the organisation holds sufficient Windows Server SA or subscription licences before toggling.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "resource_id": "sha256:f54ac37e8807851e",
+        "os_type": "Windows",
+        "license_type": null,
+        "sku": "Standard_D4s_v5",
+        "location": "eastus"
       }
     },
     {

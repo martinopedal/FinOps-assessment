@@ -231,6 +231,9 @@ class AzureResource(BaseModel):
     subscription_id: str | None = None
     subscription_offer: str | None = None
     env_tag: str | None = None
+    # OS / licence-bring metadata (used by AZ.AHB_ELIGIBLE)
+    os_type: Literal["Windows", "Linux"] | None = None
+    license_type: str | None = None
 
 
 class AzureReservation(BaseModel):

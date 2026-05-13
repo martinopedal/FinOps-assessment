@@ -1,0 +1,34 @@
+[TITLE]
+Windows VM without Azure Hybrid Benefit: {{ principal }}
+
+[DESCRIPTION]
+The virtual machine **{{ principal }}** (SKU: {{ sku if sku is defined else '(unknown)' }},
+region: {{ location if location is defined else '(unknown)' }}) is running Windows
+(os_type=Windows) but does not have Azure Hybrid Benefit (AHB) applied
+(license_type={{ license_type if license_type is defined else '(none)' }}).
+
+Enabling AHB with `license_type=Windows_Server` eliminates the Windows Server
+licence cost component from the VM's hourly rate, typically reducing the total
+price by 40–50%. This requires the organisation to hold sufficient Windows Server
+Software Assurance (SA) or Windows Server subscription licences.
+
+This is an **informational** finding — verify licence entitlement before toggling.
+
+[REMEDIATION_STEPS]
+1. Confirm the organisation holds Windows Server Software Assurance or subscription licences that are not already allocated to other VMs. Each two-processor licence covers one D/E-series VM (up to 16 cores) or two A-series VMs.
+2. Locate the VM in the Azure portal: Virtual Machines > {{ principal }}.
+3. Under Configuration (or via Azure CLI / ARM template), set the licence type to "Azure Hybrid Benefit for Windows Server".
+4. Verify the change in Cost Management: the VM's compute rate should drop to the Linux-equivalent base rate within the next billing cycle.
+5. If the organisation does NOT hold sufficient SA licences, do not enable AHB — document this as an intentional exception and consider whether purchasing SA would be cost-effective given the fleet size.
+
+[VERIFICATION_CHECKLIST]
+- Windows Server SA / subscription licence entitlement confirmed: yes / no.
+- Sufficient unallocated licences available for this VM's core count: yes / no.
+- AHB toggled on for the VM: yes / no.
+- Cost reduction verified in the next billing cycle: yes / no.
+- If not toggling: rationale documented (e.g., insufficient SA coverage, short-lived VM).
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/azure/virtual-machines/windows/hybrid-use-benefit-licensing
+- https://learn.microsoft.com/en-us/azure/cost-management-billing/savings-plan/savings-plan-compute-overview
+- https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list

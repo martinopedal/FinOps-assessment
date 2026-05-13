@@ -18,6 +18,10 @@ release.
   `verification_checklist`, `references`, `adapter_hints`, `template_render_inputs`,
   and `pii_warning`. 23 per-rule `.j2` templates ship under
   `src/finops_assess/data/playbooks/`. (#61)
+- **AZ.AHB_ELIGIBLE** rule — flags Windows VMs running pay-as-you-go without Azure
+  Hybrid Benefit applied (severity: info). New `os_type` and `license_type` fields on
+  `AzureResource`; ARM collector reads `storageProfile.osDisk.osType` and
+  `properties.licenseType`. (#59)
 - `Rule.adapter_class: str = Field(default="generic")` field on the Rule model —
   enables per-rule ticket adapter customisation without YAML changes.
 - New JSON Schemas `src/finops_assess/schemas/playbook_row.schema.json` and
