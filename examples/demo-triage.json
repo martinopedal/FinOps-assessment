@@ -15,15 +15,15 @@
     "mode": "read-only",
     "schema_version": "1.0",
     "report_path": "<redacted>/demo-report.json",
-    "findings_count": 34,
+    "findings_count": 36,
     "input_pii_redaction": true
   },
   "summary": {
-    "total_items": 34,
+    "total_items": 36,
     "priority_counts": {
       "p1": 13,
       "p2": 2,
-      "p3": 17,
+      "p3": 19,
       "p4": 2
     }
   },
@@ -315,8 +315,60 @@
       "advisory": true
     },
     {
-      "finding_ref": "finding:09f2dcc80bce85da",
+      "finding_ref": "finding:69b257a7e994cdbb",
       "source_finding_index": 11,
+      "rule_id": "AZ.COMMITMENT_UNDER_COVERED",
+      "surface": "azure",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:efb1eb6d0c6c0952",
+      "current_sku": "Standard_D4s_v5",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": null,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has unknown savings.",
+      "suggested_owner_role": "azure-owner",
+      "verification_checklist": [
+        "Confirm the resource is still owned and in scope for optimisation.",
+        "Review recent metrics, tags, and change windows before resizing or stopping.",
+        "Verify reservations, commitments, or environment tags with the FinOps owner."
+      ],
+      "followup_questions": [
+        "Is this workload seasonal, recently deployed, or intentionally kept warm?",
+        "Would a right-size or commitment change affect availability targets?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:abdb4a47224344b6",
+      "source_finding_index": 12,
+      "rule_id": "AZ.COMMITMENT_UNDER_COVERED",
+      "surface": "azure",
+      "severity": "medium",
+      "confidence": "high",
+      "principal": "sha256:efb1eb6d0c6c0952",
+      "current_sku": "Standard_D4s_v5",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": null,
+      "evidence_ref": null,
+      "priority_bucket": "p3",
+      "priority_rationale": "P3 because severity is medium, confidence is high, and the finding has unknown savings.",
+      "suggested_owner_role": "azure-owner",
+      "verification_checklist": [
+        "Confirm the resource is still owned and in scope for optimisation.",
+        "Review recent metrics, tags, and change windows before resizing or stopping.",
+        "Verify reservations, commitments, or environment tags with the FinOps owner."
+      ],
+      "followup_questions": [
+        "Is this workload seasonal, recently deployed, or intentionally kept warm?",
+        "Would a right-size or commitment change affect availability targets?"
+      ],
+      "advisory": true
+    },
+    {
+      "finding_ref": "finding:09f2dcc80bce85da",
+      "source_finding_index": 13,
       "rule_id": "GH.INACTIVE_SEAT_90D",
       "surface": "github",
       "severity": "high",
@@ -342,7 +394,7 @@
     },
     {
       "finding_ref": "finding:3ab27a128a74fbd1",
-      "source_finding_index": 12,
+      "source_finding_index": 14,
       "rule_id": "GH.COPILOT_INACTIVE_30D",
       "surface": "github",
       "severity": "high",
@@ -368,7 +420,7 @@
     },
     {
       "finding_ref": "finding:75ced20c81dfbb75",
-      "source_finding_index": 13,
+      "source_finding_index": 15,
       "rule_id": "GH.GHAS_OVER_PROVISIONED",
       "surface": "github",
       "severity": "medium",
@@ -394,7 +446,7 @@
     },
     {
       "finding_ref": "finding:b3dabb4adfd741cc",
-      "source_finding_index": 14,
+      "source_finding_index": 16,
       "rule_id": "GH.RUNNER_TIER_MISMATCH",
       "surface": "github",
       "severity": "low",
@@ -420,7 +472,7 @@
     },
     {
       "finding_ref": "finding:08da895916bb5375",
-      "source_finding_index": 15,
+      "source_finding_index": 17,
       "rule_id": "M365.UNUSED_LICENSE_30D",
       "surface": "m365",
       "severity": "high",
@@ -446,7 +498,7 @@
     },
     {
       "finding_ref": "finding:1b5c9215eb1910c7",
-      "source_finding_index": 16,
+      "source_finding_index": 18,
       "rule_id": "M365.UNUSED_LICENSE_30D",
       "surface": "m365",
       "severity": "high",
@@ -472,7 +524,7 @@
     },
     {
       "finding_ref": "finding:09c068adac99a7ee",
-      "source_finding_index": 17,
+      "source_finding_index": 19,
       "rule_id": "M365.UNUSED_LICENSE_30D",
       "surface": "m365",
       "severity": "high",
@@ -498,7 +550,7 @@
     },
     {
       "finding_ref": "finding:59232e973a7f3457",
-      "source_finding_index": 18,
+      "source_finding_index": 20,
       "rule_id": "M365.UNUSED_LICENSE_30D",
       "surface": "m365",
       "severity": "high",
@@ -524,7 +576,7 @@
     },
     {
       "finding_ref": "finding:0d588334ef87729b",
-      "source_finding_index": 19,
+      "source_finding_index": 21,
       "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
       "surface": "m365",
       "severity": "medium",
@@ -550,7 +602,7 @@
     },
     {
       "finding_ref": "finding:fc028001b9dec374",
-      "source_finding_index": 20,
+      "source_finding_index": 22,
       "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
       "surface": "m365",
       "severity": "medium",
@@ -576,7 +628,7 @@
     },
     {
       "finding_ref": "finding:ce81c27bf0994d34",
-      "source_finding_index": 21,
+      "source_finding_index": 23,
       "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
       "surface": "m365",
       "severity": "medium",
@@ -602,7 +654,7 @@
     },
     {
       "finding_ref": "finding:632cd89946cc711a",
-      "source_finding_index": 22,
+      "source_finding_index": 24,
       "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
       "surface": "m365",
       "severity": "medium",
@@ -628,7 +680,7 @@
     },
     {
       "finding_ref": "finding:3c952bf445337c05",
-      "source_finding_index": 23,
+      "source_finding_index": 25,
       "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
       "surface": "m365",
       "severity": "medium",
@@ -654,7 +706,7 @@
     },
     {
       "finding_ref": "finding:2f5f5958ab7ee79d",
-      "source_finding_index": 24,
+      "source_finding_index": 26,
       "rule_id": "M365.OVER_LICENSED_VS_PERSONA",
       "surface": "m365",
       "severity": "medium",
@@ -680,7 +732,7 @@
     },
     {
       "finding_ref": "finding:6313dbb92cc2989a",
-      "source_finding_index": 25,
+      "source_finding_index": 27,
       "rule_id": "M365.DUPLICATE_BUNDLE",
       "surface": "m365",
       "severity": "medium",
@@ -706,7 +758,7 @@
     },
     {
       "finding_ref": "finding:2a7ff6c41044e94b",
-      "source_finding_index": 26,
+      "source_finding_index": 28,
       "rule_id": "M365.DISABLED_USER_LICENSED",
       "surface": "m365",
       "severity": "high",
@@ -732,7 +784,7 @@
     },
     {
       "finding_ref": "finding:df970d167caba76b",
-      "source_finding_index": 27,
+      "source_finding_index": 29,
       "rule_id": "M365.DISABLED_USER_LICENSED",
       "surface": "m365",
       "severity": "high",
@@ -758,7 +810,7 @@
     },
     {
       "finding_ref": "finding:e8997598fd88789e",
-      "source_finding_index": 28,
+      "source_finding_index": 30,
       "rule_id": "M365.SHARED_MAILBOX_LICENSED",
       "surface": "m365",
       "severity": "medium",
@@ -784,7 +836,7 @@
     },
     {
       "finding_ref": "finding:ac31439ea8ff84c9",
-      "source_finding_index": 29,
+      "source_finding_index": 31,
       "rule_id": "M365.GUEST_PREMIUM_LICENSED",
       "surface": "m365",
       "severity": "medium",
@@ -810,7 +862,7 @@
     },
     {
       "finding_ref": "finding:73ce3e924451fd6b",
-      "source_finding_index": 30,
+      "source_finding_index": 32,
       "rule_id": "M365.COPILOT_INACTIVE_60D",
       "surface": "m365",
       "severity": "high",
@@ -836,7 +888,7 @@
     },
     {
       "finding_ref": "finding:badf5199c285f1ce",
-      "source_finding_index": 31,
+      "source_finding_index": 33,
       "rule_id": "M365.COPILOT_INACTIVE_60D",
       "surface": "m365",
       "severity": "high",
@@ -862,7 +914,7 @@
     },
     {
       "finding_ref": "finding:becc9148c01bc57a",
-      "source_finding_index": 32,
+      "source_finding_index": 34,
       "rule_id": "M365.E5_FEATURES_UNUSED",
       "surface": "m365",
       "severity": "medium",
@@ -888,7 +940,7 @@
     },
     {
       "finding_ref": "finding:e35e0e49114e35ec",
-      "source_finding_index": 33,
+      "source_finding_index": 35,
       "rule_id": "M365.E5_FEATURES_UNUSED",
       "surface": "m365",
       "severity": "medium",
