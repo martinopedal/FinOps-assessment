@@ -84,6 +84,9 @@ ignore = ["E501"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
+markers = [
+    "no_freeze_today: opt out of the AZ.COMMITMENT_RENEWAL_REVIEW today-freeze fixture (test exercises the env-var seam itself)",
+]
 
 [tool.mypy]
 python_version = "3.11"

@@ -90,3 +90,31 @@
     and region (Azure auto-applies on a best-fit basis), then
     consider widening the reservation's applied scope so the
     sibling's workload absorbs the unused capacity.
+
+- id: AZ.COMMITMENT_RENEWAL_REVIEW
+  surface: azure
+  severity: medium
+  summary: Reservation expiring within the near-expiry window with auto-renew not configured.
+  recommendation_template: >
+    Reservation {principal} ({term}) expires on {expiry_date}
+    (in {days_until_expiry} days) and is not configured to auto-renew.
+    Verify whether the workload still needs reserved capacity. If yes,
+    consider renewing or exchanging the reservation before the expiry date.
+    If no, plan for the workload to fall back to on-demand pricing on
+    {expiry_date} and capture the projected on-demand cost in your forecast.
+  inactivity_days: 60
+
+- id: AZ.RESERVATION_SCOPE_MISMATCH
+  surface: azure
+  severity: medium
+  summary: >
+    Single-scope reservation while sibling subscriptions carry significant
+    on-demand spend for likely-compatible workloads.
+  recommendation_template: >
+    Reservation {principal} is scoped to {owner_subs} while subscriptions
+    {sibling_subs} carry ${non_owner_usd}/mo of on-demand spend on
+    potentially compatible workloads. Consider widening the reservation's
+    applied scope (Single → Shared or Management Group) so the sibling
+    workloads can absorb unused reserved capacity, or verify the narrow
+    scope is intentional (e.g., chargeback isolation).
+  min_uncovered_usd: 50.0

@@ -118,6 +118,38 @@ def _resource_group(resource_id: str) -> str:
         return ""
 
 
+def _renew_to_str(value: object) -> str:
+    """Render the Microsoft.Capacity reservations API ``renew`` flag as a CSV cell.
+
+    ``True`` / ``False`` map to lowercase strings the strict-column loader's
+    ``_BOOL_TRUE`` / ``_BOOL_FALSE`` sets recognise. ``None`` and any other
+    value map to the empty string so the strict-column loader treats the
+    cell as missing and pydantic applies the model default
+    (``auto_renew = None``, signal absent).
+    """
+    if value is True:
+        return "true"
+    if value is False:
+        return "false"
+    return ""
+
+
+def _scope_ids_to_csv(value: object) -> str:
+    """Render the API's appliedScopes list as a pipe-separated CSV cell.
+
+    The strict-column CSV loader expects ``list[str]`` columns to be
+    pipe-separated single cells (``csv_collector.py:103-104``). ``None``
+    maps to the empty string (signal absent on Shared scope or when the
+    API returned no list); a non-empty list maps to ``"|"``-joined ARNs.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, list):
+        items = [str(item).strip() for item in value if str(item).strip()]
+        return "|".join(items)
+    return ""
+
+
 def _now_utc() -> datetime:
     return datetime.now(tz=UTC)
 
@@ -667,8 +699,13 @@ def collect_arm(
 
     # ---- Reservations (tenant-level) ----------------------------------------
     for res in _collect_reservations(client):
-        rid = res.get("id") or ""
         props = res.get("properties") or {}
+        # Skip cancelled / failed / expired / pending rows -- only Succeeded
+        # reservations are actionable as a renewal-review signal. See
+        # docs/plans/059-az-commitment-renewal-review.md §2.2 (E9).
+        if (props.get("displayProvisioningState") or "").lower() != "succeeded":
+            continue
+        rid = res.get("id") or ""
         sku_info = res.get("sku") or {}
         util = None
         util_data = props.get("utilization") or {}
@@ -690,6 +727,9 @@ def collect_arm(
                 "scope": props.get("appliedScopeType") or "",
                 "utilization_pct": "" if util is None else str(round(float(util), 2)),
                 "monthly_cost_usd": "",
+                "expiry_date": props.get("expiryDate") or "",
+                "auto_renew": _renew_to_str(props.get("renew")),
+                "applied_scope_subscription_ids": _scope_ids_to_csv(props.get("appliedScopes")),
             }
         )
 
@@ -725,6 +765,9 @@ def collect_arm(
             "scope",
             "utilization_pct",
             "monthly_cost_usd",
+            "expiry_date",
+            "auto_renew",
+            "applied_scope_subscription_ids",
         ],
         reservation_rows,
     )

@@ -22,7 +22,7 @@
     "github": 4,
     "m365": 19
   },
-  "row_count": 9,
+  "row_count": 12,
   "unsupported_columns": [
     "BilledCost",
     "BillingAccountId",

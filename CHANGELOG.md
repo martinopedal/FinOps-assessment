@@ -55,6 +55,33 @@ release.
 
 ### Added
 
+- `AZ.RESERVATION_SCOPE_MISMATCH` rule: flags single-scope Azure reservations
+  whose discount applies to one subscription while sibling subscriptions carry
+  significant on-demand spend (≥ $50/mo by default) on likely-compatible
+  workloads. The rule pre-aggregates spend per subscription from
+  `azure_resources` and compares with the reservation's
+  `applied_scope_subscription_ids` to identify scope-widening opportunities.
+  Adds `applied_scope_subscription_ids: list[str] | None` to the
+  `AzureReservation` model (pipe-separated in CSV mode). ARM collector now
+  populates the field from `properties.appliedScopes`. Legacy CSVs without
+  the new column load unchanged; the rule abstains on those rows. Ships with
+  a per-rule playbook template and 14 unit tests. (#59)
+- `AZ.COMMITMENT_RENEWAL_REVIEW` rule: surfaces Azure reservations expiring
+  within 60 days whose operator has NOT configured auto-renew on the
+  Microsoft.Capacity reservations API. The rule reads the API's
+  `properties.expiryDate` and `properties.renew` fields directly (no
+  heuristic) and abstains on missing signals, malformed dates, already-expired
+  reservations, and reservations with auto-renew already on. Recommendation
+  wording asks the operator to verify whether the workload still needs reserved
+  capacity before renewing, exchanging, or planning the on-demand fallback.
+  Adds two optional fields to the `AzureReservation` model: `expiry_date`
+  (ISO 8601 `YYYY-MM-DD` string) and `auto_renew` (tri-state boolean).
+  Legacy `azure_reservations.csv` files without the new columns load
+  unchanged and the rule abstains on those rows. ARM collector now also
+  filters out reservations whose `displayProvisioningState` is not
+  `Succeeded`. New `FINOPS_NOW_OVERRIDE` env var anchors the rule's "today"
+  for deterministic demo-report regeneration and the engine smoke test;
+  production runs leave it unset and use the wall clock. (#59)
 - Operator-facing agentic-FinOps architecture guide (`docs/agentic-finops.md`)
   explaining how the tool's read-only audit half plus an operator-controlled
   remediation-PR-against-IaC-repo add-on form a clean base for an agentic

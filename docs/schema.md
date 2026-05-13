@@ -176,6 +176,9 @@ rule engine reads). Every live collector (`graph`, `arm`, `github`,
 | `scope` | `str \| null` | Scope (shared, single subscription, etc.) |
 | `utilization_pct` | `float \| null` | 30-day average utilisation (0 to 100) |
 | `monthly_cost_usd` | `float \| null` | Monthly commitment cost |
+| `expiry_date` | `str \| null` | Reservation expiry date (ISO 8601 `YYYY-MM-DD`); drives `AZ.COMMITMENT_RENEWAL_REVIEW`. Rule abstains on `null`. |
+| `auto_renew` | `bool \| null` | Operator's renewal-intent flag from the Microsoft.Capacity reservations API (`properties.renew`). `null` means signal absent; `AZ.COMMITMENT_RENEWAL_REVIEW` abstains on `null`. |
+| `applied_scope_subscription_ids` | `list[str] \| null` | Subscription ARNs the discount is applied to (`properties.appliedScopes`). Pipe-separated in CSV mode. `null` means signal absent; `AZ.RESERVATION_SCOPE_MISMATCH` abstains on `null`. |
 
 ### `AzureLogWorkspace`: `samples/azure_log_workspaces.csv`
 
