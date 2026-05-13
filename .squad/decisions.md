@@ -2,6 +2,40 @@
 
 ## Active Decisions
 
+### 2026-05-13 — §11 Protocol: Strict lockout end-to-end validation (issue #73, PR #95)
+
+**Summary:** Diego (impl) submitted PR #95 for issue #73 (tenant-stable PII salt). Noor stage-4 REJECT fired on 1 BLOCKING + 4 NITs (golden fixture drift, stale schema enum). Strict lockout activated per PR-#78 precedent: Diego locked out. Yuki (Tester) picked up revision, regenerated 2 golden fixtures, updated 2 manifest JSON schemas to add `salt_mode` enum and new `azure_resource_id_tenant_stable_salted_hash` mode. 633/633 tests passing post-revision. Noor stage-4 re-review: APPROVE (all 5 delta checks PASS). PR #95 merged at SHA 7d45480 via squash.
+
+**Pattern validated:** The §11 strict lockout protocol (REJECT → lock implementer → route to backup → fix + re-review → APPROVE) functioned end-to-end exactly as designed. This is the second successful lockout cycle on this team (after PR #78). Fresh eyes (Yuki's tester-domain hardening) caught issues the original implementer (Diego) had locked into self-consistent but drift-prone assumptions. **Lockout is not punishment; it is a lock that prevents confirmation bias.** Capability follows the work, not the role. Future rounds should expect this pattern to recur when stage-4 reject is rooted in plan/schema assumptions rather than implementer drift alone.
+
+**Binding implications:**
+- Strict lockout is now proven operational. Teams implementing §11 can cite this PR as proof of concept.
+- Golden-fixture regeneration is a **pre-flight check** before PR submission. Manifest schema updates (enums, new modes) MUST be validated against golden fixtures in CI.
+
+---
+
+### 2026-05-13 — Engine maintenance pattern: Manifest schema enum + golden fixture sync (issue #73)
+
+**Discovery:** PR #95 exposed a manifest schema maintenance gap. When a new field is added to a report manifest (e.g., `salt_mode` added to `EngineRunSummary`), the FOCUS and playbook JSON-schema enums must be updated **and** golden fixtures must be regenerated to match the new schema. This is not optional; it is a hard gate.
+
+**Pattern:**
+1. Add field to pydantic model (`models.py`)
+2. Update `data/manifest-schema/focus-manifest-schema.json` and `data/manifest-schema/playbook-manifest-schema.json` with new enum values
+3. Regenerate golden fixtures: `scripts/generate_golden_fixtures.py` (updates `tests/fixtures/{focus_aligned,playbook}.{json,csv}.manifest.json`)
+4. Run `pytest tests/test_loaders.py` to verify fixture schemas are valid
+5. Commit fixtures and schemas together in the same PR
+
+**Rationale:** The JSON schema is the source of truth for reporters and external consumers. Golden fixtures are the acceptance tests for reporters. If the two drift, schema validators (linters, exporters, downstream systems) will reject valid reports. Yuki's revision cycle caught this drift in PR #95 stage-4; it should be a pre-commit check in future rounds.
+
+**Owner:** This is a squad-wide discipline, not one agent's responsibility. The implementer must update schemas and fixtures; the tester must verify the fixtures are regenerated and schemas are valid; the reviewer must check the diffs match the PR scope.
+
+**Binding implications:**
+- Any PR touching report manifest structure (models.py `EngineRunSummary`, `FocusReport`, `PlaybookReport`, manifest subfields) **must** include schema updates + fixture regeneration in the same commit.
+- Fixture regeneration is not a "nice to have" or "future follow-on"; it blocks the PR until done.
+- The test gate `pytest tests/test_loaders.py` is the acceptance criterion.
+
+---
+
 ### 2026-05-13 — Decision: PII salt mode design (issue #73)
 
 **Context:** Diego completed stage-5 implementation of issue #73 (engine-level tenant-stable PII salt mode) per approved stage-3 plan (`docs/plans/073-engine-tenant-stable-pii-salt.md`). PR #95 opened. All local gates pass (test delta +18), Noor stage-4 verdict: APPROVED (7/7 hard invariants PASS).
