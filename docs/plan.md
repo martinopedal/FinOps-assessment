@@ -278,6 +278,10 @@ is source-agnostic.
   Actions; no long-lived secrets in the repo.
 - All emitted reports redact UPN local-parts behind a salted hash by
   default; `--no-pii-redaction` is opt-in.
+- **Tenant-stable PII salt** (#73, v0.6.0): operators may supply a
+  persistent salt via `--pii-salt-file` or `FINOPS_PII_SALT` for
+  cross-run principal stability; default remains per-run rotation.
+  Plan: `docs/plans/073-engine-tenant-stable-pii-salt.md`.
 - Repo hardening (applied immediately after first PR lands):
   branch protection on `main`, required CI, required review,
   Dependabot for `pip` + `github-actions`, secret scanning + push
