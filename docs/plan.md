@@ -381,6 +381,9 @@ offline workflow and outputs.
 ### Open questions
 
 1. **RESOLVED (PR #30):** Pricing profiles are customer-supplied inputs, NOT catalogue constants. Default posture is list price (multiplier=1.0, source=default_list). Agreement discounts (EA/MCA/CSP/MOSP/negotiated) are modeled as optional `PricingProfile` inputs with explicit currency, scope, and temporal bounds. Rules join observations with profiles; the model enforces no tenant-specific rate cards in the repo.
+4. **IN PROGRESS (#75):** Scribe-after-Stage-4 serialization — housekeeping
+   commits must not race with bot approval. Stage-3 plan at
+   `docs/plans/075-serialize-scribe-behind-stage4.md`.
 2. Persona inference confidence, surface as a column? *Yes; rules with
    confidence < 0.7 are downgraded to "advisory".*
 3. How to handle **per-user Copilot for M365** vs **GitHub Copilot** vs
