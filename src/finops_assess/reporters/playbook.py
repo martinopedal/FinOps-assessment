@@ -81,7 +81,11 @@ from typing import Any
 
 from finops_assess import __version__
 from finops_assess.reporters._determinism import generated_at_iso
-from finops_assess.reporters._playbook_env import extract_template_vars, get_playbook_env
+from finops_assess.reporters._playbook_env import (
+    extract_template_vars,
+    get_playbook_env,
+    reset_playbook_env,
+)
 
 _log = logging.getLogger(__name__)
 
@@ -264,8 +268,8 @@ def _parse_template_output(rendered: str) -> dict[str, Any]:
 
     def _list_lines(key: str) -> list[str]:
         items = []
-        for raw in sections[key]:
-            text = raw.strip()
+        for _raw in sections[key]:
+            text = _raw.strip()
             if text:
                 items.append(text)
         return items
