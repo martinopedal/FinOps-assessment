@@ -282,6 +282,11 @@ is source-agnostic.
   persistent salt via `--pii-salt-file` or `FINOPS_PII_SALT` for
   cross-run principal stability; default remains per-run rotation.
   Plan: `docs/plans/073-engine-tenant-stable-pii-salt.md`.
+- **Reporter template overlay** (#74, v0.6.0): operator-supplied Jinja2
+  templates via `--allow-template-overlay <dir>` with
+  `SandboxedEnvironment`, pre-flight validation, and per-template
+  SHA-256 provenance in `manifest.template_sources[]`.
+  Plan: `docs/plans/074-reporter-template-overlay.md`.
 - Repo hardening (applied immediately after first PR lands):
   branch protection on `main`, required CI, required review,
   Dependabot for `pip` + `github-actions`, secret scanning + push
