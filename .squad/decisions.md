@@ -2,6 +2,39 @@
 
 ## Active Decisions
 
+### 2026-05-13 — Decision: PII salt mode design (issue #73)
+
+**Context:** Diego completed stage-5 implementation of issue #73 (engine-level tenant-stable PII salt mode) per approved stage-3 plan (`docs/plans/073-engine-tenant-stable-pii-salt.md`). PR #95 opened. All local gates pass (test delta +18), Noor stage-4 verdict: APPROVED (7/7 hard invariants PASS).
+
+**Implementation decisions (Diego):**
+
+1. **Salt mode observability**: Added `salt_mode` field to engine summary and report run block. Values: `"per_run"` (default, random salt per invocation) or `"tenant_stable"` (operator-provided salt via file or env var). The field makes salt mode observable without leaking the salt value itself.
+
+2. **Precedence order (CLI layer)**: `_resolve_pii_salt()` implements:
+   - `--no-pii-redaction` → no hashing, salt irrelevant (take highest precedence)
+   - `--pii-salt-file <path>` → highest precedence if PII redaction enabled
+   - `FINOPS_PII_SALT` env var → fallback
+   - Neither → per-run random salt (default, no cross-run correlation risk)
+
+3. **Reporter manifest**: Both playbook and FOCUS reporters read `salt_mode` and set ticket/finding key stability accordingly (stable ResourceId and AdvisoryFindingKey under tenant-stable salt; rotates per-run in default mode).
+
+4. **Threat model**: Tenant-stable salt enables cross-run principal correlation. If salt leaks, principals can be re-identified across all runs using that salt. Operators must protect the salt file or env var as they would a database encryption key. Default behavior (per-run rotation) incurs no cross-run correlation risk.
+
+5. **Deferred decisions**: 
+   - Rotation with `previous_salts[]` (key rotation, rainbow-table resistance) → follow-on issue
+   - Secret manager integration examples (AWS Secrets Manager, Azure Key Vault) → reduce operator friction in follow-on
+
+**Binding implications:**
+- Default mode (per-run random salt) is unchanged; operators opt in to tenant-stable salt explicitly.
+- Stable mode is suitable for compliance attestation and continuous remediation workflows where cross-run principal linking is required.
+- Entropy warning on salt resolution if <16 bytes.
+
+**Stage-4 verdict:** APPROVED (Noor, all 7 hard invariants PASS).
+
+**Next:** Awaiting main CI + merge.
+
+---
+
 ### 2026-05-13 — #59 epic shipping cycle: rules 1+2+3 plans merged, rule 1 impl merged via Reviewer Rejection Lockout
 
 **Context:** Epic #59 (Azure commitment-discount rule suite, 5-rule decomposition, one rule per PR) reached a major checkpoint: three consecutive stage-3 plans shipped (PRs #83, #84, #86) and rule 1 implementation merged (PR #85) after a Reviewer Rejection Lockout revision cycle.
