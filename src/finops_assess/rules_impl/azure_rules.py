@@ -292,6 +292,86 @@ def dev_test_sub_mismatch(ctx: RuleContext) -> Iterable[Finding]:
 
 
 # ---------------------------------------------------------------------------
+# AZ.COMMITMENT_UNDER_COVERED
+# ---------------------------------------------------------------------------
+# Same utilisation threshold as AZ.RESERVATION_UNDERUTILIZED -- intentional;
+# see docs/plans/059-az-commitment-under-covered.md §2.4 (cross-rule isolation discussion).
+_COMMITMENT_UTIL_THRESHOLD = 80.0
+_SIBLING_MIN_ON_DEMAND_USD = 50.0
+
+
+@register("AZ.COMMITMENT_UNDER_COVERED")
+def commitment_under_covered(ctx: RuleContext) -> Iterable[Finding]:
+    """Flag under-utilised reservations whose unused capacity could absorb
+    a sibling subscription's on-demand spend (scope-widening opportunity).
+
+    See docs/plans/059-az-commitment-under-covered.md §2.4 for the intentional
+    overlap with AZ.RESERVATION_UNDERUTILIZED.
+    """
+    # Aggregate on-demand spend per subscription_id from azure_resources.
+    sibling_spend: dict[str, float] = {}
+    for resource in ctx.dataset.azure_resources:
+        sub = resource.subscription_id
+        if sub is None or not sub.strip():
+            continue
+        cost = resource.monthly_cost_usd
+        if cost is None:
+            continue
+        sibling_spend[sub] = sibling_spend.get(sub, 0.0) + float(cost)
+
+    if not sibling_spend:
+        return  # E10: no on-demand signal
+
+    seen: set[tuple[str, str]] = set()  # E8 dedup on (reservation_id, sibling_sub)
+    for reservation in ctx.dataset.azure_reservations:
+        if reservation.utilization_pct is None:
+            continue  # E9
+        if reservation.utilization_pct >= _COMMITMENT_UTIL_THRESHOLD:
+            continue  # E2
+
+        scope_raw = (reservation.scope or "").strip().lower()
+        scope_kind = (
+            "Single"
+            if scope_raw == "single"
+            else ("Shared" if scope_raw in ("shared", "managementgroup") else "Unknown")
+        )
+
+        for sibling_sub, on_demand in sibling_spend.items():
+            if on_demand < _SIBLING_MIN_ON_DEMAND_USD:
+                continue  # E3
+            key = (reservation.reservation_id, sibling_sub)
+            if key in seen:
+                continue  # E8
+            seen.add(key)
+
+            yield Finding(
+                rule_id=ctx.rule.id,
+                surface="azure",
+                severity=ctx.rule.severity,
+                principal=ctx.redact(reservation.reservation_id),
+                current_sku=reservation.sku,
+                estimated_monthly_savings_usd=None,  # not quantifiable from this signal
+                recommendation=render(
+                    ctx.rule.recommendation_template,
+                    principal=ctx.redact(reservation.reservation_id),
+                    scope_kind=scope_kind,
+                    utilization_pct=round(reservation.utilization_pct, 1),
+                    sibling_sub=ctx.redact(sibling_sub),
+                    sibling_on_demand_spend_usd=round(on_demand, 2),
+                ),
+                evidence={
+                    "reservation_name": reservation.reservation_name,
+                    "sku": reservation.sku,
+                    "scope_kind": scope_kind,
+                    "utilization_pct": reservation.utilization_pct,
+                    "monthly_cost_usd": reservation.monthly_cost_usd,
+                    "sibling_sub": ctx.redact(sibling_sub),
+                    "sibling_on_demand_spend_usd": round(on_demand, 2),
+                },
+            )
+
+
+# ---------------------------------------------------------------------------
 # AZ.SAVINGS_PLAN_ELIGIBLE_SPEND
 # ---------------------------------------------------------------------------
 _SP_MIN_LOOKBACK_PERIODS = {"Last30Days", "Last60Days"}

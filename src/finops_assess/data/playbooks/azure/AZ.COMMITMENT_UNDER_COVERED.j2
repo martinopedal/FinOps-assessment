@@ -1,0 +1,29 @@
+[TITLE]
+Under-utilised reservation with sibling subscription on-demand spend: {{ principal }}
+
+[DESCRIPTION]
+The reservation **{{ principal }}** is {{ scope_kind }}-scope and averaged
+**{{ utilization_pct if utilization_pct is defined else 'low' }}% utilisation**
+over the last 30 days, while sibling subscription **{{ sibling_sub }}** shows
+**${{ sibling_on_demand_spend_usd }}** of on-demand resource spend over the same window.
+
+This indicates a scope-widening opportunity: the reservation has unused capacity,
+and a sibling subscription is paying on-demand for workloads that could potentially
+fall under the reservation's coverage.
+
+[REMEDIATION_STEPS]
+1. Review the reservation utilisation details in Azure Cost Management > Reservations for {{ principal }}.
+2. Identify the on-demand resources in subscription {{ sibling_sub }} and verify their SKU family and region match the reservation's coverage (Azure auto-applies reservations on a best-fit basis).
+3. Check the reservation's current applied scope (Single, Shared, or ManagementGroup) in the Azure portal.
+4. If the sibling subscription's workload is compatible and should be covered, consider widening the reservation's applied scope so the sibling's resources absorb the unused capacity.
+5. If the sibling is not compatible or is intentionally excluded, document the rationale.
+
+[VERIFICATION_CHECKLIST]
+- Reservation utilisation trend reviewed in Azure Cost Management for 30+ days.
+- Sibling subscription's on-demand resources verified for SKU/region compatibility.
+- Reservation applied scope reviewed and documented.
+- Scope-widening decision documented with timeline (or exclusion rationale).
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/reservation-utilization
+- https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/prepare-buy-reservation#reservation-scope

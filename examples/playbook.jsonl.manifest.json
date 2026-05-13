@@ -10,10 +10,10 @@
     "schema_version": "1.0",
     "pii_redaction": true
   },
-  "row_count": 34,
+  "row_count": 35,
   "output_artifacts": {
-    "jsonl_sha256": "59985f55db6a6094ce55cf2cc66a38b0c709572a927a04631124dddf262771d1",
-    "jsonl_byte_count": 71553
+    "jsonl_sha256": "70e33234352d59cbb23c54d9077c678bdcee6ee1b0105d7b81f1d1f3b6bbcff4",
+    "jsonl_byte_count": 74236
   },
   "pii_handling": {
     "mode": "salted_hash",
