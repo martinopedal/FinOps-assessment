@@ -140,7 +140,9 @@ def run_rules(
 
     Returns ``(findings, summary)``. The summary contains per-rule counts
     plus the redaction salt iff redaction was disabled (so the operator can
-    re-correlate later if they choose).
+    re-correlate later if they choose). The summary also includes ``salt_mode``
+    which is ``"tenant_stable"`` when the caller provides a salt, or ``"per_run"``
+    when the engine generates one.
     """
     # Import the rule-impl modules so their @register decorators fire.
     _ensure_rule_impls_loaded()
@@ -149,6 +151,7 @@ def run_rules(
     personas_by_id = {p.id: p for p in personas}
     assignments_idx, usage_idx = _build_indexes(dataset)
     salt_value = salt if salt is not None else secrets.token_hex(16)
+    salt_mode = "tenant_stable" if salt is not None else "per_run"
 
     findings: list[Finding] = []
     counts: dict[str, int] = {}
@@ -184,6 +187,7 @@ def run_rules(
         "principals_evaluated": len(dataset.users),
         "assignments_evaluated": len(dataset.assignments),
         "azure_resources_evaluated": len(dataset.azure_resources),
+        "salt_mode": salt_mode,
     }
     if not redact_pii:
         summary["pii_redaction"] = "disabled"

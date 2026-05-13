@@ -663,3 +663,54 @@ def test_advisory_finding_key_long_resource_id() -> None:
     assert key_long != key_shorter
     # Stable across calls
     assert key_long == advisory_finding_key(f_long)
+
+
+def test_focus_manifest_salt_mode_tenant_stable() -> None:
+    """FOCUS manifest reports salt_mode='tenant_stable' and stability='stable' when an explicit salt is provided."""
+    from finops_assess.catalog import load_catalog
+    from finops_assess.collectors import collect_from_directory
+    from finops_assess.engine import run_rules
+    from finops_assess.persona import assign_personas
+    from finops_assess.reporters.json_reporter import build_report
+    from finops_assess.rules import load_personas, load_rules
+
+    catalog = load_catalog()
+    personas = load_personas()
+    rules = [r for r in load_rules() if r.id == "AZ.IDLE_VM_14D"]
+    samples = Path(__file__).resolve().parents[1] / "samples"
+    dataset = collect_from_directory(samples)
+    persona_assignments = assign_personas(dataset, personas)
+
+    findings, summary = run_rules(
+        rules=rules,
+        catalog=catalog,
+        personas=personas,
+        persona_assignments=persona_assignments,
+        dataset=dataset,
+        redact_pii=True,
+        salt="tenant-stable-salt-xyz",
+    )
+    report = build_report(
+        findings=findings,
+        summary=summary,
+        persona_assignments=persona_assignments,
+        input_path=samples,
+        redact_pii=True,
+    )
+
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        csv_path = Path(td) / "focus.csv"
+        _csv_out, manifest_out = write_focus_aligned_export(report, csv_path)
+        manifest = json.loads(manifest_out.read_text(encoding="utf-8"))
+
+    assert manifest["pii_handling"]["mode"] == "azure_resource_id_tenant_stable_salted_hash"
+    assert manifest["pii_handling"]["salt_mode"] == "tenant_stable"
+    assert manifest["pii_handling"]["known_limitation"] is None
+
+    # Join keys should be stable
+    resource_id_key = next(k for k in manifest["join_keys"] if k["column"] == "ResourceId")
+    advisory_key = next(k for k in manifest["join_keys"] if k["column"] == "AdvisoryFindingKey")
+    assert resource_id_key["stability"] == "stable"
+    assert advisory_key["stability"] == "stable"

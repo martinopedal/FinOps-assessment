@@ -17,13 +17,14 @@
   },
   "pii_handling": {
     "mode": "salted_hash",
+    "salt_mode": "tenant_stable",
     "ticket_key_stability_by_surface": {
-      "ado": "per_run",
-      "azure": "per_run",
-      "github": "per_run",
-      "m365": "per_run"
+      "ado": "stable",
+      "azure": "stable",
+      "github": "stable",
+      "m365": "stable"
     },
-    "known_limitation": "ticket_key is per_run for ALL surfaces when PII redaction is on (the engine salts every principal — including Azure resource IDs — with a per-run secret).  Cross-run deduplication is unsafe under this mode.  Engine tenant-stable salting is deferred to #73; until then, run with --no-pii-redaction or accept that re-runs will produce duplicate tickets."
+    "known_limitation": null
   },
   "surfaces": [
     "ado",

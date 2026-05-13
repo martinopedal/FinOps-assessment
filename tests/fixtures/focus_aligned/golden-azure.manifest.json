@@ -57,6 +57,7 @@
   ],
   "pii_handling": {
     "mode": "azure_resource_id_per_run_salted_hash",
+    "salt_mode": "per_run",
     "known_limitation": "ResourceId is the engine's salted hash of the cleartext ARM resource ID under default redaction; AdvisoryFindingKey rotates with the per-run salt and is unsafe for cross-run joins. Re-runs will produce duplicate advisory rows. Engine tenant-stable salting is deferred to #73; until then, run with --no-pii-redaction or accept the per-run instability."
   },
   "non_additive_warning": true,

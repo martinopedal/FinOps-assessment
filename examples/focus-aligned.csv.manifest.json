@@ -46,18 +46,19 @@
     {
       "column": "ResourceId",
       "joins_to": "FOCUS.ResourceId",
-      "stability": "per_run"
+      "stability": "stable"
     },
     {
       "column": "AdvisoryFindingKey",
       "joins_to": null,
-      "stability": "per_run",
-      "notes": "Stable across runs for the same (rule_id, resource_id, evidence) ONLY when --no-pii-redaction is set; otherwise rotates with the per-run salt. Not a FOCUS column."
+      "stability": "stable",
+      "notes": "Stable across runs for the same (rule_id, resource_id, evidence) with tenant-stable salt. Not a FOCUS column."
     }
   ],
   "pii_handling": {
-    "mode": "azure_resource_id_per_run_salted_hash",
-    "known_limitation": "ResourceId is the engine's salted hash of the cleartext ARM resource ID under default redaction; AdvisoryFindingKey rotates with the per-run salt and is unsafe for cross-run joins. Re-runs will produce duplicate advisory rows. Engine tenant-stable salting is deferred to #73; until then, run with --no-pii-redaction or accept the per-run instability."
+    "mode": "azure_resource_id_tenant_stable_salted_hash",
+    "salt_mode": "tenant_stable",
+    "known_limitation": null
   },
   "non_additive_warning": true,
   "column_order": [

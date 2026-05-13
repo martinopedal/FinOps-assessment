@@ -6,6 +6,7 @@
     "generated_at": "1970-01-01T00:00:00+00:00",
     "input": "<redacted>/demo",
     "pii_redaction": true,
+    "salt_mode": "tenant_stable",
     "mode": "read-only"
   },
   "summary": {
@@ -44,6 +45,7 @@
     "principals_evaluated": 11,
     "assignments_evaluated": 13,
     "azure_resources_evaluated": 10,
+    "salt_mode": "tenant_stable",
     "persona_distribution": {
       "frontline_worker": 1,
       "information_worker": 4,

@@ -199,3 +199,54 @@ def test_azure_ticket_key_stable_when_redaction_off(tmp_path: Path) -> None:
     assert manifest["pii_handling"]["known_limitation"] is None, (  # type: ignore[index]
         "known_limitation must be null when every surface is stable."
     )
+
+
+# ---------------------------------------------------------------------------
+# Test C — with tenant-stable salt, ticket_key MUST be stable AND manifest MUST agree
+# ---------------------------------------------------------------------------
+
+
+def test_azure_ticket_key_stable_with_tenant_stable_salt(tmp_path: Path) -> None:
+    """Two engine runs with the same tenant-stable salt must produce IDENTICAL
+    Azure ticket_keys for the same finding, AND the manifest must declare every
+    surface 'stable' with known_limitation null.
+    """
+    # Run 1 with explicit salt
+    report_run1 = _engine_run(redact_pii=True, salt="tenant-stable-salt-abcd1234")
+    # Run 2 with the SAME salt
+    report_run2 = _engine_run(redact_pii=True, salt="tenant-stable-salt-abcd1234")
+
+    keys_run1 = _ticket_keys(report_run1, tmp_path, "stable1")
+    keys_run2 = _ticket_keys(report_run2, tmp_path, "stable2")
+
+    assert keys_run1 and keys_run2, "Both runs must produce at least one ticket"
+    assert keys_run1 == keys_run2, (
+        "Azure ticket_keys must be identical across runs with tenant-stable salt "
+        "(principal is a stable salted hash)."
+    )
+
+    manifest = _manifest_dict(report_run1, tmp_path, "manifest_stable")
+    assert manifest["pii_handling"]["salt_mode"] == "tenant_stable", (  # type: ignore[index]
+        "Manifest must report salt_mode='tenant_stable' when an explicit salt is provided."
+    )
+    stability = manifest["pii_handling"]["ticket_key_stability_by_surface"]  # type: ignore[index]
+    for surface in ("azure", "ado", "github", "m365"):
+        assert stability[surface] == "stable", (
+            f"With tenant-stable salt, {surface} must report stable; manifest claims {stability[surface]!r}"
+        )
+    assert manifest["pii_handling"]["known_limitation"] is None, (  # type: ignore[index]
+        "known_limitation must be null when tenant-stable salt is used."
+    )
+
+
+def test_manifest_salt_mode_per_run_by_default(tmp_path: Path) -> None:
+    """Manifest reports salt_mode='per_run' when no explicit salt is provided."""
+    report = _engine_run(redact_pii=True)
+    manifest = _manifest_dict(report, tmp_path, "manifest_per_run")
+
+    assert manifest["pii_handling"]["salt_mode"] == "per_run", (  # type: ignore[index]
+        "Manifest must report salt_mode='per_run' when no explicit salt is provided."
+    )
+    assert manifest["pii_handling"]["known_limitation"] is not None, (  # type: ignore[index]
+        "known_limitation must be present when salt_mode is per_run."
+    )

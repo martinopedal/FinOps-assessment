@@ -112,3 +112,109 @@ def test_run_format_csv_requires_output_path() -> None:
     )
     assert result.exit_code != 0
     assert "--csv-output" in result.output
+
+
+def test_run_with_pii_salt_file_produces_stable_hashes() -> None:
+    """Two runs with the same salt file produce identical principal hashes."""
+    runner = CliRunner()
+    with runner.isolated_filesystem() as td:
+        tmp_path = Path(td)
+        salt_file = tmp_path / "salt.txt"
+        salt_file.write_text("test-tenant-stable-salt-abcd1234", encoding="utf-8")
+
+        # Run 1
+        out1 = tmp_path / "out1.json"
+        result1 = runner.invoke(
+            main,
+            [
+                "run",
+                "--input",
+                str(SAMPLES),
+                "--output",
+                str(out1),
+                "--pii-salt-file",
+                str(salt_file),
+            ],
+        )
+        assert result1.exit_code == 0, result1.output
+        report1 = json.loads(out1.read_text(encoding="utf-8"))
+
+        # Run 2 with the SAME salt file
+        out2 = tmp_path / "out2.json"
+        result2 = runner.invoke(
+            main,
+            [
+                "run",
+                "--input",
+                str(SAMPLES),
+                "--output",
+                str(out2),
+                "--pii-salt-file",
+                str(salt_file),
+            ],
+        )
+        assert result2.exit_code == 0, result2.output
+        report2 = json.loads(out2.read_text(encoding="utf-8"))
+
+        # Extract principals from both runs
+        principals1 = {f["principal"] for f in report1["findings"] if f.get("principal")}
+        principals2 = {f["principal"] for f in report2["findings"] if f.get("principal")}
+
+        # Principals should be identical
+        assert principals1 == principals2, "Principals should be stable with same salt file"
+
+        # Verify salt_mode is reported correctly
+        assert report1["run"]["salt_mode"] == "tenant_stable"
+        assert report2["run"]["salt_mode"] == "tenant_stable"
+
+
+def test_run_with_pii_salt_env_produces_stable_hashes() -> None:
+    """Two runs with the same FINOPS_PII_SALT env var produce identical principal hashes."""
+    runner = CliRunner()
+    with runner.isolated_filesystem() as td:
+        tmp_path = Path(td)
+        out1 = tmp_path / "out1.json"
+        result1 = runner.invoke(
+            main,
+            ["run", "--input", str(SAMPLES), "--output", str(out1)],
+            env={"FINOPS_PII_SALT": "env-salt-12345678"},
+        )
+        assert result1.exit_code == 0, result1.output
+        report1 = json.loads(out1.read_text(encoding="utf-8"))
+
+        # Run 2 with the SAME env var
+        out2 = tmp_path / "out2.json"
+        result2 = runner.invoke(
+            main,
+            ["run", "--input", str(SAMPLES), "--output", str(out2)],
+            env={"FINOPS_PII_SALT": "env-salt-12345678"},
+        )
+        assert result2.exit_code == 0, result2.output
+        report2 = json.loads(out2.read_text(encoding="utf-8"))
+
+        # Extract principals from both runs
+        principals1 = {f["principal"] for f in report1["findings"] if f.get("principal")}
+        principals2 = {f["principal"] for f in report2["findings"] if f.get("principal")}
+
+        # Principals should be identical
+        assert principals1 == principals2, "Principals should be stable with same env salt"
+
+        # Verify salt_mode is reported correctly
+        assert report1["run"]["salt_mode"] == "tenant_stable"
+        assert report2["run"]["salt_mode"] == "tenant_stable"
+
+
+def test_run_salt_file_not_found_error() -> None:
+    """Missing salt file raises a clear error."""
+    runner = CliRunner()
+    with runner.isolated_filesystem() as td:
+        tmp_path = Path(td)
+        missing = tmp_path / "nosuch.txt"
+        out = tmp_path / "out.json"
+
+        result = runner.invoke(
+            main,
+            ["run", "--input", str(SAMPLES), "--output", str(out), "--pii-salt-file", str(missing)],
+        )
+        assert result.exit_code != 0
+        assert "Salt file not found" in result.output

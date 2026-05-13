@@ -85,7 +85,7 @@
     },
     "pii_handling": {
       "type": "object",
-      "required": ["mode", "ticket_key_stability_by_surface", "known_limitation"],
+      "required": ["mode", "salt_mode", "ticket_key_stability_by_surface", "known_limitation"],
       "additionalProperties": true,
       "properties": {
         "mode": {
@@ -93,9 +93,14 @@
           "description": "PII handling mode. 'salted_hash' when PII redaction is on; 'cleartext' when --no-pii-redaction is set.",
           "enum": ["salted_hash", "cleartext"]
         },
+        "salt_mode": {
+          "type": "string",
+          "description": "Salt mode from engine. Values: 'per_run' (default), 'tenant_stable' (explicit salt via --pii-salt-file or FINOPS_PII_SALT), or 'disabled' (--no-pii-redaction). Consumers MUST accept unknown values.",
+          "enum": ["per_run", "tenant_stable", "disabled"]
+        },
         "ticket_key_stability_by_surface": {
           "type": "object",
-          "description": "Per-surface stability of ticket_key across runs. With default redaction (mode='salted_hash'), every surface — including azure — reports 'per_run' because the engine salts every principal with a per-run secret. With mode='cleartext', every surface reports 'stable'. Engine tenant-stable salting is deferred to #73.",
+          "description": "Per-surface stability of ticket_key across runs. With default redaction (mode='salted_hash' and salt_mode='per_run'), every surface reports 'per_run'. With salt_mode='tenant_stable', every surface reports 'stable'. With mode='cleartext', every surface reports 'stable'.",
           "additionalProperties": {
             "type": "string",
             "enum": ["stable", "per_run", "best_effort"]
@@ -103,7 +108,7 @@
         },
         "known_limitation": {
           "type": ["string", "null"],
-          "description": "Non-null whenever ANY surface in ticket_key_stability_by_surface is 'per_run'. The string MUST reference issue #73 and warn that re-runs will produce duplicate tickets. Null when every surface is 'stable'."
+          "description": "Non-null whenever ANY surface in ticket_key_stability_by_surface is 'per_run' (i.e., salt_mode='per_run'). The string MUST reference issue #73 and warn that re-runs will produce duplicate tickets. Null when every surface is 'stable' (salt_mode='tenant_stable' or mode='cleartext')."
         }
       }
     },
