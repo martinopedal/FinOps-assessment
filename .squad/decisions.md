@@ -1209,6 +1209,73 @@ PR #78 ready for adversarial re-review of BLOCKING #1 fix. Noor to verify the pi
 
 ---
 
+### Stage-4 Re-Review (Noor, post-Yuki revision)
+
+> **Reviewer:** Noor (Security Specialist) — Opus 4.7 xhigh
+> **Verdict:** ✅ **APPROVE**
+> **Re-review confidence:** HIGH
+> **Revision SHA:** `5bf48e8`
+> **PR:** #78
+> **Re-review comment:** https://github.com/martinopedal/FinOps-assessment/pull/78#issuecomment-4440298763
+
+#### Status of original findings
+
+| # | Finding | Status | Evidence |
+|---|---------|--------|----------|
+| BLOCKING #1 | Manifest `azure: stable` while engine emits per-run salt | **RESOLVED** | `playbook.py:108,468–475` builds the stability dict from `_STABLE_SURFACES_WHEN_CLEARTEXT` and emits `per_run` for ALL four surfaces under `pii_redaction=True`, `stable` for ALL four when `pii_redaction=False`. `examples/playbook.jsonl.manifest.json:18–27` confirms the shipped example is now honest. |
+| AMEND #1 | `extract_template_vars` re-parses every render | **RESOLVED** | `playbook.py:339–351` adds `@functools.cache`-wrapped `_template_vars_cached(rule_id, source)`. Returns `tuple` so callers cannot mutate the cached value. |
+| AMEND #2 | Evidence dict overrides reserved render-context keys | **RESOLVED** | `playbook.py:386–399` spreads `**evidence` FIRST, then reserved keys; reserved wins on conflict. |
+| AMEND #3 | `_playbook_env.py` docstring vs lazy-init reality | **RESOLVED** | `_playbook_env.py:1–35` now explicitly documents lazy initialisation on first `get_playbook_env()` call. |
+| NIT #1 | Test gap that allowed BLOCKING #1 to slip past | **RESOLVED** | `tests/test_playbook_cross_run_stability.py` runs the REAL engine (`run_rules`) twice and asserts cross-run ticket_key behaviour. Verified non-vacuous: regression test FAILS on Diego's original `eef9b10` and PASSES on `5bf48e8`. |
+| NIT #2 | `focus_aligned.py` same false assumption | **RESOLVED** | `focus_aligned.py:298–350` mirrors the pii-aware pattern — `mode: azure_resource_id_per_run_salted_hash` + `join_keys[*].stability: per_run` under default redaction; `azure_resource_id_cleartext` + `stable` only when redaction off. Schema enum widened correspondingly (`focus_aligned_manifest.schema.json:138`). |
+
+#### New findings
+
+None. Two scope-deferred follow-ups inspected:
+- **#81** (squad:maya, repo-wide CRLF hygiene) — appropriate scope. Yuki shipped LF on her own files; repo-wide `*.py text eol=lf` is a separate hygiene concern that doesn't affect playbook honesty.
+- **#82** (squad:yuki, NIT bundle) — fsync docstring nit, naming clarification, loop-var shadowing. None block manifest correctness or PII posture.
+
+#### Hard rules re-check
+
+| # | Rule | Status |
+|---|------|--------|
+| 1 | Read-only by construction | **PASS** — pure dict→files transform; engine/collectors untouched; CLI delta is 56 lines for `--cleanup-orphans`/`--skip-warnings` only, zero credential code |
+| 2 | OIDC / no secrets | **PASS** — no auth surface, no token/PAT/secret strings introduced |
+| 3 | No third-party copyright | **PASS** — all rendered content is original template paraphrase |
+| 4 | PII default-on | **PASS** — this PR specifically *strengthens* Rule #4 by closing the manifest-dishonesty gap. Default `pii_redaction=True` now produces an honest `per_run` declaration, and `known_limitation` references #73 so operators can't be misled |
+| 5 | Catalogue-as-data | **PASS** — no SKU strings hard-coded in Python; `_STABLE_SURFACES_WHEN_CLEARTEXT` is a surface name set, not a SKU set |
+
+#### Verdict rationale
+
+The BLOCKING #1 fix is structurally correct (pii-aware dict construction at the manifest builder), the cross-run regression test is non-vacuous (empirically verified to fail on `eef9b10` and pass on `5bf48e8`), all three amendments are addressed at the implementation level not just at docstring level, and the focus-aligned mirror prevents the same false assumption from re-surfacing in the v0.5.0 sister reporter. CI is 10/10 SUCCESS on the matrix (ubuntu/windows/macos × py3.11/3.12) plus validate, demo-report, docs-check, and the `required-checks` summary. Read-only / OIDC / copyright / PII-default-on / catalogue-as-data hard rules all hold cleanly. The two deferred follow-ups (#81 CRLF, #82 NIT bundle) are appropriately scoped and do not obscure any latent defect in the manifest contract.
+
+#### Re-review confidence: HIGH
+
+Confidence is HIGH (not just MEDIUM) because:
+1. The cross-run regression test was personally verified against both the broken (`eef9b10`) and fixed (`5bf48e8`) implementations, proving the test catches the exact defect class it's designed to catch — not a tautology against the new implementation.
+2. The schema enums were inspected to confirm the new `azure_resource_id_per_run_salted_hash` mode is declared (no schema drift).
+3. The shipped example manifest (`examples/playbook.jsonl.manifest.json`) is byte-honest about per_run instability under default redaction — no operator can be misled by reading the demo.
+
+#### Pattern learning (for future stage-4 reviewers)
+
+When a stage-3 plan asserts a per-surface invariant about a manifest field, demand a two-run end-to-end regression test that uses the REAL producer (engine, collector, reporter) — not a hand-crafted fixture. The presence of `tests/test_playbook_cross_run_stability.py` is now the binding precedent: any future PR that adds a `*_stability_by_*` dict to a manifest must ship the analogous two-run test, and stage-4 reviewers should reject the plan if that test is not enumerated by name in stage-3's test plan.
+
+---
+
+### Coordinator procedural decision: Squad-approve workflow label gate
+
+**Finding:** PR #78 was opened by Maya (stage-3 plan author) and was labeled `release:v0.5.0` but NOT labeled with any `squad:*` label. The `squad-approve.yml` workflow requires a `squad:*` label to fire on `issue_comment.created` events. Noor's original REJECT verdict comment (2026-05-13T09:30Z) did not fire the workflow because the label was missing. When the Yuki revision fixed BLOCKING #1, Noor posted her APPROVE verdict (2026-05-13T12:09Z, comment ID 4440298763). The workflow still did not fire because the label was still missing. PR #78 sat in "awaiting approval" limbo despite having a valid stage-4 verdict, until the label was applied.
+
+**Decision:** The `squad-approve.yml` workflow's label gate is **working as intended** — it is a **defensive guard** that prevents stray verdict comments (e.g., someone manually typing "APPROVE" in a non-squad-tracked PR) from triggering approvals. The workflow is correct to require the label.
+
+**Coordinator responsibility:** When opening or driving a squad PR, **apply a `squad:*` label before Noor posts her verdict comment**, or **apply it immediately after detecting that Noor's verdict did not trigger the workflow**. This is a procedural discipline, not a change to the workflow itself.
+
+**Acceptable remediation:** When a squad PR label is forgotten (as happened with PR #78), the Coordinator may **transparently re-post the verdict comment** (referencing the original comment ID so the new comment is clearly a copy, not a new verdict) to trigger the workflow on the new `issue_comment.created` event. Inventing a verdict (e.g., writing "APPROVE" when Noor never verdicted) is not acceptable; transparent re-post is.
+
+**Impact on §11 delivery loop:** This procedural discipline is now binding. Squad PRs opened by stage-3 authors must be labeled `squad:{member}` at PR creation time (applied by the author or by the Coordinator's first review). If a squad PR is opened without a label, the Coordinator corrects it BEFORE Noor is invited for stage-4 review, so the workflow fires on the first verdict comment, not the second.
+
+---
+
 ### 2026-05-13 — Stage-3 plan for #58 FOCUS-aligned advisory exporter (Maya, Opus 4.7)
 
 ## §11 Stage-3 Plan — FOCUS-aligned advisory exporter (#58)
