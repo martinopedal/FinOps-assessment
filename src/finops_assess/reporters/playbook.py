@@ -84,7 +84,6 @@ from finops_assess.reporters._determinism import generated_at_iso
 from finops_assess.reporters._playbook_env import (
     extract_template_vars,
     get_playbook_env,
-    reset_playbook_env,
 )
 
 _log = logging.getLogger(__name__)
