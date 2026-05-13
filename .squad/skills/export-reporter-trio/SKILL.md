@@ -61,6 +61,44 @@ third-party consumer ships as a **trio**:
 | 8 | packaged-data drift (resource path bytes == source-tree bytes)|
 | 9 | `generate_docs.py --check` covers the new artefacts           |
 
+## Adversarial-pass checklist (Noor, stage-4)
+
+Every export-reporter / sidecar-manifest plan MUST walk through the
+following before stage-4 sign-off. Missing any one is grounds for
+REQUEST_CHANGES; surfacing them in P2 is acceptable when the rest of
+the plan is sound.
+
+1. **v+1 additive-evolution walkthrough.** For every nested manifest
+   object, write out the v0.6.0 (or next) shape. Verify v0.5.0
+   consumers still parse it. Specifically: distinguish *adding keys*
+   (consumer-strict-additive) from *extending enum values on existing
+   keys* (NOT consumer-strict-additive — old strict validators reject).
+   Any enum field that will grow MUST ship with a `description` on the
+   schema entry signalling "value set will expand under additive
+   `manifest_schema_version` bumps; widen your accepted set."
+2. **PII-cleartext rationale anchored to a downstream join.** If any
+   field ships in cleartext for an export reporter, the manifest MUST
+   carry a typed `pii_handling` mode field signalling it explicitly,
+   AND the rationale must be "downstream join requires the cleartext
+   value", NOT "we forgot to hash it". Any redaction toggle on the
+   upstream report MUST be echoed verbatim into the manifest
+   (`source_report.pii_redaction`) so consumers can reason about
+   trust.
+3. **Hash-input versioning declared up front.** If the export
+   computes a join key (e.g. `AdvisoryFindingKey`) from rule output,
+   ship a `<thing>_key_version` field on the relevant model NOW with
+   default `1`, even if it is not mixed into the hash payload in v1.
+   Document the migration path in the manifest's algorithm-string
+   field. Cheaper than retrofitting after warehouses have indexed.
+4. **Docs-freshness gate covers the new artefact.** Verify the new
+   committed example file is picked up by
+   `scripts/generate_docs.py --check`'s `_diff_examples` loop and
+   `.gitattributes` pins it to LF.
+5. **Branch-protection regression check.** Verify the plan does NOT
+   add a new top-level CI job that needs registering in the
+   `required-checks` summary's `needs:` list (lesson from issue
+   #51/#52). Bonus points if new tests live inside an existing job.
+
 ## Citations
 
 - Stage-3 plan: `.squad/decisions/inbox/maya-stage3-58-focus-aligned-export.md` (FOCUS-aligned exporter, v0.5.0)

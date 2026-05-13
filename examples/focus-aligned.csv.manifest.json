@@ -1,0 +1,93 @@
+{
+  "manifest_schema_version": "0.1",
+  "tool": {
+    "name": "finops-assess",
+    "version": "0.1.0"
+  },
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "source_report": {
+    "path": "<redacted>/demo",
+    "schema_version": "1.0",
+    "pii_redaction": true
+  },
+  "dataset_type": "advisory",
+  "focus_version": "1.3",
+  "conformance_level": "non-conformant",
+  "conformance_rationale": "Rows describe corrective recommendations, not billed consumption. Cost columns (BilledCost, ContractedCost, EffectiveCost, ListCost) are intentionally empty; advisory savings are surfaced in EstimatedMonthlySavingsUsd. See docs/focus-export.md.",
+  "surfaces_included": [
+    "azure"
+  ],
+  "surfaces_skipped": {
+    "ado": 4,
+    "github": 4,
+    "m365": 19
+  },
+  "row_count": 7,
+  "unsupported_columns": [
+    "BilledCost",
+    "BillingAccountId",
+    "BillingAccountName",
+    "CommitmentDiscountId",
+    "CommitmentDiscountName",
+    "CommitmentDiscountType",
+    "ContractedCost",
+    "ContractedUnitPrice",
+    "EffectiveCost",
+    "ListCost",
+    "ListUnitPrice",
+    "PricingQuantity",
+    "PricingUnit",
+    "Region",
+    "SkuPriceId",
+    "UsageQuantity",
+    "UsageUnit"
+  ],
+  "join_keys": [
+    {
+      "column": "ResourceId",
+      "joins_to": "FOCUS.ResourceId",
+      "stability": "stable"
+    },
+    {
+      "column": "AdvisoryFindingKey",
+      "joins_to": null,
+      "stability": "stable",
+      "notes": "Stable across runs for the same (rule_id, resource_id, evidence). Not a FOCUS column."
+    }
+  ],
+  "pii_handling": {
+    "mode": "azure_resource_id_cleartext"
+  },
+  "non_additive_warning": true,
+  "column_order": [
+    "ServiceProviderName",
+    "HostProviderName",
+    "ServiceName",
+    "ServiceCategory",
+    "ServiceSubcategory",
+    "ChargeCategory",
+    "ChargeClass",
+    "ChargeFrequency",
+    "ChargeDescription",
+    "SkuId",
+    "ResourceId",
+    "ResourceType",
+    "BillingPeriodStart",
+    "BillingPeriodEnd",
+    "PricingCurrency",
+    "ListCost",
+    "ContractedCost",
+    "BilledCost",
+    "EffectiveCost",
+    "EstimatedMonthlySavingsUsd",
+    "AdvisoryFindingKey",
+    "RuleId",
+    "Severity"
+  ],
+  "evidence_key_fields": [
+    "rule_id",
+    "resource_id",
+    "normalized_evidence"
+  ],
+  "evidence_key_algorithm": "sha256(json_envelope([rule_id, resource_id, normalized_evidence_json]))"
+}

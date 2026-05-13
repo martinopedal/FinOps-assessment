@@ -16,3 +16,5 @@ examples/demo-report.html text eol=lf
 examples/demo-report.json text eol=lf
 examples/demo-triage.csv text eol=lf
 examples/demo-triage.json text eol=lf
+examples/focus-aligned.csv text eol=lf
+examples/focus-aligned.csv.manifest.json text eol=lf

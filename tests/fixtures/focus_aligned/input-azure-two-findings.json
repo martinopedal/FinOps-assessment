@@ -1,0 +1,55 @@
+{
+  "run": {
+    "tool": "finops-assess",
+    "version": "0.5.0",
+    "schema_version": "1.0",
+    "generated_at": "1970-01-01T00:00:00+00:00",
+    "input": "<redacted>/run.json",
+    "pii_redaction": true,
+    "mode": "read-only"
+  },
+  "summary": {
+    "total_findings": 2,
+    "by_severity": {"high": 1, "medium": 1}
+  },
+  "findings": [
+    {
+      "rule_id": "AZ.VM_IDLE_30D",
+      "surface": "azure",
+      "severity": "high",
+      "principal": "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/vm-idle-01",
+      "current_sku": "Standard_D4s_v3",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 142.56,
+      "recommendation": "Consider deallocating or resizing this VM: avg CPU \u2264 5% over 30 days (95th percentile).",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "avg_cpu_pct": 2.1,
+        "p95_cpu_pct": 4.8,
+        "days_inactive": 30,
+        "observation_window_end": "2024-03-31T00:00:00Z",
+        "tags": ["env:prod", "team:backend"]
+      }
+    },
+    {
+      "rule_id": "AZ.UNATTACHED_DISK",
+      "surface": "azure",
+      "severity": "medium",
+      "principal": "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-test/providers/Microsoft.Compute/disks/disk-orphan-02",
+      "current_sku": "Premium_LRS",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 23.10,
+      "recommendation": "Consider deleting this unattached managed disk to eliminate its storage cost.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "attached": false,
+        "disk_size_gb": 128,
+        "monthly_cost_usd": 23.10,
+        "observation_window_end": "2024-03-31T00:00:00Z",
+        "nested": {"key1": "val1", "key2": 42}
+      }
+    }
+  ]
+}

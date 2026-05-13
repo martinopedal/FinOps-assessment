@@ -186,6 +186,25 @@ not upload to FinOps Hubs, deploy pipelines, mutate storage, or require Hubs to
 run. Any future live connector should be tracked as a separate reviewed change
 with explicit data-flow documentation.
 
+## Exporting findings to a FOCUS-aligned advisory CSV
+
+`finops-assess` can project findings onto a CSV shaped like the FinOps Foundation
+FOCUS 1.3 Cost-and-Usage spec, suitable for joining to your existing FOCUS-aligned
+cost dataset. The output is **advisory**, not billed consumption — see
+[`docs/focus-export.md`](focus-export.md) for the full warning banner before loading.
+
+```console
+$ finops-assess export focus-aligned \
+    --input demo-report/demo-report.json \
+    --output ./focus-aligned.csv
+Wrote 7 advisory rows to focus-aligned.csv (manifest: focus-aligned.csv.manifest.json)
+```
+
+The output is two files: `<output>.csv` (the rows) and
+`<output>.csv.manifest.json` (the sidecar contract). Both honour
+`SOURCE_DATE_EPOCH` for byte-deterministic builds. Azure-only in v0.5.0;
+M365/GitHub/ADO ship in v0.6.0 once the stable-principal-salt feature lands.
+
 ## Under-licensed cases: current boundary
 
 The current v0.1 ruleset is cost-right-sizing focused. It detects

@@ -227,6 +227,13 @@ Each rule has: `id`, `surface`, `severity`, `recommendation_template`,
 - `ADO.PARALLEL_JOBS_OVER_PROVISIONED`: purchased Microsoft-hosted parallel jobs > P95 concurrent usage.
 - `ADO.TEST_PLANS_UNUSED`: Basic+Test seat with no Test Plans activity.
 
+### FOCUS-aligned advisory export
+
+Findings can additionally be projected onto a FOCUS-aligned advisory CSV via
+`finops-assess export focus-aligned`; see [`docs/focus-export.md`](focus-export.md).
+This export is NOT a FOCUS 1.3 conformant Cost-and-Usage dataset — it is an advisory
+view that joins to your cost warehouse on `ResourceId`. Azure-only in v0.5.0.
+
 ---
 
 ## 7. Data sources & APIs (live collectors)

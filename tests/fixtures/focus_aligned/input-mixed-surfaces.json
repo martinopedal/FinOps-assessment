@@ -1,0 +1,87 @@
+{
+  "run": {
+    "tool": "finops-assess",
+    "version": "0.5.0",
+    "schema_version": "1.0",
+    "generated_at": "1970-01-01T00:00:00+00:00",
+    "input": "<redacted>/run.json",
+    "pii_redaction": true,
+    "mode": "read-only"
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": {"high": 2, "medium": 1, "low": 1, "info": 1}
+  },
+  "findings": [
+    {
+      "rule_id": "AZ.VM_IDLE_30D",
+      "surface": "azure",
+      "severity": "high",
+      "principal": "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/vm-idle-01",
+      "current_sku": "Standard_D4s_v3",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 142.56,
+      "recommendation": "Consider deallocating this VM.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "avg_cpu_pct": 2.1,
+        "p95_cpu_pct": 4.8
+      }
+    },
+    {
+      "rule_id": "AZ.UNATTACHED_DISK",
+      "surface": "azure",
+      "severity": "medium",
+      "principal": "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-test/providers/Microsoft.Compute/disks/disk-orphan-02",
+      "current_sku": "Premium_LRS",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 23.10,
+      "recommendation": "Consider deleting this unattached disk.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "attached": false
+      }
+    },
+    {
+      "rule_id": "M365.UNUSED_LICENSE_30D",
+      "surface": "m365",
+      "severity": "high",
+      "principal": "sha256:abc123",
+      "current_sku": "ENTERPRISEPACK",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 35.00,
+      "recommendation": "Consider removing this unused M365 license.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {}
+    },
+    {
+      "rule_id": "GH.COPILOT_INACTIVE_30D",
+      "surface": "github",
+      "severity": "low",
+      "principal": "sha256:def456",
+      "current_sku": "copilot_business",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 19.00,
+      "recommendation": "Consider removing this inactive Copilot seat.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {}
+    },
+    {
+      "rule_id": "ADO.UNUSED_SEAT_30D",
+      "surface": "ado",
+      "severity": "info",
+      "principal": "sha256:ghi789",
+      "current_sku": "basic",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 6.00,
+      "recommendation": "Consider downgrading this ADO seat.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {}
+    }
+  ]
+}

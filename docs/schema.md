@@ -67,6 +67,7 @@ Stored in `data/rules/{surface}.yaml`.
 | `recommendation_template` | `str` | ✅ | Jinja-style template with `{principal}` etc. |
 | `inactivity_days` | `int \| null` | n/a | Inactivity window the rule uses |
 | `enabled` | `bool` | n/a | Default `true`; set `false` to disable without deleting |
+| `evidence_key_version` | `int` | n/a | Default `1`. Version of the AdvisoryFindingKey hash algorithm for this rule. Bump to `2+` when the rule's evidence shape changes (forces re-keying in downstream warehouses). See `docs/focus-export.md` §"AdvisoryFindingKey: stability contract". |
 
 ---
 
@@ -398,3 +399,35 @@ The triage CSV column order is stable: `finding_ref`,
 `principal`, `priority_bucket`, `priority_rationale`, `suggested_owner_role`,
 `current_sku`, `recommended_sku`, `estimated_monthly_savings_usd`,
 `evidence_ref`, `verification_checklist`, `followup_questions`, `advisory`.
+
+---
+
+## FOCUS-aligned advisory manifest (v0.5.0)
+
+`finops-assess export focus-aligned --input report.json --output out.csv`
+emits `out.csv` (the advisory rows) and a sidecar `out.csv.manifest.json`
+describing the export contract. See [`docs/focus-export.md`](focus-export.md)
+for usage, column semantics, and the AdvisoryFindingKey stability contract.
+
+The manifest is validated against
+`src/finops_assess/schemas/focus_aligned_manifest.schema.json` (Draft 2020-12).
+The schema is **additive-only**: readers must tolerate unknown top-level fields.
+
+### Manifest top-level fields
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `manifest_schema_version` | `"0.1"` | Incremented when a breaking change is introduced |
+| `generated_at` | ISO-8601 UTC | Honours `SOURCE_DATE_EPOCH` |
+| `tool.name` | `"finops-assess"` | Always |
+| `tool.version` | `str` | Package version at generation time |
+| `focus_version` | `"1.3"` | FOCUS spec this export aligns to |
+| `conformance_level` | `"non-conformant"` | Always; this is advisory, not billed cost |
+| `advisory` | `true` | Machine-checkable advisory flag |
+| `advisory_banner` | `str` | Human-readable warning — display before loading |
+| `row_count` | `int` | Number of data rows in the CSV |
+| `surfaces_included` | `list[str]` | Surfaces with ≥1 finding in the CSV |
+| `surfaces_skipped` | `{surface: int}` | Skipped surfaces and their finding counts (always present, may be all-zero) |
+| `pii_redaction` | `bool` | Copied from the source report |
+| `evidence_key_version` | `int` | Algorithm version for AdvisoryFindingKey hashes in this file |
+| `column_order` | `list[str]` | Ordered column names for the CSV |

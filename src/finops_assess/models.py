@@ -53,6 +53,17 @@ class Rule(BaseModel):
     recommendation_template: str
     inactivity_days: int | None = Field(default=None, ge=1)
     enabled: bool = True
+    evidence_key_version: int = Field(
+        default=1,
+        ge=1,
+        description=(
+            "Version of the AdvisoryFindingKey hash algorithm for this rule. "
+            "Defaults to 1 (v0.5.0 algorithm: sha256(rule_id \\x00 resource_id \\x00 "
+            "normalized_evidence_json)). Bump to 2+ when the rule's evidence shape changes "
+            "in a way that would silently break cross-run joins; also bump "
+            "manifest_schema_version to '0.2' in the same PR."
+        ),
+    )
 
 
 class Finding(BaseModel):

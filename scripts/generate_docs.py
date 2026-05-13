@@ -58,6 +58,7 @@ from finops_assess.reporters import (
     write_triage_csv,
     write_triage_json,
 )
+from finops_assess.reporters.focus_aligned import write_focus_aligned_export
 from finops_assess.reporters.json_reporter import build_report
 from finops_assess.rules import load_personas, load_rules
 from finops_assess.triage import build_triage
@@ -67,6 +68,7 @@ DOCS_RULES_PATH = REPO_ROOT / "docs" / "rules.md"
 EXAMPLES_DIR = REPO_ROOT / "examples"
 EXAMPLE_BASENAME = "demo-report"
 TRIAGE_BASENAME = "demo-triage"
+FOCUS_BASENAME = "focus-aligned"
 
 # A fixed, non-secret salt. The synthetic tenant has no real PII so the
 # salt's only role here is to make the redacted principals stable across
@@ -244,6 +246,8 @@ def regenerate_examples(target_dir: Path) -> None:
         )
         write_triage_json(triage_report, target_dir / f"{TRIAGE_BASENAME}.json")
         write_triage_csv(triage_report, target_dir / f"{TRIAGE_BASENAME}.csv")
+        # FOCUS-aligned advisory export — Azure-only slice of the demo report.
+        write_focus_aligned_export(report, target_dir / f"{FOCUS_BASENAME}.csv")
     finally:
         if previous_epoch is None:
             os.environ.pop("SOURCE_DATE_EPOCH", None)
@@ -333,7 +337,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     print(
         f"Wrote {EXAMPLES_DIR.relative_to(REPO_ROOT)}/"
-        f"{EXAMPLE_BASENAME}.{{json,html,csv}} and {TRIAGE_BASENAME}.{{json,csv}}"
+        f"{EXAMPLE_BASENAME}.{{json,html,csv}}, {TRIAGE_BASENAME}.{{json,csv}}, "
+        f"and {FOCUS_BASENAME}.{{csv,csv.manifest.json}}"
     )
     return 0
 

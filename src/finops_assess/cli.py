@@ -25,6 +25,7 @@ from finops_assess.persona import assign_personas
 from finops_assess.reporters import (
     Branding,
     write_csv_report,
+    write_focus_aligned_export,
     write_html_report,
     write_json_report,
     write_pdf_report,
@@ -670,6 +671,75 @@ def collect(
         f"\nCollection complete.  Run the assessment with:\n"
         f"  finops-assess run --input {output_dir} --output report.json --format all"
     )
+
+
+@main.group()
+def export() -> None:
+    """Export findings to interoperability formats (advisory, not billing)."""
+
+
+@export.command("focus-aligned")
+@click.option(
+    "--input",
+    "input_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    required=True,
+    help="Canonical findings JSON from `finops-assess run`.",
+)
+@click.option(
+    "--output",
+    "output_path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    required=True,
+    help="Destination CSV path; manifest written alongside.",
+)
+def export_focus_aligned(input_path: Path, output_path: Path) -> None:
+    """Emit a FOCUS-aligned advisory CSV from a finops-assess findings report.
+
+    This export is NOT a FOCUS 1.3 conformant Cost-and-Usage dataset. Rows
+    describe corrective recommendations, not billed consumption. Cost columns
+    (BilledCost, ContractedCost, EffectiveCost, ListCost) are intentionally
+    empty; advisory savings are surfaced in EstimatedMonthlySavingsUsd. See
+    the sidecar manifest.json and docs/focus-export.md before loading.
+    """
+    try:
+        raw = input_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        click.echo(f"ERROR: could not read {input_path}: {exc}", err=True)
+        raise click.exceptions.Exit(1) from exc
+
+    try:
+        report: dict[str, Any] = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        click.echo(
+            f"ERROR: {input_path} is not valid JSON: {exc}",
+            err=True,
+        )
+        raise click.exceptions.Exit(1) from exc
+
+    if "findings" not in report:
+        click.echo(
+            f"ERROR: {input_path} does not look like a finops-assess report (no 'findings' key).",
+            err=True,
+        )
+        raise click.exceptions.Exit(1) from None
+
+    csv_path, manifest_path = write_focus_aligned_export(report, output_path)
+
+    # Log skipped non-Azure findings.
+    findings: list[dict[str, Any]] = report.get("findings", [])
+    n_m365 = sum(1 for f in findings if f.get("surface") == "m365")
+    n_github = sum(1 for f in findings if f.get("surface") == "github")
+    n_ado = sum(1 for f in findings if f.get("surface") == "ado")
+    n_skipped = n_m365 + n_github + n_ado
+    if n_skipped:
+        click.echo(
+            f"Skipped {n_skipped} non-Azure findings "
+            f"(m365={n_m365}, github={n_github}, ado={n_ado})"
+        )
+
+    n_rows = sum(1 for f in findings if f.get("surface") == "azure")
+    click.echo(f"Wrote {n_rows} advisory rows to {csv_path} (manifest: {manifest_path})")
 
 
 if __name__ == "__main__":  # pragma: no cover
