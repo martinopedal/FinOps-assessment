@@ -110,11 +110,36 @@ def get_playbook_env() -> Environment:
     Thread safety: CPython's GIL makes the double-checked initialisation safe
     for the common single-threaded CLI use case.  The function is idempotent
     — repeated calls return the same object.
+
+    **Lazy initialisation note:** The first call to this function triggers
+    environment construction and template pre-compilation (filesystem I/O and
+    Jinja2 AST parsing).  Subsequent calls return the cached instance without
+    side effects.
     """
     global _ENV
     if _ENV is None:
         _ENV = _build_env()
     return _ENV
+
+
+def reset_playbook_env() -> None:
+    """Clear the cached ``Environment`` for testing purposes.
+
+    Sets the module-level ``_ENV`` cache to ``None`` so the next call to
+    ``get_playbook_env()`` will rebuild and re-compile the environment.
+
+    **Cache invalidation semantics:** This function does NOT trigger any
+    filesystem sync or Jinja2 template cache flush.  It simply clears the
+    module-level reference.  The Jinja2 ``Environment`` object itself (if
+    still referenced elsewhere) retains its compiled template cache until
+    garbage-collected.
+
+    **Intended use:** Test fixtures that need to observe lazy-init behavior
+    or verify environment configuration in isolation.  NOT for production
+    use.
+    """
+    global _ENV
+    _ENV = None
 
 
 def extract_template_vars(source: str) -> list[str]:
