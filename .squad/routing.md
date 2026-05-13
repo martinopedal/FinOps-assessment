@@ -65,9 +65,48 @@ When triaging, ask:
 ## Rules
 
 1. **Eager by default** — spawn all agents who could usefully start work, including anticipatory downstream work (e.g., `tester` writes the failing test while the surface specialist drafts the rule).
-2. **Scribe always runs** after substantial work, always as `mode: "background"`. Never blocks.
+2. **Scribe always runs** after substantial work, always as `mode: "background"`. Never blocks. **Exception:** during Stage-4 approval flow, Scribe is serialized per rule 2a.
+2a. **Scribe-after-Stage-4 (branch-protection safety).** When a PR is in
+    Stage-4 review, the coordinator MUST NOT spawn Scribe (or any agent
+    that pushes commits) until after the verdict comment has been posted
+    and the bot approval has landed — or, using the deferred-verdict
+    pattern (recommended), spawn Scribe FIRST, wait for its commit, then
+    post the verdict comment against final HEAD. See
+    `docs/plans/075-serialize-scribe-behind-stage4.md` and the
+    "Deferred-verdict pattern" subsection below for the refined sequence.
+    On REJECT, Scribe may run immediately (no approval to protect).
 3. **Quick facts → coordinator answers directly.** Don't spawn an agent for "what does the `family` field mean?".
 4. **When two agents could handle it**, pick the one whose domain is the primary concern (e.g., a Copilot rule touching both M365 and GitHub Copilot routes to whichever surface owns the *billing relationship*, not the feature name).
 5. **"Team, ..." → fan-out.** Spawn all relevant agents in parallel as `mode: "background"`.
 6. **§11 stage gates are non-negotiable.** Maya rejects any PR that skipped stages 1–4 for a non-trivial change, even under time pressure.
 7. **`@copilot` routing** — only `squad:copilot` triggers auto-assign. 🟡 work stays with squad members but `@copilot` may be tagged for review-only assist.
+
+### Deferred-verdict pattern (Stage-4 → Scribe → approve)
+
+When the coordinator receives an APPROVE verdict from Noor:
+
+1. Spawn Scribe to log the orchestration cycle (background, wait for completion).
+2. After Scribe's commit lands, post the verdict comment via `gh pr comment` (which triggers `squad-approve.yml`).
+3. The bot approval now targets final HEAD (including Scribe's commit). No subsequent push will dismiss it.
+4. If Scribe fails or times out (>120s), post the verdict comment anyway with a `⚠️ Scribe timeout — manual housekeeping may be needed` note, and tag the repo owner.
+
+On REJECT: spawn Scribe immediately (no approval at stake). Post the reject verdict at any time — `squad-approve.yml` ignores non-APPROVE verdicts.
+
+#### Residual risk: unrelated push during the Scribe → verdict window
+
+Even with the deferred-verdict pattern, an out-of-band push (human force-push,
+Dependabot batch update, or a parallel agent pushing to the same branch)
+landing between Scribe's commit and the verdict comment will dismiss the
+bot approval just as PR #72's race did. This is **accepted as an explicit
+failure mode**: the coordinator detects the dismissal via `gh pr view --json
+reviewDecision`, re-confirms HEAD has stabilised, and re-posts the verdict
+comment. Mitigations: (a) avoid pushing to in-flight Stage-4 PRs from any
+other agent or session, (b) for high-stakes PRs, the coordinator may pause
+30s after Scribe to absorb late pushes before posting the verdict.
+
+#### Self-application
+
+This routing policy takes effect on the **implementation PR itself**: the
+coordinator merging this PR (#75 implementation) MUST follow the
+deferred-verdict pattern when its Stage-4 review concludes. No special
+case applies — if it works for this PR, it works for all subsequent ones.
