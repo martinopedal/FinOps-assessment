@@ -38,6 +38,7 @@ _API_VERSIONS = {
     "disks": "2023-10-02",
     "publicIPAddresses": "2023-11-01",
     "reservations": "2022-11-01",
+    "benefitRecommendations": "2022-10-01",
     "workspaces": "2023-09-01",
     "workspaceUsages": "2020-08-01",
     "metrics": "2023-10-01",
@@ -250,6 +251,19 @@ def _collect_reservations(client: _ArmClient) -> list[dict[str, Any]]:
         return client.list_all(url)
     except Exception as exc:
         logger.warning("Failed to list reservations: %s", exc)
+        return []
+
+
+def _collect_benefit_recommendations(client: _ArmClient, sub_id: str) -> list[dict[str, Any]]:
+    """Collect Azure Benefit Recommendations from the Cost Management API."""
+    url = (
+        f"{_ARM_BASE}/subscriptions/{sub_id}/providers/Microsoft.CostManagement/"
+        f"benefitRecommendations?api-version={_API_VERSIONS['benefitRecommendations']}"
+    )
+    try:
+        return client.list_all(url)
+    except Exception as exc:
+        logger.warning("Failed to list benefit recommendations in %s: %s", sub_id, exc)
         return []
 
 
@@ -505,6 +519,54 @@ def collect_arm(
             )
             _ = current_tier  # reserved for future use
 
+    # ---- Benefit Recommendations (per-subscription) -------------------------
+    benefit_recs_by_key: dict[tuple[str, str], dict[str, Any]] = {}
+    lookback_priority = {"Last60Days": 3, "Last30Days": 2, "Last7Days": 1}
+
+    for sub_id in sub_ids:
+        for rec in _collect_benefit_recommendations(client, sub_id):
+            rid = rec.get("id") or ""
+            props = rec.get("properties") or {}
+            scope_val = props.get("scope") or f"/subscriptions/{sub_id}"
+            term = props.get("term") or ""
+            lookback = props.get("lookBackPeriod") or ""
+            details = props.get("recommendationDetails") or {}
+
+            key = (scope_val, term)
+            priority = lookback_priority.get(lookback, 0)
+
+            # Keep the highest-lookback (or highest net savings on tie) per (scope, term)
+            if key in benefit_recs_by_key:
+                existing_priority = lookback_priority.get(
+                    benefit_recs_by_key[key].get("lookback_period") or "", 0
+                )
+                if priority > existing_priority:
+                    pass  # Replace existing
+                elif priority == existing_priority:
+                    # Tie: prefer higher net savings
+                    existing_savings = benefit_recs_by_key[key].get("net_savings_usd") or 0.0
+                    new_savings = float(details.get("netSavings") or 0.0)
+                    if new_savings <= existing_savings:
+                        continue
+                else:
+                    continue  # Keep existing
+
+            benefit_recs_by_key[key] = {
+                "recommendation_id": rid,
+                "scope": scope_val,
+                "scope_kind": props.get("scope") or "",
+                "term": term,
+                "lookback_period": lookback,
+                "arm_sku_name": props.get("armSkuName") or "",
+                "cost_without_benefit_usd": str(details.get("costWithoutBenefit") or ""),
+                "recommended_hourly_commit_usd": str(details.get("recommendedQuantity") or ""),
+                "net_savings_usd": str(details.get("netSavings") or ""),
+                "wastage_usd": str(details.get("wastage") or ""),
+                "benefit_kind": "SavingsPlan",  # Default; can parse from props.kind if needed
+            }
+
+    benefit_rec_rows = list(benefit_recs_by_key.values())
+
     # ---- Reservations (tenant-level) ----------------------------------------
     for res in _collect_reservations(client):
         rid = res.get("id") or ""
@@ -581,9 +643,27 @@ def collect_arm(
         ],
         workspace_rows,
     )
+    _write_csv(
+        output_dir / "azure_benefit_recommendations.csv",
+        [
+            "recommendation_id",
+            "scope",
+            "scope_kind",
+            "term",
+            "lookback_period",
+            "arm_sku_name",
+            "cost_without_benefit_usd",
+            "recommended_hourly_commit_usd",
+            "net_savings_usd",
+            "wastage_usd",
+            "benefit_kind",
+        ],
+        benefit_rec_rows,
+    )
     logger.info(
-        "ARM collection complete: %d resources, %d reservations, %d workspaces",
+        "ARM collection complete: %d resources, %d reservations, %d workspaces, %d benefit recs",
         len(resource_rows),
         len(reservation_rows),
         len(workspace_rows),
+        len(benefit_rec_rows),
     )
