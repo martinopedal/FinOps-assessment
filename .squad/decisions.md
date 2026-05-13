@@ -61,7 +61,7 @@ ticketing reporter framed as a foundation block under #16/#63.
 **Locked architectural response (Option B from the consensus,
 "honest stability declaration" variant):**
 
-- The playbook reporter **does not introduce a stable principal salt** in v0.5.0 (that is a separate engine-level architectural change, deferred to its own follow-up issue — placeholder `#NNN-stable-salt`, to be filed by Maya at PR-open time).
+- The playbook reporter **does not introduce a stable principal salt** in v0.5.0 (that is a separate engine-level architectural change, deferred to its own follow-up issue — placeholder `#73`, to be filed by Maya at PR-open time).
 - Instead, the reporter emits two distinct identifiers per row, derived from whatever the engine produced:
   - `ticket_key` — the dedup key used by downstream ticketing systems. Computed as `sha256(json_envelope([rule_id, principal_as_emitted, evidence_key_version]))` truncated to 32 hex chars. **Stability is per-surface and explicitly declared in the manifest**: `"stable"` for Azure (cleartext resource IDs), `"per_run"` for M365 / GitHub / ADO when `pii_redaction=true` with no stable salt.
   - `finding_revision` — `sha256(normalized_evidence_json)` truncated to 16 hex chars. Always changes when evidence shifts; allows operators to detect when an existing ticket needs an update vs. when nothing has changed.
@@ -81,7 +81,7 @@ and the six convergent amendments are accepted verbatim.
 |----|----------|-----------------|-------------------|
 | **OQ-1** | Row cardinality — one row per finding, or one row per (rule, principal) aggregated? | **One row per finding.** No aggregation. | Aggregation is a rule-design concern, not a reporter concern; the reporter is a faithful projection of the engine output. |
 | **OQ-2** | How is a row's identity defined when the same rule fires N times for the same principal with different evidence? | `ticket_key = sha256(json_envelope([rule_id, principal, evidence_key_version]))`. Same `(rule, principal)` collisions are disambiguated by `finding_revision = sha256(normalized_evidence)` when stability allows; otherwise treated as separate rows whose downstream dedup is the operator's responsibility. | Mirrors `advisory_finding_key` pattern in `focus_aligned.py:138-158` so consumers can join playbook to FOCUS-aligned export on `(rule_id, principal)` when stability matches. |
-| **OQ-3** | Should operators be able to overlay custom templates from `~/.finops-assess/playbooks/`? | **No.** Repo-controlled templates only via `importlib.resources`. **Defer to v0.6.0** (placeholder issue `#NNN-runtime-overlay` to be filed by Maya at PR-open time). | Sandbox-escape risk + supply-chain risk; v0.5.0 ships only what is in the wheel. Sonnet's Noor prediction #2. |
+| **OQ-3** | Should operators be able to overlay custom templates from `~/.finops-assess/playbooks/`? | **No.** Repo-controlled templates only via `importlib.resources`. **Defer to v0.6.0** (placeholder issue `#74` to be filed by Maya at PR-open time). | Sandbox-escape risk + supply-chain risk; v0.5.0 ships only what is in the wheel. Sonnet's Noor prediction #2. |
 | **OQ-4** | Should the row carry the full `evidence` dict, or just an `evidence_ref`? | **`evidence_ref` only**, plus `template_render_inputs[]` listing the evidence keys the template touched. | Keeps row size bounded; gives operators a debuggable trail without bloating the JSONL or leaking unredacted evidence into ticket bodies. |
 | **OQ-5** | Missing-template policy — fail-fast, silently skip, or generic fallback? | **Fail-fast.** Raise `PlaybookTemplateNotFoundError(rule_id, expected_path)`. No silent skip, no generic fallback. | Mirrors mypy / ruff posture: a missing template is a packaging defect, not a runtime warning. Sonnet's Noor prediction #4. |
 
@@ -90,7 +90,7 @@ and the six convergent amendments are accepted verbatim.
 | D | Topic | Sonnet position | GPT position | **Locked decision** | Rationale |
 |---|-------|-----------------|--------------|---------------------|-----------|
 | **D1** | Payload model | Issue's row shape + `playbook_schema_version` | Neutral row + `adapter_hints.{servicenow,jira,github}` | **Both, additively.** Core row = Sonnet's shape. Optional nested `adapter_hints` object derived from `severity` + a new `rules.yaml` field `adapter_class` (defaults to `"generic"`). Ship in row v1; do not defer. | GPT is right that "vendor-ready superset" is misleading — adapters always reinterpret. The hints are a free leg-up: cheap to compute, cheap to ignore. Schema versioning means we can extend the hints object additively in v0.6.0 without a v1 break. |
-| **D2** | PII stable-ID | Not addressed | BLOCKING — per-run salt makes `finding_id` non-stable | **Option B-honest** (see "Stage-3 corrections" above): emit `ticket_key` + `finding_revision`, declare per-surface stability in manifest, emit a CLI warning when redaction is on with non-Azure findings, defer the stable-salt engine change to follow-up issue `#NNN-stable-salt`. | Option A (per-run-only) breaks #16/#63 framing. Option C (introduce stable-salt mode) is a cross-cutting engine change that does not belong in a reporter PR. Option B ships honest semantics today and unblocks the stable-salt issue without coupling. |
+| **D2** | PII stable-ID | Not addressed | BLOCKING — per-run salt makes `finding_id` non-stable | **Option B-honest** (see "Stage-3 corrections" above): emit `ticket_key` + `finding_revision`, declare per-surface stability in manifest, emit a CLI warning when redaction is on with non-Azure findings, defer the stable-salt engine change to follow-up issue `#73`. | Option A (per-run-only) breaks #16/#63 framing. Option C (introduce stable-salt mode) is a cross-cutting engine change that does not belong in a reporter PR. Option B ships honest semantics today and unblocks the stable-salt issue without coupling. |
 | **D3** | Jinja2 hardening | Pre-compile templates at startup | Configure `StrictUndefined` | **Both.** A single helper `_load_playbook_environment()` builds the `Environment` with `undefined=StrictUndefined`, autoescape disabled (templates produce JSON-string fragments, not HTML), `keep_trailing_newline=False`, and pre-compiles every templated rule's `.j2` source on construction. | Complementary, not exclusive. Pre-compile catches syntax errors at export start (before any rows render); StrictUndefined catches missing-variable errors at render time. |
 | **D4** | Evidence in row | `evidence_ref` only | Defers to Maya | **`evidence_ref` only**, plus `template_render_inputs: list[str]` capturing the evidence keys actually referenced by the template (recorded by a custom Jinja2 finalize hook or by post-render diffing the evidence dict). | Sonnet's call. The `template_render_inputs` list gives operators "what fed this ticket?" without re-emitting the full evidence payload. |
 
@@ -493,7 +493,7 @@ WARNING: pii_redaction is on and findings include surfaces without a
 stable principal salt (m365=N, github=N, ado=N). Their ticket_key
 values are stable WITHIN this run only and will change on the next
 invocation. Downstream ticketing systems will treat re-runs as new
-tickets. Track stable-salt support at issue #NNN-stable-salt.
+tickets. Track stable-salt support at issue #73.
 ```
 
 (Suppressed by `--skip-warnings`.)
@@ -525,7 +525,7 @@ true. Stage-4 Noor will check this list verbatim.
 ### 8.3 Divergences reconciled (all 4)
 
 - [ ] D1 — Row carries optional `adapter_hints` object; `Rule.adapter_class` field added.
-- [ ] D2 — `pii_handling.ticket_key_stability_by_surface` declared in manifest; CLI emits stderr warning when applicable; follow-up issue `#NNN-stable-salt` filed and linked.
+- [ ] D2 — `pii_handling.ticket_key_stability_by_surface` declared in manifest; CLI emits stderr warning when applicable; follow-up issue `#73` filed and linked.
 - [ ] D3 — `_load_playbook_environment()` uses `StrictUndefined` AND pre-compiles every templated rule.
 - [ ] D4 — Row carries `evidence_ref` + `template_render_inputs`, NOT the full evidence dict.
 
@@ -563,11 +563,11 @@ Noor MUST reject any PR that smuggles them in.
 |---|------|-----------|-------------|
 | 1 | Direct API push to ServiceNow / Jira / GitHub Issues | Read-only posture is non-negotiable per copilot-instructions §"Hard rules" #1; #61's framing is explicit ("operators can pipe to … out-of-band"). | Permanent — would violate the read-only architecture. |
 | 2 | Custom-field mapping per ticketing instance | Operator-specific; belongs in the operator's downstream adapter, not in finops-assess. | Permanent — out of charter. |
-| 3 | Ticket dedup across runs | Requires stable salt + a state store; both are out of scope. The honest stability declaration (D2) tells operators which dedup is safe. | Defer to follow-up `#NNN-stable-salt` (Maya files at PR-open). |
+| 3 | Ticket dedup across runs | Requires stable salt + a state store; both are out of scope. The honest stability declaration (D2) tells operators which dedup is safe. | Defer to follow-up `#73` (Maya files at PR-open). |
 | 4 | Multi-finding aggregation (one ticket for N findings) | Aggregation is a rule-design concern (where the rule itself emits one finding per group), not a reporter concern. | Permanent for the reporter — revisit at the rule level if requested. |
-| 5 | Runtime template overlay (`~/.finops-assess/playbooks/`) | Sandbox escape + supply-chain risk. | Defer to v0.6.0 — placeholder issue `#NNN-runtime-overlay` (Maya files at PR-open). |
+| 5 | Runtime template overlay (`~/.finops-assess/playbooks/`) | Sandbox escape + supply-chain risk. | Defer to v0.6.0 — placeholder issue `#74` (Maya files at PR-open). |
 | 6 | Cross-surface rules (a "playbook rule" that fires on a join of M365 + Azure findings) | Cross-surface evaluation is an engine-level architectural change, not a reporter concern. | Defer — no follow-up filed (no operator demand surfaced yet). |
-| 7 | Stable-principal-salt feature | The engine-level architectural change to make `principal` stable across runs when redacted. The honest stability declaration (D2) ships v0.5.0 without it. | Follow-up `#NNN-stable-salt` (Maya files at PR-open). |
+| 7 | Stable-principal-salt feature | The engine-level architectural change to make `principal` stable across runs when redacted. The honest stability declaration (D2) ships v0.5.0 without it. | Follow-up `#73` (Maya files at PR-open). |
 
 ---
 
