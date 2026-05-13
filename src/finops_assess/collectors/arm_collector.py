@@ -134,6 +134,22 @@ def _renew_to_str(value: object) -> str:
     return ""
 
 
+def _scope_ids_to_csv(value: object) -> str:
+    """Render the API's appliedScopes list as a pipe-separated CSV cell.
+
+    The strict-column CSV loader expects ``list[str]`` columns to be
+    pipe-separated single cells (``csv_collector.py:103-104``). ``None``
+    maps to the empty string (signal absent on Shared scope or when the
+    API returned no list); a non-empty list maps to ``"|"``-joined ARNs.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, list):
+        items = [str(item).strip() for item in value if str(item).strip()]
+        return "|".join(items)
+    return ""
+
+
 def _now_utc() -> datetime:
     return datetime.now(tz=UTC)
 
@@ -713,6 +729,7 @@ def collect_arm(
                 "monthly_cost_usd": "",
                 "expiry_date": props.get("expiryDate") or "",
                 "auto_renew": _renew_to_str(props.get("renew")),
+                "applied_scope_subscription_ids": _scope_ids_to_csv(props.get("appliedScopes")),
             }
         )
 
@@ -750,6 +767,7 @@ def collect_arm(
             "monthly_cost_usd",
             "expiry_date",
             "auto_renew",
+            "applied_scope_subscription_ids",
         ],
         reservation_rows,
     )

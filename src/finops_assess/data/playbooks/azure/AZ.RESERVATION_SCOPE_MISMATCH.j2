@@ -1,0 +1,36 @@
+[TITLE]
+Single-scope reservation with sibling on-demand spend: {{ principal }}
+
+[DESCRIPTION]
+The reservation **{{ principal }}** is applied to a single scope
+({{ owner_subs if owner_subs is defined else '(unknown)' }}) while
+sibling subscriptions
+({{ sibling_subs if sibling_subs is defined else '(unknown)' }})
+carry **${{ non_owner_usd if non_owner_usd is defined else '?' }}/mo**
+of on-demand spend on potentially compatible workloads.
+
+Widening the reservation scope (Single → Shared or Management Group)
+would let sibling workloads absorb unused reserved capacity, reducing
+total on-demand cost. However, scope widening changes the chargeback
+model — verify that the narrow scope is not required for cost-centre
+isolation before making changes.
+
+[REMEDIATION_STEPS]
+1. Locate the reservation in the Azure portal: Cost Management + Billing > Reservations > {{ principal }}.
+2. Review the reservation's current utilisation trend (30-day and 90-day). If utilisation is consistently below 80%, the sibling workloads are strong candidates for absorbing the slack.
+3. Identify the sibling subscriptions ({{ sibling_subs if sibling_subs is defined else '(unknown)' }}) and confirm their workloads are compatible with the reserved SKU ({{ sku if sku is defined else '(unknown)' }}).
+4. If chargeback isolation is NOT required, widen the reservation's applied scope from Single to Shared (or Management Group if applicable).
+5. If chargeback isolation IS required, consider purchasing a separate reservation for the sibling workloads or converting their spend to a Savings Plan.
+6. Document the decision and the rationale in the team's FinOps log.
+
+[VERIFICATION_CHECKLIST]
+- Sibling workloads confirmed compatible with reserved SKU: yes / no.
+- Chargeback isolation requirement verified with finance: required / not required.
+- If widened: scope change applied and new utilisation trend monitored for 7 days.
+- If not widened: rationale documented; separate reservation or Savings Plan evaluated.
+- Finance / FinOps team notified of the decision and projected cost impact.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/prepare-buy-reservation
+- https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/manage-reserved-vm-instance
+- https://learn.microsoft.com/en-us/rest/api/reserved-vm-instances/reservation/list-all

@@ -79,9 +79,9 @@
   <section>
     <h2>Summary</h2>
     <div class="cards">
-      <div class="card"><div class="label">Findings</div><div class="value">37</div></div>
-      <div class="card"><div class="label">Rules fired</div><div class="value">25</div></div>
-      <div class="card"><div class="label">Estimated monthly savings</div><div class="value">$1512.65</div></div>
+      <div class="card"><div class="label">Findings</div><div class="value">39</div></div>
+      <div class="card"><div class="label">Rules fired</div><div class="value">26</div></div>
+      <div class="card"><div class="label">Estimated monthly savings</div><div class="value">$2012.65</div></div>
       <div class="card"><div class="label">Principals</div><div class="value">11</div></div>
     </div>
 
@@ -869,6 +869,32 @@
             
               <tr>
                 <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">AZ.COMMITMENT_UNDER_COVERED</td>
+                <td class="mono">sha256:efb1eb6d0c6c0952</td>
+                <td class="mono">Standard_D4s_v5</td>
+                <td class="mono">—</td>
+                <td>—</td>
+                <td>
+                  Reservation sha256:efb1eb6d0c6c0952 is Shared-scope and averaged 45.0% utilisation, while sibling subscription sha256:92498a1282297365 shows $200.0 of on-demand resource spend over the same window. Verify the sibling&#39;s on-demand SKUs are compatible with this reservation&#39;s family and region (Azure auto-applies on a best-fit basis), then consider widening the reservation&#39;s applied scope so the sibling&#39;s workload absorbs the unused capacity.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "monthly_cost_usd": 500.0,
+  "reservation_name": "RI-VM-D4s-EastUS",
+  "scope_kind": "Shared",
+  "sibling_on_demand_spend_usd": 200.0,
+  "sibling_sub": "sha256:92498a1282297365",
+  "sku": "Standard_D4s_v5",
+  "utilization_pct": 45.0
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
                 <td class="mono">AZ.DEV_TEST_SUB_MISMATCH</td>
                 <td class="mono">sha256:f7ca075ffb272bf1</td>
                 <td class="mono">Standard_D4s_v3</td>
@@ -930,6 +956,39 @@
   "location": "eastus",
   "p95_cpu_pct": 25.0,
   "p95_mem_pct": 30.0
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">AZ.RESERVATION_SCOPE_MISMATCH</td>
+                <td class="mono">sha256:4edd5d584b224e77</td>
+                <td class="mono">GP_Gen5_8</td>
+                <td class="mono">—</td>
+                <td>$500.00</td>
+                <td>
+                  Reservation sha256:4edd5d584b224e77 is scoped to sha256:67f5b5bc1fe92f81 while subscriptions sha256:6581d3cf7d0d3d5a, sha256:92498a1282297365, sha256:d3c35dbc62687a64 carry $500.0/mo of on-demand spend on potentially compatible workloads. Consider widening the reservation&#39;s applied scope (Single → Shared or Management Group) so the sibling workloads can absorb unused reserved capacity, or verify the narrow scope is intentional (e.g., chargeback isolation).
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "monthly_cost_usd": 800.0,
+  "non_owner_monthly_usd": 500.0,
+  "owner_subscription_ids": [
+    "sha256:67f5b5bc1fe92f81"
+  ],
+  "reservation_name": "RI-SQL-WestUS",
+  "scope": "single",
+  "sibling_subscription_ids": [
+    "sha256:6581d3cf7d0d3d5a",
+    "sha256:92498a1282297365",
+    "sha256:d3c35dbc62687a64"
+  ],
+  "sku": "GP_Gen5_8",
+  "utilization_pct": 92.0
 }</pre>
                     </details>
                   
@@ -1220,8 +1279,8 @@
   <h3>Pricing assumptions</h3>
 <p>Estimated savings are derived from public list-price catalogue defaults bundled with this tool. Customer-negotiated pricing is not distinguished in the current report schema; treat the totals as an order-of-magnitude advisory figure, not a quote.</p>
 <ul>
-  <li>Findings carrying an estimated monthly saving: <strong>29</strong></li>
-  <li>Sum of estimated monthly savings across those findings: <strong>$1512.65</strong></li>
+  <li>Findings carrying an estimated monthly saving: <strong>30</strong></li>
+  <li>Sum of estimated monthly savings across those findings: <strong>$2012.65</strong></li>
 </ul>
   <h3>Data-quality warnings</h3>
 <p class="empty">No data-quality warnings derived from this snapshot. Dataset coverage and rule implementation are complete for the surfaces evaluated.</p>
