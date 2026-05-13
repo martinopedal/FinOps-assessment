@@ -17,6 +17,7 @@
   },
   "pii_handling": {
     "mode": "cleartext",
+    "salt_mode": "disabled",
     "ticket_key_stability_by_surface": {
       "ado": "stable",
       "azure": "stable",

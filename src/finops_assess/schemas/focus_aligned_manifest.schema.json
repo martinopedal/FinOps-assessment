@@ -128,18 +128,23 @@
     },
     "pii_handling": {
       "type": "object",
-      "required": ["mode"],
+      "required": ["mode", "salt_mode"],
       "additionalProperties": true,
-      "description": "PII handling policy for this export. v0.5.0 emits 'azure_resource_id_cleartext' when --no-pii-redaction is set, and 'azure_resource_id_per_run_salted_hash' under default redaction (engine salts every principal — including Azure resource IDs — with a per-run secret; see #73 for engine tenant-stable salting). 'known_limitation' is non-null whenever the mode produces per-run instability. Consumers MUST accept unknown keys and unknown mode values (forward-compatible read).",
+      "description": "PII handling policy for this export. v0.6.0 adds tenant-stable salt mode per #73. 'known_limitation' is non-null whenever the mode produces per-run instability. Consumers MUST accept unknown keys and unknown mode/salt_mode values (forward-compatible read).",
       "properties": {
         "mode": {
           "type": "string",
-          "description": "PII handling mode. v0.5.0 values: 'azure_resource_id_cleartext' (--no-pii-redaction) or 'azure_resource_id_per_run_salted_hash' (default redaction). v0.6.0 will add 'stable_salt'. Consumers MUST accept unknown values.",
-          "enum": ["azure_resource_id_cleartext", "azure_resource_id_per_run_salted_hash"]
+          "description": "PII handling mode. Values: 'azure_resource_id_cleartext' (--no-pii-redaction), 'azure_resource_id_per_run_salted_hash' (default redaction), or 'azure_resource_id_tenant_stable_salted_hash' (explicit salt provided). Consumers MUST accept unknown values.",
+          "enum": ["azure_resource_id_cleartext", "azure_resource_id_per_run_salted_hash", "azure_resource_id_tenant_stable_salted_hash"]
+        },
+        "salt_mode": {
+          "type": "string",
+          "description": "Salt mode from engine. Values: 'per_run' (default), 'tenant_stable' (explicit salt via --pii-salt-file or FINOPS_PII_SALT), or 'disabled' (--no-pii-redaction). Consumers MUST accept unknown values.",
+          "enum": ["per_run", "tenant_stable", "disabled"]
         },
         "known_limitation": {
           "type": ["string", "null"],
-          "description": "Non-null when the mode produces per-run instability (Azure resource IDs hashed with a per-run salt). The string MUST reference issue #73 and warn that re-runs will produce duplicate advisory rows. Null when the mode is cleartext."
+          "description": "Non-null when the mode produces per-run instability (Azure resource IDs hashed with a per-run salt). The string MUST reference issue #73 and warn that re-runs will produce duplicate advisory rows. Null when the mode is cleartext or tenant_stable."
         }
       }
     },
