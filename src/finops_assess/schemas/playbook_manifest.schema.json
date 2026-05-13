@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/martinopedal/FinOps-assessment/blob/main/src/finops_assess/schemas/playbook_manifest.schema.json",
+  "title": "Playbook export manifest (v0.1)",
+  "description": "Sidecar contract for finops-assess playbook JSONL exports. playbook_schema_version '0.1' is additive-only: new top-level keys may be added without a version bump. Consumers MUST ignore unknown keys. A breaking change increments playbook_schema_version to '0.2'. Reader contract: if this file is missing OR output_artifacts.jsonl_sha256 does not match the JSONL on disk, the JSONL is orphaned and MUST NOT be consumed.",
+  "type": "object",
+  "required": [
+    "playbook_schema_version",
+    "tool",
+    "generated_at",
+    "source_report",
+    "row_count",
+    "output_artifacts",
+    "pii_handling",
+    "surfaces",
+    "sort_key",
+    "templates_source"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "playbook_schema_version": {
+      "type": "string",
+      "const": "0.1",
+      "description": "Schema version. '0.1' for v0.5.0. Bump to '0.2' only on a breaking change."
+    },
+    "tool": {
+      "type": "object",
+      "required": ["name", "version"],
+      "additionalProperties": true,
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "finops-assess"
+        },
+        "version": {
+          "type": "string",
+          "description": "SemVer string read from finops_assess.__version__."
+        }
+      }
+    },
+    "generated_at": {
+      "type": "string",
+      "description": "RFC 3339 UTC ISO-8601 timestamp at second precision. Honours SOURCE_DATE_EPOCH."
+    },
+    "source_report": {
+      "type": "object",
+      "required": ["path", "schema_version", "pii_redaction"],
+      "additionalProperties": true,
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path to the source report JSON (may be redacted by upstream run)."
+        },
+        "schema_version": {
+          "type": "string",
+          "description": "schema_version from the source report run block."
+        },
+        "pii_redaction": {
+          "type": "boolean",
+          "description": "Echoes pii_redaction from the source report run block."
+        }
+      }
+    },
+    "row_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of rows in the sibling JSONL file."
+    },
+    "output_artifacts": {
+      "type": "object",
+      "required": ["jsonl_sha256", "jsonl_byte_count"],
+      "additionalProperties": true,
+      "properties": {
+        "jsonl_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 hex digest of the sibling JSONL file as written to disk. Consumers MUST verify this before consuming the JSONL."
+        },
+        "jsonl_byte_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Byte size of the sibling JSONL file."
+        }
+      }
+    },
+    "pii_handling": {
+      "type": "object",
+      "required": ["mode", "ticket_key_stability_by_surface"],
+      "additionalProperties": true,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "description": "PII handling mode. 'salted_hash' when PII redaction is on; 'cleartext' when --no-pii-redaction is set.",
+          "enum": ["salted_hash", "cleartext"]
+        },
+        "ticket_key_stability_by_surface": {
+          "type": "object",
+          "description": "Per-surface stability of ticket_key across runs. 'stable' for azure (cleartext resource IDs); 'per_run' for m365/github/ado when PII redaction is on.",
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["stable", "per_run", "best_effort"]
+          }
+        },
+        "note": {
+          "type": "string",
+          "description": "Human-readable note about PII handling."
+        }
+      }
+    },
+    "surfaces": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Alphabetically sorted list of cloud surfaces present in this export."
+    },
+    "sort_key": {
+      "type": "string",
+      "description": "Human-readable description of the row sort order."
+    },
+    "templates_source": {
+      "type": "string",
+      "description": "Describes where the Jinja2 templates were loaded from."
+    }
+  }
+}

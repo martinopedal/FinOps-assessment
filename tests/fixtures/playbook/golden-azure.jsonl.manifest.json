@@ -1,0 +1,33 @@
+{
+  "playbook_schema_version": "0.1",
+  "tool": {
+    "name": "finops-assess",
+    "version": "0.1.0"
+  },
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "source_report": {
+    "path": "<test>",
+    "schema_version": "1.0",
+    "pii_redaction": false
+  },
+  "row_count": 1,
+  "output_artifacts": {
+    "jsonl_sha256": "3844109c7c97d6743c4a6a7ab2782b7f8c858020080ffd562c68229f963d523e",
+    "jsonl_byte_count": 2635
+  },
+  "pii_handling": {
+    "mode": "cleartext",
+    "ticket_key_stability_by_surface": {
+      "azure": "stable",
+      "ado": "per_run",
+      "github": "per_run",
+      "m365": "per_run"
+    },
+    "note": "ticket_key is per_run for M365/GitHub/ADO when PII redaction is on because the principal is hashed with a per-run salt. Engine-level stable-salt deferred to #73."
+  },
+  "surfaces": [
+    "azure"
+  ],
+  "sort_key": "(surface, rule_id, ticket_key, evidence_ref)",
+  "templates_source": "importlib.resources:finops_assess.data.playbooks"
+}

@@ -40,16 +40,24 @@ def _repo_files(root: Path) -> dict[str, bytes]:
 
 
 def test_packaged_data_matches_repo_data() -> None:
-    """The installed data mirror must stay byte-identical to repo-root data."""
+    """The installed data mirror must stay byte-identical to repo-root data.
+
+    Only catalog/, rules/, and personas.yaml are mirrored from the repo-root data/
+    directory. Package-only data (e.g. playbooks/) lives exclusively in the installed
+    package and is not compared here.
+    """
     if not REPO_DATA.is_dir():
         pytest.skip("source-tree data/ directory is not available")
 
     repo_files = _repo_files(REPO_DATA)
     packaged_files = _resource_files(resources.files("finops_assess").joinpath("data"))
-    assert packaged_files.keys() == repo_files.keys()
-    assert {
-        name: hashlib.sha256(payload).hexdigest() for name, payload in packaged_files.items()
-    } == {name: hashlib.sha256(payload).hexdigest() for name, payload in repo_files.items()}
+    # Verify that every file from the repo-root data/ is present and byte-identical
+    # in the installed package (package may have additional files; that is allowed).
+    missing = repo_files.keys() - packaged_files.keys()
+    assert not missing, f"Repo-root data files missing from package: {missing}"
+    assert {name: hashlib.sha256(payload).hexdigest() for name, payload in repo_files.items()} == {
+        name: hashlib.sha256(packaged_files[name]).hexdigest() for name in repo_files
+    }
 
 
 def test_packaged_data_has_required_surfaces() -> None:

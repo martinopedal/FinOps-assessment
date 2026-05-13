@@ -186,6 +186,74 @@ not upload to FinOps Hubs, deploy pipelines, mutate storage, or require Hubs to
 run. Any future live connector should be tracked as a separate reviewed change
 with explicit data-flow documentation.
 
+## Playbook / ticket export
+
+`finops-assess run --format playbook` emits a structured JSONL file — one line per
+finding — designed to be loaded directly into ServiceNow, Jira, GitHub Issues, or any
+ticket-creation pipeline. Each row is a self-contained playbook ticket with a stable
+`ticket_key`, rich `description` / `remediation_steps` / `verification_checklist` /
+`references` fields rendered from a per-rule Jinja2 template, and an `adapter_hints`
+block that pre-populates common ticket fields (priority, category, assignment group).
+
+```console
+$ finops-assess run \
+    --input ./samples \
+    --format playbook \
+    --playbook-output ./playbook-export.jsonl
+Wrote 34 playbook tickets to playbook-export.jsonl
+Manifest: playbook-export.jsonl.manifest.json
+```
+
+The output is two files:
+
+- `<output>.jsonl` — one JSON object per line; each row validates against
+  `src/finops_assess/schemas/playbook_row.schema.json`.
+- `<output>.jsonl.manifest.json` — sidecar contract with SHA-256 of the JSONL,
+  row count, PII handling mode, and `ticket_key_stability_by_surface`.
+  **The manifest is the canonical readiness marker.** If it is absent or its
+  `output_artifacts.jsonl_sha256` does not match the JSONL on disk, treat the
+  JSONL as an orphan and do not consume it.
+
+Both files honour `SOURCE_DATE_EPOCH` for byte-deterministic builds.
+
+### Ticket key stability
+
+- **Azure findings** have `stable` ticket keys. The principal is an ARM resource ID
+  that does not change with the PII redaction salt, so the same finding always maps
+  to the same ticket.
+- **M365, GitHub, and ADO findings** with PII redaction on have `per_run` ticket keys.
+  The principal is a salted hash that changes between runs with different salts. Use
+  the `evidence_ref` field to correlate across runs.
+
+### Orphan cleanup
+
+Interrupted or failed writes can leave JSONL files on disk without a valid manifest.
+Use `--cleanup-orphans` to remove them before a new run:
+
+```console
+$ finops-assess run \
+    --input ./samples \
+    --format playbook \
+    --playbook-output ./playbook-export.jsonl \
+    --cleanup-orphans
+Cleaned up 1 orphaned JSONL file(s).
+Wrote 34 playbook tickets to playbook-export.jsonl
+```
+
+### PII warning
+
+When PII redaction is on (the default), the exporter logs a warning reminding
+operators that ticket descriptions may contain de-anonymised evidence strings
+(resource names, tenant IDs, subscription names). Use `--skip-warnings` to suppress
+this warning in automated pipelines that have already acknowledged the posture.
+
+### Committed example
+
+- [`examples/playbook.jsonl`](../examples/playbook.jsonl) — 34 tickets from the
+  synthetic demo tenant (LF-only, `SOURCE_DATE_EPOCH=0`).
+- [`examples/playbook.jsonl.manifest.json`](../examples/playbook.jsonl.manifest.json)
+  — matching sidecar manifest.
+
 ## Exporting findings to a FOCUS-aligned advisory CSV
 
 `finops-assess` can project findings onto a CSV shaped like the FinOps Foundation

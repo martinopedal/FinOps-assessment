@@ -1,0 +1,25 @@
+[TITLE]
+Unused M365 license: {{ principal }}
+
+[DESCRIPTION]
+The user **{{ principal }}** has **{{ current_sku }}** assigned but no service-plan
+activity has been detected in the last 30 days.
+
+Inactive licenses accrue charges without delivering value. Verify with the
+user's manager and reclaim or downsize the assignment.
+
+[REMEDIATION_STEPS]
+1. Open the Microsoft 365 Admin Center and review the activity report for {{ principal }}.
+2. Verify with the user's manager that the license is genuinely unused and not subject to a compliance hold (eDiscovery, litigation hold).
+3. If no hold exists, consider removing the {{ current_sku }} assignment or stepping down to a lower-cost SKU.
+4. Return the reclaimed seat to the available pool and update licence tracking records.
+
+[VERIFICATION_CHECKLIST]
+- Confirmed no service-plan activity in M365 Admin Center for 30+ days.
+- Manager sign-off obtained before reclaiming.
+- No compliance hold (eDiscovery / litigation hold) detected.
+- License returned to pool and change logged in ITSM.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/microsoft-365/admin/activity-reports/overview
+- https://learn.microsoft.com/en-us/microsoft-365/admin/misc/add-licenses-bought-through-vlsc

@@ -24,11 +24,13 @@ from finops_assess.engine import run_rules
 from finops_assess.persona import assign_personas
 from finops_assess.reporters import (
     Branding,
+    find_orphaned_jsonl,
     write_csv_report,
     write_focus_aligned_export,
     write_html_report,
     write_json_report,
     write_pdf_report,
+    write_playbook_export,
     write_triage_csv,
     write_triage_json,
 )
@@ -205,12 +207,13 @@ def triage(
 @click.option(
     "--format",
     "fmt",
-    type=click.Choice(["json", "html", "csv", "pdf", "both", "all"]),
+    type=click.Choice(["json", "html", "csv", "pdf", "playbook", "both", "all"]),
     default="json",
     show_default=True,
     help="Report format(s) to emit. 'both' emits json+html (back-compat); "
     "'all' emits json+html+csv+pdf — the pdf step requires the optional "
-    "'pdf' extra (pip install 'finops-assess[pdf]').",
+    "'pdf' extra (pip install 'finops-assess[pdf]'). 'playbook' emits a "
+    "JSONL ticket-playbook file alongside a sidecar manifest.json.",
 )
 @click.option(
     "--html-output",
@@ -236,6 +239,30 @@ def triage(
     help="Path to write the PDF report (only used when --format is pdf or all). "
     "Defaults to --output with the suffix replaced by .pdf when --format=all. "
     "Requires the optional 'pdf' extra (pip install 'finops-assess[pdf]').",
+)
+@click.option(
+    "--playbook-output",
+    "playbook_output",
+    type=click.Path(dir_okay=False, path_type=Path),
+    default=None,
+    help="Path to write the playbook JSONL (only used when --format is playbook). "
+    "A sidecar <path>.manifest.json is written in the same directory. "
+    "Defaults to --output with the suffix replaced by .jsonl when --format=playbook.",
+)
+@click.option(
+    "--cleanup-orphans",
+    is_flag=True,
+    default=False,
+    help="Pre-flight: scan the playbook output directory for .jsonl files that lack a "
+    "matching manifest (or whose manifest sha256 does not match). Remove orphaned "
+    "files before writing the new export. Default off.",
+)
+@click.option(
+    "--skip-warnings",
+    is_flag=True,
+    default=False,
+    help="Suppress advisory warnings emitted to stderr (e.g. per-run ticket_key stability "
+    "warning for M365/GitHub/ADO findings when PII redaction is on).",
 )
 @click.option(
     "--branding-name",
@@ -279,6 +306,9 @@ def run(
     html_output: Path | None,
     csv_output: Path | None,
     pdf_output: Path | None,
+    playbook_output: Path | None,
+    cleanup_orphans: bool,
+    skip_warnings: bool,
     branding_name: str | None,
     branding_color: str | None,
     branding_logo: Path | None,
@@ -348,6 +378,28 @@ def run(
         _write_pdf_or_friendly_error(report, resolved_pdf, branding)
         wrote_any_file = True
         click.echo(f"OK — wrote PDF report to {resolved_pdf}")
+
+    if fmt == "playbook":
+        resolved_playbook = playbook_output
+        if resolved_playbook is None and output is not None:
+            resolved_playbook = output.with_suffix(".jsonl")
+        if resolved_playbook is None:
+            raise click.UsageError(
+                "--playbook-output (or --output) is required for playbook format."
+            )
+        if cleanup_orphans:
+            orphans = find_orphaned_jsonl(resolved_playbook.parent)
+            for orphan in orphans:
+                click.echo(f"Removing orphaned JSONL (no matching manifest): {orphan}", err=True)
+                orphan.unlink()
+        jsonl_path, manifest_path = write_playbook_export(
+            report, resolved_playbook, skip_warnings=skip_warnings
+        )
+        wrote_any_file = True
+        click.echo(
+            f"OK — wrote {findings_count} playbook rows to {jsonl_path}\n"
+            f"     manifest: {manifest_path}"
+        )
 
     if not wrote_any_file and fmt == "json" and output is None:
         # Already echoed JSON to stdout above; nothing else to do.

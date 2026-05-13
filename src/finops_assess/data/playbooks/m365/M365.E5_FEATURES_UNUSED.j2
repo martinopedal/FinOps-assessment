@@ -1,0 +1,28 @@
+[TITLE]
+E5 license with unused premium features: {{ principal }}
+
+[DESCRIPTION]
+The user **{{ principal }}** is on **{{ current_sku }}** (E5) but none of the
+E5-exclusive capabilities — Defender for Office 365 P2, Microsoft Purview DLP /
+Information Protection, or Entra ID P2 risk policies — have produced an activity
+signal in the last 90 days.
+
+If the E5-exclusive features are genuinely unneeded, stepping down to E3 plus
+targeted add-ons may reduce costs significantly.
+
+[REMEDIATION_STEPS]
+1. Review the Microsoft 365 Admin Center security and compliance reports for {{ principal }} to confirm absence of Defender P2, Purview, and Entra P2 activity.
+2. Check whether the user is subject to a security policy that mandates E5 entitlements (e.g., Conditional Access or tenant-wide security baseline).
+3. Consult the security / compliance team before downgrading any user that may be under a compliance or audit scope.
+4. If downgrade is approved, consider migrating {{ principal }} to E3 plus only the add-ons they actually use.
+
+[VERIFICATION_CHECKLIST]
+- E5-exclusive feature usage confirmed absent for 90+ days in Admin Center.
+- Security and compliance team consulted.
+- No mandatory security baseline requires E5.
+- Downgrade path to E3 + targeted add-ons costed and approved.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/microsoft-365/security/defender/microsoft-365-defender
+- https://learn.microsoft.com/en-us/purview/purview-compliance-portal
+- https://learn.microsoft.com/en-us/entra/id-protection/overview-identity-protection

@@ -1,0 +1,26 @@
+[TITLE]
+Duplicate bundle assignment: {{ principal }}
+
+[DESCRIPTION]
+The user **{{ principal }}** holds **{{ current_sku }}**, which already includes the
+capabilities covered by a separately assigned child SKU. Carrying both results
+in duplicate charges.
+
+Removing the redundant child SKU eliminates the overlap without affecting any
+functionality.
+
+[REMEDIATION_STEPS]
+1. Identify the specific child SKU (duplicate_sku) that overlaps with {{ current_sku }}.
+2. Verify the overlap with the Microsoft 365 SKU documentation or the M365 Maps reference.
+3. Consider removing the redundant child SKU from {{ principal }}.
+4. Confirm the user retains all required functionality after the removal.
+
+[VERIFICATION_CHECKLIST]
+- Overlap confirmed: child SKU capabilities are a strict subset of {{ current_sku }}.
+- User or manager consulted and no standalone entitlements depend on the child SKU.
+- Removal performed and license returned to pool.
+- Change logged in ITSM.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/microsoft-365/admin/misc/licenses-overview
+- https://m365maps.com/

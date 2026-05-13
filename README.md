@@ -63,6 +63,9 @@ finops-assess run --input ./samples --output ./report.json --format both
 # Emit a flat CSV of findings for pivoting in Excel or Sheets.
 finops-assess run --input ./samples --format csv --csv-output ./findings.csv
 
+# Emit a JSONL playbook export (one ticket per finding) for ServiceNow / Jira / GitHub Issues.
+finops-assess run --input ./samples --format playbook --playbook-output ./playbook.jsonl
+
 # Build an advisory analyst triage pack from an existing JSON report.
 finops-assess triage --input ./report.json --output-dir ./triage
 
@@ -81,6 +84,8 @@ is documented in [`docs/schema.md`](docs/schema.md). The full rule
 reference is in [`docs/rules.md`](docs/rules.md). Export findings to
 a FOCUS-aligned advisory CSV with
 `finops-assess export focus-aligned` ([details](docs/focus-export.md)).
+Export findings as playbook tickets with
+`finops-assess run --format playbook` ([details](docs/user-guide.md#playbook--ticket-export)).
 
 ## PDF reports (optional `[pdf]` extra)
 

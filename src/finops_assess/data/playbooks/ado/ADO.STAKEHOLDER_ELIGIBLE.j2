@@ -1,0 +1,27 @@
+[TITLE]
+ADO user eligible for Stakeholder downgrade: {{ principal }}
+
+[DESCRIPTION]
+The user **{{ principal }}** holds an **ADO Basic** seat but their only observed
+activity in the last 90 days is reading boards and commenting. This activity
+pattern is fully supported by the free **Stakeholder** access level.
+
+Downgrading to Stakeholder eliminates the per-user Basic seat charge without
+reducing the user's actual capability needs.
+
+[REMEDIATION_STEPS]
+1. Confirm in the ADO organisation settings (Users > Access levels) that {{ principal }}'s recent activity is limited to board reads and comments.
+2. Check whether {{ principal }} has any upcoming sprint tasks, assigned work items requiring editor access, or pipeline ownership.
+3. Consult {{ principal }} or their manager to confirm the Stakeholder level covers their workflow.
+4. If confirmed, change the access level from Basic to Stakeholder.
+5. Inform the user of the change and provide Stakeholder documentation.
+
+[VERIFICATION_CHECKLIST]
+- Only board-read and comment activity confirmed in ADO for 90+ days.
+- No upcoming sprint tasks or editor-access requirements identified.
+- User or manager consulted and agreed.
+- Access level changed to Stakeholder; user notified.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/azure/devops/organizations/security/access-levels
+- https://learn.microsoft.com/en-us/azure/devops/organizations/billing/buy-basic-access-add-users

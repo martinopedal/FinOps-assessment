@@ -1,0 +1,26 @@
+[TITLE]
+Shared mailbox with unnecessary paid license: {{ principal }}
+
+[DESCRIPTION]
+The shared mailbox **{{ principal }}** is under 50 GB and holds **{{ current_sku }}**.
+Shared mailboxes under the 50 GB threshold do not require a paid Exchange Online
+license — they can be accessed by delegates without one.
+
+Removing the license eliminates ongoing charges without affecting mailbox
+accessibility.
+
+[REMEDIATION_STEPS]
+1. Confirm {{ principal }} is a shared mailbox (not a user mailbox or resource mailbox) in the Exchange Admin Center.
+2. Verify the mailbox size is below 50 GB ({{ mailbox_size_gb if mailbox_size_gb is defined else 'check in EAC' }} GB reported).
+3. Check whether the mailbox has automapping requirements or Outlook profile dependencies that need a license.
+4. If no special requirements exist, consider removing {{ current_sku }} from the shared mailbox.
+
+[VERIFICATION_CHECKLIST]
+- Confirmed shared mailbox type in Exchange Admin Center.
+- Mailbox size verified below 50 GB.
+- No automapping or special licensing requirements identified.
+- License removed and returned to pool.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/microsoft-365/admin/email/about-shared-mailboxes
+- https://learn.microsoft.com/en-us/exchange/collaboration-exo/shared-mailboxes

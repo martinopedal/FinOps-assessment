@@ -1,0 +1,28 @@
+[TITLE]
+Azure DevOps parallel jobs over-provisioned: {{ principal }}
+
+[DESCRIPTION]
+The Azure DevOps organisation **{{ principal }}** owns
+**{{ purchased_parallel_jobs if purchased_parallel_jobs is defined else 'more' }}**
+Microsoft-hosted parallel jobs but P95 concurrent usage was only
+**{{ p95_concurrent_jobs if p95_concurrent_jobs is defined else 'lower' }}**.
+
+Purchased parallel jobs that regularly go unused represent committed spend that
+can be reduced. Consider reducing the purchased count at the next renewal.
+
+[REMEDIATION_STEPS]
+1. Review the pipeline concurrency report in Azure DevOps organisation settings (Pipelines > Parallel jobs usage).
+2. Confirm the P95 concurrent usage trend over 30+ days is consistently below the purchased quantity.
+3. Identify whether peak pipeline load is driven by short-lived bursts or sustained concurrency needs.
+4. Reduce the purchased parallel job count to match P95 usage plus a small headroom buffer (e.g. P95 + 1 or 2).
+5. Monitor pipeline queue times for 30 days after the change to confirm no regression.
+
+[VERIFICATION_CHECKLIST]
+- P95 concurrent usage confirmed below purchased quantity over 30+ days.
+- Peak pipeline load pattern reviewed for transient bursts.
+- Budget owner approved reduction.
+- Parallel job count reduced; queue time monitored for 30 days.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/azure/devops/pipelines/licensing/concurrent-jobs
+- https://learn.microsoft.com/en-us/azure/devops/organizations/billing/billing-faq
