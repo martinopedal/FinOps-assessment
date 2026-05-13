@@ -64,6 +64,15 @@ class Rule(BaseModel):
             "manifest_schema_version to '0.2' in the same PR."
         ),
     )
+    adapter_class: str = Field(
+        default="generic",
+        min_length=1,
+        description=(
+            "Adapter class hint for the playbook reporter. "
+            "Default 'generic' emits adapter_hints for ServiceNow/Jira/GitHub. "
+            "Future values: 'azure_cost', 'identity', 'github_seat'."
+        ),
+    )
 
 
 class Finding(BaseModel):

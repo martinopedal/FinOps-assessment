@@ -1052,6 +1052,32 @@ Orchest log: `.squad/orchestration-log/2026-05-13T085530Z-yuki-stage3-revise-61.
 
 ---
 
+### Stage-4 Re-Review APPROVE + Merge (Noor + Coordinator, post-Yuki revision)
+
+> **Reviewer:** Noor (Security & Compliance) — model: Opus 4.7
+> **Issue:** #61 (epic #57, v0.5.0)
+> **Input:** `.squad/decisions.md` §11 #61 stage-3 plan + Yuki's stage-3-plan revision subsection
+> **Date:** 2026-05-13 09:03:51 UTC (original verdict) → 09:06:52 UTC (re-trigger)
+> **PR:** #72 (Maya's stage-3 plan) — merged as commit `f96a5e9` to main (2026-05-13)
+
+**VERDICT: APPROVE** (re-affirmed on re-trigger; original verdict stood with zero new findings after Yuki's revision)
+
+**Original verdict:** Noor posted APPROVE at 2026-05-13T09:03:51Z against commit `10096cb` (Yuki's revision) at PR #72 comment 4439198912. All 2 BLOCKING findings (B1 manifest pair-atomicity, B2 `.j2` LF-pinning) closed with concrete code/config + matching tests. All 8 AMENDMENT findings closed with binding lockings. All 3 NIT findings closed inline. Maya's D1/D2/D3/D4, OQ-1..5, §9 deferred-disposition preserved unchanged.
+
+**Race condition:** At 2026-05-13T09:04:07Z (35 seconds after Noor's verdict), the squad-approve workflow auto-approved against `10096cb`. But at 2026-05-13T09:04:28Z (21 seconds later), the Scribe (`scribe-yuki-revise-61` spawn) pushed orchestration-log and decisions-inbox updates (commit `cc1e466`), which auto-dismissed the bot's approval per branch protection's "Dismiss stale approvals on new commits" rule.
+
+**Re-trigger mechanism:** Coordinator (Martin) re-posted Noor's verdict as a fresh comment at 2026-05-13T09:06:52Z (PR #72 comment 4439226770), explicitly noting the dismiss and confirming that Scribe's commit touched no source code, schemas, or rules — only infrastructure. The squad-approve workflow re-fired, and the bot re-approved against the new HEAD (`cc1e466`) at 2026-05-13T09:06:56Z (success).
+
+**Cross-agent learning:** Parallel spawn of Stage-4 reviewer + Scribe creates a race condition where Scribe's housekeeping push can dismiss reviewer approvals. This is the first enforcement of Reviewer Rejection Lockout (Maya locked out when Noor rejected) + first evidence of the Scribe-reviewer race. Coordinator filed a follow-up issue (TBD by Martin) to serialize Scribe behind Stage-4 verdict in future deliveries.
+
+**Merge:** PR #72 squash-merged to main as commit `f96a5e9` (subject: `docs(squad): §11 stage-3 plan for #61 playbook/ticket reporter (#72)`). Remote branch `squad/61-playbook-reporter` deleted; local branch deleted.
+
+**Stage-5 spawn:** Diego (stage-5 implementer, reporter module owner, same hands as #58) is in flight with the implementation PR for the playbook reporter. Branch will be `squad/61-implementation`.
+
+**Atomic-write contract reaffirmed:** Option C (manifest-as-readiness-marker + `os.fsync` + orphan pre-flight + `--cleanup-orphans` recovery) is now established precedent for all multi-file reporters in v0.5.0+.
+
+---
+
 ### 2026-05-13 — Stage-3 plan for #58 FOCUS-aligned advisory exporter (Maya, Opus 4.7)
 
 ## §11 Stage-3 Plan — FOCUS-aligned advisory exporter (#58)
