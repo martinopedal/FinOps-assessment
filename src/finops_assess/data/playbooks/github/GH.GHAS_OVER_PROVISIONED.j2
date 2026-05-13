@@ -1,0 +1,31 @@
+[TITLE]
+GitHub Advanced Security over-provisioned: {{ principal }}
+
+[DESCRIPTION]
+GitHub Advanced Security (GHAS) is enabled on
+**{{ ghas_repo_count if ghas_repo_count is defined else 'multiple' }}** repositories
+in organisation **{{ principal }}** with
+**{{ active_committers if active_committers is defined else 'several' }}** unique
+committers in the last 90 days, but only
+**{{ actively_scanned if actively_scanned is defined else 'a subset of' }}**
+repositories have produced an alert or scan result.
+
+GHAS is billed per unique active committer. Disabling GHAS on repositories that
+produce no scanning signal can reduce the billable committer count.
+
+[REMEDIATION_STEPS]
+1. Review the GHAS billing breakdown in the GitHub organisation settings (Billing & plans > GitHub Advanced Security).
+2. Identify repositories where GHAS is enabled but no code scanning, secret scanning, or Dependabot alerts have fired in 90+ days.
+3. For each inactive repository: determine whether GHAS is required by policy (compliance, security baseline).
+4. If GHAS is not required by policy on an inactive repo, consider disabling it to reduce billable committers.
+5. Re-run the GHAS billing estimate to confirm savings before and after changes.
+
+[VERIFICATION_CHECKLIST]
+- GHAS-enabled repos with no alert history identified.
+- Each inactive repo reviewed for policy/compliance requirement.
+- Approval obtained from security team before disabling GHAS on any repo.
+- GHAS disabled on approved repos; billable committer count reduced.
+
+[REFERENCES]
+- https://docs.github.com/en/billing/managing-billing-for-github-advanced-security/about-billing-for-github-advanced-security
+- https://docs.github.com/en/code-security/getting-started/github-security-features

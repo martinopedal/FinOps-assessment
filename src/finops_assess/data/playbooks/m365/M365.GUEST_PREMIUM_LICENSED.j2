@@ -1,0 +1,26 @@
+[TITLE]
+B2B guest with premium M365 license: {{ principal }}
+
+[DESCRIPTION]
+The Entra B2B guest **{{ principal }}** holds **{{ current_sku }}**, an interactive
+M365 user license. Guest users typically rely on the host tenant's resources;
+assigning a full user license is unusual and may represent an error or
+a misconfigured onboarding.
+
+Verify the assignment is intentional before removing it.
+
+[REMEDIATION_STEPS]
+1. Contact the business sponsor who invited {{ principal }} and confirm the license assignment is required.
+2. Review what M365 services the guest actually needs (Teams chat vs. mailbox, SharePoint edit vs. view, etc.).
+3. If the full license is not justified, consider removing {{ current_sku }} and relying on guest-access entitlements provided by the host tenant.
+4. Document the decision in the guest-user lifecycle record.
+
+[VERIFICATION_CHECKLIST]
+- Business sponsor consulted and confirmed (or denied) the license requirement.
+- Guest access entitlements reviewed against actual usage.
+- License removed or explicitly justified and documented.
+- Guest user lifecycle record updated.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/entra/external-id/what-is-b2b
+- https://learn.microsoft.com/en-us/microsoft-365/admin/misc/guest-user-access

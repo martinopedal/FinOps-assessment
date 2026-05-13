@@ -1,0 +1,31 @@
+[TITLE]
+Log Analytics workspace on sub-optimal pricing tier: {{ principal }}
+
+[DESCRIPTION]
+The Log Analytics workspace **{{ principal }}** ingests an average of
+**{{ daily_gb if daily_gb is defined else 'significant' }} GB/day**, which puts it
+in the sweet spot for a commitment pricing tier. Moving to
+**{{ recommended_tier if recommended_tier is defined else 'a commitment tier' }}**
+could reduce list-price costs by approximately
+**{{ est_savings_pct if est_savings_pct is defined else 'a significant' }}%**.
+
+Commitment tiers offer a discounted per-GB rate in exchange for a minimum
+daily ingestion commitment. They are billed even on low-ingest days, so
+verify the average is representative before switching.
+
+[REMEDIATION_STEPS]
+1. Review 30-day ingestion trends for {{ principal }} in the Azure portal (Log Analytics workspace > Usage and estimated costs).
+2. Confirm the average daily ingest volume is stable and representative (not inflated by a one-time event).
+3. Calculate the break-even point between pay-as-you-go and {{ recommended_tier if recommended_tier is defined else 'the recommended commitment tier' }}.
+4. If committed tier is beneficial, change the pricing tier in the workspace settings.
+5. Set a calendar reminder to review ingest volume in 90 days.
+
+[VERIFICATION_CHECKLIST]
+- 30-day ingest trend reviewed and confirmed stable.
+- Break-even calculation performed.
+- No upcoming workload change that would materially reduce ingest volume.
+- Tier changed and billing confirmed in next Cost Management report.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/azure/azure-monitor/logs/cost-logs
+- https://azure.microsoft.com/en-us/pricing/details/monitor/

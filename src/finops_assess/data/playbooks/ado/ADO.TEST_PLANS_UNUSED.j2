@@ -1,0 +1,26 @@
+[TITLE]
+ADO Basic+Test Plans seat unused (60 days): {{ principal }}
+
+[DESCRIPTION]
+The user **{{ principal }}** holds an **ADO Basic + Test Plans** seat but has not
+opened or modified a Test Plan in the last 60 days.
+
+The Test Plans add-on carries a significant per-user premium over the Basic
+tier. Users who no longer use Test Plans should be stepped down to Basic.
+
+[REMEDIATION_STEPS]
+1. Verify in the Azure DevOps organisation settings that {{ principal }} has no recent Test Plans activity (test runs, test case modifications, test plan creation).
+2. Contact {{ principal }} or their manager to confirm whether Test Plans access is still needed.
+3. Check whether {{ principal }} is the plan owner for any upcoming test cycles.
+4. If Test Plans access is no longer needed, change the access level from Basic + Test Plans to Basic.
+5. If a future test cycle requires Test Plans, schedule a temporary re-upgrade aligned to the sprint timeline.
+
+[VERIFICATION_CHECKLIST]
+- No Test Plans activity confirmed in ADO for 60+ days.
+- User or manager consulted.
+- No upcoming sprint test cycle assigns Test Plans authorship to this user.
+- Access level changed to Basic; user notified.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/azure/devops/test/create-a-test-plan
+- https://learn.microsoft.com/en-us/azure/devops/organizations/security/access-levels

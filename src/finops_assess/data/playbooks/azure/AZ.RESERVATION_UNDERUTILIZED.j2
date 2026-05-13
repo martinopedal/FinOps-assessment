@@ -1,0 +1,28 @@
+[TITLE]
+Under-utilised reservation / savings plan: {{ principal }}
+
+[DESCRIPTION]
+The reservation or savings plan **{{ principal }}** averaged only
+**{{ utilization_pct if utilization_pct is defined else 'low' }}% utilisation**
+over the last 30 days. Reservations below ~80% effective utilisation represent
+over-committed spend — you are paying for capacity you are not using.
+
+Exchange or shrink the commitment at the next renewal window to align the
+reservation with actual usage.
+
+[REMEDIATION_STEPS]
+1. Review the reservation utilisation details in Azure Cost Management > Reservations.
+2. Identify which resources are (and are not) covered by {{ principal }}.
+3. Determine whether workloads have scaled down or been decommissioned since the reservation was purchased.
+4. At the next exchange or renewal window, consider right-sizing the reservation to match current usage (e.g. reduce quantity, change instance size flexibility settings, or switch to a Savings Plan if the workload mix has diversified).
+5. If the reservation is not exchangeable, document the residual commitment and its planned end date.
+
+[VERIFICATION_CHECKLIST]
+- Utilisation trend reviewed in Azure Cost Management for 30+ days.
+- Root cause of under-utilisation identified (workload change, decommission, etc.).
+- Exchange or renewal plan documented with timeline.
+- Finance / FinOps team notified of residual commitment.
+
+[REFERENCES]
+- https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/reservation-utilization
+- https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/exchange-and-refund-azure-reservations

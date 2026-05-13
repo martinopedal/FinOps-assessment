@@ -1,0 +1,25 @@
+[TITLE]
+Inactive GitHub Copilot seat (30 days): {{ principal }}
+
+[DESCRIPTION]
+The user **{{ principal }}** holds a GitHub Copilot seat but has accepted zero
+Copilot suggestions in the last 30 days.
+
+Copilot seats are a per-seat add-on. Seats with no acceptance activity should be
+reassigned to developers on the waitlist who are actively writing code.
+
+[REMEDIATION_STEPS]
+1. Confirm the zero-acceptance signal in the GitHub Copilot usage dashboard for the organisation.
+2. Contact {{ principal }} or their manager to determine if there is a legitimate reason (role change, extended leave, new to the org).
+3. If no legitimate reason exists, consider reassigning the Copilot seat to a developer on the waiting list.
+4. Re-evaluate the allocation policy if multiple seats show low acceptance rates.
+
+[VERIFICATION_CHECKLIST]
+- Zero Copilot acceptances confirmed in GitHub usage dashboard for 30+ days.
+- User or manager consulted.
+- No legitimate reason for inactivity (leave, role change) identified.
+- Seat reassigned or justification documented.
+
+[REFERENCES]
+- https://docs.github.com/en/copilot/managing-copilot/managing-github-copilot-in-your-organization/reviewing-github-copilot-activity-in-your-organization
+- https://docs.github.com/en/billing/managing-billing-for-github-copilot/about-billing-for-github-copilot

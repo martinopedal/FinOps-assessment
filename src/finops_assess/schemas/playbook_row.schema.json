@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/martinopedal/FinOps-assessment/blob/main/src/finops_assess/schemas/playbook_row.schema.json",
+  "title": "Playbook row (v0.1)",
+  "description": "Single JSONL row emitted by the finops-assess playbook reporter. playbook_schema_version '0.1' is additive-only: new top-level keys may be added without a version bump. Consumers MUST ignore unknown keys.",
+  "type": "object",
+  "required": [
+    "playbook_schema_version",
+    "ticket_key",
+    "finding_revision",
+    "rule_id",
+    "surface",
+    "severity",
+    "adapter_class",
+    "principal",
+    "evidence_ref",
+    "template_render_inputs",
+    "title",
+    "description",
+    "remediation_steps",
+    "verification_checklist",
+    "references",
+    "adapter_hints"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "playbook_schema_version": {
+      "type": "string",
+      "const": "0.1",
+      "description": "Schema version. '0.1' for v0.5.0. Bump to '0.2' only on a breaking change."
+    },
+    "ticket_key": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "Stable SHA-256 ID for cross-run deduplication. Stability depends on surface — see manifest pii_handling.ticket_key_stability_by_surface."
+    },
+    "finding_revision": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Monotonic revision counter for the playbook template. '1' in v0.5.0. Increments when the template structure changes in a future release."
+    },
+    "rule_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Screaming-snake-case rule identifier, e.g. M365.UNUSED_LICENSE_30D."
+    },
+    "surface": {
+      "type": "string",
+      "enum": ["m365", "azure", "github", "ado"],
+      "description": "Cloud surface that produced this finding."
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["info", "low", "medium", "high"],
+      "description": "Finding severity."
+    },
+    "adapter_class": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Adapter class hint. 'generic' in v0.5.0. Future values: 'azure_cost', 'identity', 'github_seat'."
+    },
+    "principal": {
+      "type": "string",
+      "description": "The affected principal — may be a SHA-256 hash when PII redaction is on."
+    },
+    "current_sku": {
+      "type": ["string", "null"],
+      "description": "Currently assigned SKU identifier, if applicable."
+    },
+    "recommended_sku": {
+      "type": ["string", "null"],
+      "description": "Recommended replacement SKU, if applicable."
+    },
+    "estimated_monthly_savings_usd": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "Estimated monthly savings in USD, if the rule can compute one."
+    },
+    "evidence_ref": {
+      "type": ["string", "null"],
+      "description": "Opaque reference to the evidence dict (e.g. AdvisoryFindingKey). Consumers MUST NOT sum EstimatedMonthlySavingsUsd across rows sharing an evidence_ref."
+    },
+    "template_render_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Sorted list of Jinja2 variable names referenced by the rule's .j2 template, extracted statically at env-build time."
+    },
+    "title": {
+      "type": "string",
+      "description": "Single-line ticket title rendered from the rule template."
+    },
+    "description": {
+      "type": "string",
+      "description": "Multi-line ticket description rendered from the rule template."
+    },
+    "remediation_steps": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Ordered list of remediation steps rendered from the rule template."
+    },
+    "verification_checklist": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Checklist items for verifying the remediation rendered from the rule template."
+    },
+    "references": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Reference URLs and documentation links rendered from the rule template."
+    },
+    "adapter_hints": {
+      "type": "object",
+      "description": "Optional sub-dicts with system-specific hints for ServiceNow, Jira, and GitHub Issues. Derived from severity and adapter_class.",
+      "additionalProperties": true,
+      "properties": {
+        "servicenow": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "category": { "type": "string" },
+            "urgency": { "type": "integer" },
+            "priority": { "type": "integer" }
+          }
+        },
+        "jira": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "issuetype": { "type": "string" },
+            "priority": { "type": "string" },
+            "labels": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "github": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "labels": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    }
+  }
+}
