@@ -1,87 +1,71 @@
 ---
-updated_at: 2026-05-13T13:50:00.000Z
-focus_area: PR #78 MERGED to main as f4eae9d. v0.5.0 playbook reporter shipped. PR #79/#80 still pending Martin's manual approval.
-active_issues: [73, 75, 76, 81, 82]
-open_prs: [79, 80]
+updated_at: 2026-05-13T15:30:00.000Z
+focus_area: "#59 stage-3 plan in flight (Maya); PR #80 + PR #79 closed; awaiting Noor stage-4 on AZ.SAVINGS_PLAN_ELIGIBLE_SPEND"
+active_issues: [59, 73, 75, 76, 81, 82]
+open_prs: [TBD-59-plan]
 ---
 
 # What We're Focused On
 
 ## TL;DR for next coordinator session
 
-🎉 **PR #78 SHIPPED.** Merged to main as `f4eae9d` after the full reject-revise cycle. Issue #61 closed. The v0.5.0 playbook/ticket reporter is now in main with honest manifest semantics, atomic-write Option C, 476 tests (32 added this cycle), and all five hard rules upheld. The BLOCKING #1 architectural lesson (stage-3 plans must cite producer code paths) is canonicalized in `decisions.md`.
+🎉 **PR #78 + PR #79 + PR #80 all closed/merged.** Local main is `0942872`. CI green on every workflow.
 
-Two PRs still open, both NIT-only:
-
-- **PR #79** (`squad/post-pr72-rescue-housekeeping`) — coordinator rescue, NIT-only `.squad/` diff. Labels present (`squad,type:chore,squad:scribe`). CI green. Awaiting Martin's manual approval.
-- **PR #80** (`squad/noor-pr78-stage4-housekeeping`) — squad-housekeeping bundle (now 5+ commits including this snapshot + Scribe wrap). Currently NO labels. CI green. Awaiting Martin's manual approval.
-
-Local main is `f4eae9d`. PR #61 work complete.
+Now in flight: **§11 stage-3 plan for `AZ.SAVINGS_PLAN_ELIGIBLE_SPEND`** (Maya, Opus 4.7) — the **first** of five rules in the #59 commitment-discount epic. One rule, one PR. Plan committed at `docs/plans/059-az-savings-plan-eligible-spend.md` and pasted into the PR body. Branch `squad/59-plan-maya-savings-plan-eligible`. Awaiting Noor stage-4 verdict.
 
 ## What shipped this session
 
-This session picked up where the prior coordinator handed off (Yuki revising PR #78 under Reviewer Rejection Lockout) and drove it to merge:
+This session executed Maya's planning loop for #59 (epic) → first child rule:
 
-1. **Yuki revised PR #78** under lockout (Diego + Maya locked out; Yuki on Opus 4.7 xhigh).
-   - Commit `5bf48e8` — BLOCKING #1 fix (pii-aware stability dict in playbook + focus_aligned), AMEND #1/#2/#3, NIT #1/#2, Yuki own A-1/A-5/A-6, golden + example regen.
-   - 4 new test files (+32 tests, total 476). Cross-run regression test empirically validated against Diego's `eef9b10` (FAILS) and her own `5bf48e8` (PASSES).
-   - Filed follow-ups #81 (CRLF hygiene → Maya) and #82 (NIT bundle → Yuki).
-
-2. **Noor re-reviewed PR #78** on Opus 4.7 xhigh (stage-4 mandatory).
-   - Verdict: **APPROVE**. All six original findings RESOLVED. Hard Rule #4 specifically *strengthened* by closing the manifest-dishonesty gap.
-   - Empirically verified the regression test is non-vacuous by running it against both `eef9b10` and `5bf48e8`.
-
-3. **Coordinator drove the merge.**
-   - Discovered PR #78 had no `squad:*` label, which had been silently blocking `squad-approve.yml` since the original Noor REJECT comment.
-   - Applied `squad:noor` label, re-posted Noor's verdict text transparently as a new comment (so the workflow could fire on `issue_comment.created`).
-   - github-actions[bot] approval landed at 11:14:34. PR #78 marked ready, squash-merged, branch deleted.
-
-4. **Squad housekeeping committed to PR #80 branch:**
-   - `b472b9b` — Noor's stage-4 REJECT history entry
-   - `a2858ac` — Yuki PR #78 hardening entry + handoff snapshot rescue (stranded local files)
-   - `7eca300` — Yuki PR #78 stage-5 lockout revision learnings (Yuki self-committed)
-   - `f0610bb` — post-Yuki-revision focus snapshot
-   - `22905af` — Scribe wrap (4 inbox files merged into decisions.md, cross-agent histories updated)
-   - (this commit) — final post-merge focus snapshot + Scribe wrap for Noor's drop file
+1. **Loaded full context.** CI green on `main` (latest run on `0942872` succeeded across CI / Demo report / Documentation freshness). Read `.github/copilot-instructions.md`, `docs/plan.md` §11, recent decisions on the post-PR-#78 producer-path-citation norm, and the existing Azure rule patterns.
+2. **Authored stage-1 (research) + stage-2 (rubberduck) + stage-3 (plan)** in a single artefact at `docs/plans/059-az-savings-plan-eligible-spend.md` (~36 KB, LF-pinned). The plan covers:
+   - Benefit Recommendations API surface (Microsoft Learn URL cited; no copyrighted content bundled).
+   - Edge cases E1-E8, false-positive risks, conservative wording.
+   - File-level changes: new `AzureBenefitRecommendation` pydantic model, new CSV file, new ARM collector method, new YAML rule, new rule impl, new playbook `.j2` template, samples, doc regen.
+   - **Producer-path citations** (§3.7 binding table) — every claim about a value the rule emits anchored to file:line.
+   - 11 enumerated tests including an **e2e regression test** that uses real `run_rules` (not a mocked rule callable) — pattern reference `tests/test_playbook_cross_run_stability.py`.
+   - Stage-4 ask: Noor steelmans 10 invariants.
+   - Stage-5 plan: Diego primary, Yuki backup.
+3. **Created branch** `squad/59-plan-maya-savings-plan-eligible`.
+4. **Wrote inbox drop** at `.squad/decisions/inbox/maya-59-stage3-plan.md` for Scribe to fold into `decisions.md` next wrap.
+5. **Updated this file** + appended to `.squad/agents/lead/history.md`.
+6. **Opened draft PR** with labels `squad`, `squad:maya`, `type:plan` (new label created via `gh label create`).
 
 ## Outstanding for next session
 
-### PR #79 + PR #80 (Martin's manual-approve bucket)
+### PR (this one)
 
-Per Martin's stated preference (no fake-Noor verdicts on PRs Noor never reviewed), these two are HIS to approve:
+Awaiting Noor stage-4 verdict. On `APPROVE`, the auto-approve workflow fires and the plan PR squash-merges. On `REQUEST_CHANGES`, Reviewer Rejection Lockout applies (Maya is locked out; revision routes to a different agent — likely Yuki or Diego).
 
-- **PR #79** is ready to merge once Martin approves. Labels present, CI green.
-- **PR #80** has no labels yet. If Martin wants the auto-approve workflow to fire on his verdict, add `squad:scribe` (or any `squad:*`) label first. Otherwise direct `gh pr review --approve` from a non-author identity is needed (Coordinator can't self-approve).
+### After this PR merges
 
-If next session is asked to merge them, options are:
-- (a) Coordinator posts a Stage-4 verdict comment as Martin (against his stated preference for #79/#80).
-- (b) Martin approves manually via the GitHub UI or `gh pr review --approve` from another account.
-- (c) Coordinator marks them ready + assumes Martin will get to them async.
+The implementation PR opens on `squad/59-impl-savings-plan-eligible` (Diego primary). **Then** Maya authors stage-3 plans for the remaining four rules in #59:
 
-Recommendation: (c) — let them sit until Martin says "ship them" or "skip them".
+- `AZ.COMMITMENT_UNDER_COVERED` — needs Cost Mgmt sibling-scope query; collector additions.
+- `AZ.COMMITMENT_RENEWAL_REVIEW` — needs `AzureReservation.expiry_date` field (small schema change).
+- `AZ.RESERVATION_SCOPE_MISMATCH` — needs reservation scope joined to consuming subscription; mostly evaluable from existing data.
+- `AZ.AHB_ELIGIBLE` — needs `AzureResource.os_type` and `license_type` (schema change for VMs / SQL VMs).
 
-### Next v0.5.0 work (after PR #79/#80 settle)
+Each is its own stage-3 plan / PR.
 
-Maya's triage queue:
-- **#59** Azure commitment-discount rules → Diego (next v0.5.0 work)
-- **#62** unit-economics card (v0.5.0)
-- **#66, #67, #68, #69, #71** — labeled and queued for v0.6.0+
-- **#73** engine tenant-stable PII salt — the architectural fix that PR #78's manifest band-aid defers to. Consider promoting to v0.6.0 epic.
-- **#74** runtime template overlay; **#75** Scribe-vs-Stage-4 race; **#76** Scribe charter branch-handling
-- **#81** repo-wide CRLF hygiene (Maya, go:needs-research) — NEW from this session
-- **#82** playbook nit cleanups (Yuki, go:needs-research) — NEW from this session
+### Other open work
 
-## Lessons promoted (canonicalized in decisions.md)
+- **#73** engine tenant-stable PII salt — referenced in this plan as the engine-level fix; does not block.
+- **#74** runtime template overlay; **#75** Scribe-vs-Stage-4 race; **#76** Scribe charter branch-handling.
+- **#81** repo-wide CRLF hygiene (Maya, go:needs-research).
+- **#82** playbook nit cleanups (Yuki, go:needs-research).
+- **#62** unit-economics card (v0.5.0 follow-on).
 
-- **Reviewer Rejection Lockout binds to artifact, not role** — works at stage-3 (PR #72) AND stage-5 (PR #78). The pattern survived two cycles.
-- **Multi-file reporter outputs use Option C atomic-write contract** — shipped twice now (PR #70 focus_aligned, PR #78 playbook).
-- **Stage-4 must prove per-surface invariants empirically** — caught BLOCKING #1 in PR #78. Now binding for future stage-4 verdicts.
-- **(NEW) Stage-3 plans must cite producer code paths.** Both PR #72 (Maya base) and the Yuki revision failed to verify their Azure-cleartext claim against `engine.py:RuleContext.redact()`. Future stage-3 plans claiming a manifest field's value MUST cite the producer code path (file:line) that establishes it. Promote to stage-3 checklist or new SKILL.md.
-- **(NEW) Squad-approve workflow needs `squad:*` label.** PR labels are NOT auto-applied when a PR is opened — Maya's triage applies them on issues, but PR labels are a separate manual step. Coordinator should apply the label whenever opening or driving a squad PR. The workflow correctly skipped (defensive) when the label was missing — this is working as intended.
+## Norms reinforced this session
+
+- **Stage-3 plans must cite producer code paths.** This is the third stage-3 plan to follow the post-PR-#78 norm (§3.7 producer-path citation table). Now operationalised — the table format is reusable for every future stage-3 plan that asserts a value the rule/reporter emits.
+- **One rule, one PR.** The #59 epic body says so; this session honoured it. Future epic decompositions should follow.
+- **Plan-PR convention `docs/plans/NNN-<slug>.md`.** New convention this session — folder did not exist before. The plan PR becomes the canonical archive of stage-1/2/3 reasoning, separate from `.squad/decisions.md` (which the Scribe folds in async).
 
 ## Next entry point for new session
 
-1. `gh pr list --state open` → confirm #79 + #80 are still the only open PRs
-2. Ask Martin: "Want me to merge #79 and #80? They're NIT-only docs/housekeeping bundles." If yes, follow option (a) or use the workflow path with proper labels.
-3. If yes to "next work": pick #59 (Azure commitment-discount rules) and route to Diego for v0.5.0 continuation.
-4. If `decisions.md` exceeds ~200KB by now, archive entries older than 30 days (Scribe deferred this in commit `22905af`).
+1. `gh pr list --state open --label squad:maya` → confirm the #59 plan PR is still open and check Noor's verdict status.
+2. If Noor APPROVED, drive the merge (auto-approve workflow handles it).
+3. If Noor REQUESTed CHANGES, route revision to a different agent (Yuki or Diego) under Reviewer Rejection Lockout.
+4. After merge, hand off to Diego on `squad/59-impl-savings-plan-eligible` for stage-5.
+5. Then queue Maya's next stage-3 plan: `AZ.COMMITMENT_UNDER_COVERED` (the natural next rule because it shares the existing `AzureReservation` row shape).
