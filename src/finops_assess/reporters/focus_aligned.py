@@ -293,12 +293,31 @@ def build_focus_aligned_manifest(
     cleartext ARM resource ID, and ``AdvisoryFindingKey`` rotates with
     the per-run salt for cross-run joins.  ``known_limitation`` mirrors
     the playbook reporter's contract (Noor PR #78 NIT #2 + #73).
+
+    With engine tenant-stable salting (issue #73), when an operator-provided
+    salt is used (``salt_mode="tenant_stable"``), AdvisoryFindingKey becomes
+    stable across runs even with PII redaction enabled.
     """
     run = report.get("run", {})
     pii_redaction = bool(run.get("pii_redaction", True))
-    if pii_redaction:
+    salt_mode = run.get("salt_mode", "per_run")
+
+    if pii_redaction and salt_mode == "tenant_stable":
         pii_handling: dict[str, Any] = {
+            "mode": "azure_resource_id_tenant_stable_salted_hash",
+            "salt_mode": "tenant_stable",
+            "known_limitation": None,
+        }
+        resource_id_stability = "stable"
+        advisory_key_stability = "stable"
+        advisory_key_notes = (
+            "Stable across runs for the same (rule_id, resource_id, evidence) "
+            "with tenant-stable salt. Not a FOCUS column."
+        )
+    elif pii_redaction:
+        pii_handling = {
             "mode": "azure_resource_id_per_run_salted_hash",
+            "salt_mode": "per_run",
             "known_limitation": (
                 "ResourceId is the engine's salted hash of the cleartext ARM "
                 "resource ID under default redaction; AdvisoryFindingKey rotates "
@@ -308,11 +327,24 @@ def build_focus_aligned_manifest(
                 "with --no-pii-redaction or accept the per-run instability."
             ),
         }
+        resource_id_stability = "per_run"
+        advisory_key_stability = "per_run"
+        advisory_key_notes = (
+            "Stable across runs for the same (rule_id, resource_id, evidence) "
+            "ONLY when --no-pii-redaction is set; otherwise rotates with the "
+            "per-run salt. Not a FOCUS column."
+        )
     else:
         pii_handling = {
             "mode": "azure_resource_id_cleartext",
+            "salt_mode": "disabled",
             "known_limitation": None,
         }
+        resource_id_stability = "stable"
+        advisory_key_stability = "stable"
+        advisory_key_notes = (
+            "Stable across runs for the same (rule_id, resource_id, evidence). Not a FOCUS column."
+        )
     return {
         "manifest_schema_version": "0.1",
         "tool": {"name": "finops-assess", "version": __version__},
@@ -334,17 +366,13 @@ def build_focus_aligned_manifest(
             {
                 "column": "ResourceId",
                 "joins_to": "FOCUS.ResourceId",
-                "stability": "per_run" if pii_redaction else "stable",
+                "stability": resource_id_stability,
             },
             {
                 "column": "AdvisoryFindingKey",
                 "joins_to": None,
-                "stability": "per_run" if pii_redaction else "stable",
-                "notes": (
-                    "Stable across runs for the same (rule_id, resource_id, evidence) "
-                    "ONLY when --no-pii-redaction is set; otherwise rotates with the "
-                    "per-run salt. Not a FOCUS column."
-                ),
+                "stability": advisory_key_stability,
+                "notes": advisory_key_notes,
             },
         ],
         "pii_handling": pii_handling,

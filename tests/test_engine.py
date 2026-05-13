@@ -177,3 +177,57 @@ def test_features_for_surface_filters_cross_cloud_requirements() -> None:
     assert m365_only == {"mailbox.50gb", "office.web", "teams.full"}
     github_only = features_for_surface(developer_required, "github")
     assert github_only == {"github.enterprise"}
+
+
+def test_salt_mode_per_run_by_default() -> None:
+    """When no salt is provided, summary reports salt_mode='per_run'."""
+    from finops_assess.models import LicenseAssignment, NormalizedDataset, UserRecord
+
+    dummy_rule = load_rules()[0]  # Any rule will do
+
+    _findings, summary = run_rules(
+        rules=[dummy_rule],
+        catalog=[],
+        personas=[],
+        persona_assignments={},
+        dataset=NormalizedDataset(
+            users=[UserRecord(principal="u1@example.com", display_name="U1")],
+            assignments=[
+                LicenseAssignment(
+                    principal="u1@example.com", sku_id="M365-F3", assigned_date="2024-01-01"
+                )
+            ],
+            usage=[],
+            azure_resources=[],
+        ),
+        redact_pii=True,
+        salt=None,
+    )
+    assert summary["salt_mode"] == "per_run"
+
+
+def test_salt_mode_tenant_stable_when_salt_provided() -> None:
+    """When a salt is explicitly provided, summary reports salt_mode='tenant_stable'."""
+    from finops_assess.models import LicenseAssignment, NormalizedDataset, UserRecord
+
+    dummy_rule = load_rules()[0]  # Any rule will do
+
+    _findings, summary = run_rules(
+        rules=[dummy_rule],
+        catalog=[],
+        personas=[],
+        persona_assignments={},
+        dataset=NormalizedDataset(
+            users=[UserRecord(principal="u1@example.com", display_name="U1")],
+            assignments=[
+                LicenseAssignment(
+                    principal="u1@example.com", sku_id="M365-F3", assigned_date="2024-01-01"
+                )
+            ],
+            usage=[],
+            azure_resources=[],
+        ),
+        redact_pii=True,
+        salt="my-fixed-salt",
+    )
+    assert summary["salt_mode"] == "tenant_stable"

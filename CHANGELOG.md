@@ -9,6 +9,16 @@ release.
 
 ### Added
 
+- **Tenant-stable PII salt mode (#73)**: New `--pii-salt-file` CLI option and
+  `FINOPS_PII_SALT` environment variable enable operators to use a consistent salt
+  across assessment runs, making principal hashes stable for cross-run ticket
+  deduplication and trend analysis. The default behavior (per-run random salt) is
+  unchanged — tenant-stable mode is opt-in only. When enabled, the report's `run.salt_mode`
+  field reflects `"tenant_stable"` and reporter manifests mark ticket_key stability as
+  `"stable"` for all surfaces. **Security note**: tenant-stable salt enables cross-run
+  principal correlation; if your salt leaks, principals can be re-identified across all
+  runs that used it. Operators must protect the salt file or environment variable as they
+  would a database encryption key.
 - `finops-assess run --format playbook` — emits a JSONL playbook export (one ticket
   per finding) rendered from per-rule Jinja2 templates, suitable for loading into
   ServiceNow, Jira, or GitHub Issues. Includes atomic-write (Option C), manifest

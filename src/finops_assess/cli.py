@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -38,11 +39,83 @@ from finops_assess.reporters.json_reporter import build_report
 from finops_assess.rules import load_personas, load_rules
 from finops_assess.triage import CopilotHelperMode, build_triage, resolve_copilot_helper
 
+logger = logging.getLogger(__name__)
+
+
+def _resolve_pii_salt(
+    pii_salt_file: Path | None,
+    no_pii_redaction: bool,
+) -> tuple[str | None, str]:
+    """Resolve the PII salt and return (salt_or_none, mode_label).
+
+    Returns (None, "per_run") when no stable salt is configured.
+    Returns (salt_string, "tenant_stable") when a salt is found.
+    Raises click.BadParameter on validation failure.
+    """
+    if no_pii_redaction:
+        if pii_salt_file is not None:
+            logger.warning("--pii-salt-file is ignored because --no-pii-redaction is set")
+        return None, "disabled"
+
+    # 1. Explicit file flag (highest precedence)
+    if pii_salt_file is not None:
+        if not pii_salt_file.exists():
+            raise click.BadParameter(
+                f"Salt file not found: {pii_salt_file}",
+                param_hint="--pii-salt-file",
+            )
+        if pii_salt_file.stat().st_size == 0:
+            raise click.BadParameter(
+                "Salt file is empty (no entropy)",
+                param_hint="--pii-salt-file",
+            )
+        if pii_salt_file.stat().st_size > 1024 * 1024:
+            raise click.BadParameter(
+                f"Salt file too large: {pii_salt_file.stat().st_size} bytes (max 1 MiB)",
+                param_hint="--pii-salt-file",
+            )
+        salt = pii_salt_file.read_text(encoding="utf-8").strip()
+        if not salt:
+            raise click.BadParameter(
+                "Salt file contains only whitespace",
+                param_hint="--pii-salt-file",
+            )
+        # Warn if entropy is low (< 32 hex chars = 128 bits)
+        if len(salt) < 32:
+            logger.warning(
+                f"Salt has low entropy ({len(salt)} chars < 32); "
+                "consider regenerating with: python -c 'import secrets; print(secrets.token_hex(32))'"
+            )
+        # Unix-only advisory: warn if world-readable
+        if hasattr(os, "stat") and pii_salt_file.stat().st_mode & 0o004:
+            logger.warning(
+                f"Salt file {pii_salt_file} is world-readable; "
+                "consider restricting to owner-only (chmod 600)"
+            )
+        logger.info(f"PII salt mode: tenant_stable (source: file {pii_salt_file})")
+        return salt, "tenant_stable"
+
+    # 2. Environment variable
+    env_salt = os.environ.get("FINOPS_PII_SALT", "").strip()
+    if env_salt:
+        if len(env_salt) < 32:
+            logger.warning(
+                f"Salt from FINOPS_PII_SALT has low entropy ({len(env_salt)} chars < 32); "
+                "consider regenerating with: python -c 'import secrets; print(secrets.token_hex(32))'"
+            )
+        logger.info("PII salt mode: tenant_stable (source: env FINOPS_PII_SALT)")
+        return env_salt, "tenant_stable"
+
+    # 3. Default: per-run rotation
+    logger.info("PII salt mode: per_run")
+    return None, "per_run"
+
 
 def _execute_assessment(
     *,
     input_dir: Path,
     redact_pii: bool,
+    salt: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, int]]:
     """Run the collector → engine → report pipeline against ``input_dir``.
 
@@ -61,6 +134,7 @@ def _execute_assessment(
         persona_assignments=persona_assignments,
         dataset=dataset,
         redact_pii=redact_pii,
+        salt=salt,
     )
     report = build_report(
         findings=findings,
@@ -293,6 +367,16 @@ def triage(
     help="Disable salted hashing of principals in the report (opt-in; default is on).",
 )
 @click.option(
+    "--pii-salt-file",
+    type=click.Path(exists=False, dir_okay=False, path_type=Path),
+    default=None,
+    help=(
+        "Path to a file containing the PII salt (high-entropy secret, ≥32 hex chars recommended). "
+        "When set, principal hashes are stable across runs for the same tenant. "
+        "Overrides FINOPS_PII_SALT env var. Ignored if --no-pii-redaction is set."
+    ),
+)
+@click.option(
     "-v",
     "--verbose",
     is_flag=True,
@@ -314,6 +398,7 @@ def run(
     branding_logo: Path | None,
     branding_page_size: str | None,
     no_pii_redaction: bool,
+    pii_salt_file: Path | None,
     verbose: bool,
 ) -> None:
     """Run the rule engine over a directory of normalised CSVs."""
@@ -322,8 +407,13 @@ def run(
         format="%(levelname)s %(name)s: %(message)s",
     )
 
+    salt, _salt_mode = _resolve_pii_salt(pii_salt_file, no_pii_redaction)
     redact_pii = not no_pii_redaction
-    report, rule_counts = _execute_assessment(input_dir=input_dir, redact_pii=redact_pii)
+    report, rule_counts = _execute_assessment(
+        input_dir=input_dir,
+        redact_pii=redact_pii,
+        salt=salt,
+    )
     findings_count = len(report["findings"])
     active = sum(1 for v in rule_counts.values() if v)
 
@@ -430,7 +520,19 @@ def run(
     default=False,
     help="Disable salted hashing of principals in the report (opt-in; default is on).",
 )
-def demo(output_dir: Path, include_pdf: bool, no_pii_redaction: bool) -> None:
+@click.option(
+    "--pii-salt-file",
+    type=click.Path(exists=False, dir_okay=False, path_type=Path),
+    default=None,
+    help=(
+        "Path to a file containing the PII salt (high-entropy secret, ≥32 hex chars recommended). "
+        "When set, principal hashes are stable across runs for the same tenant. "
+        "Overrides FINOPS_PII_SALT env var. Ignored if --no-pii-redaction is set."
+    ),
+)
+def demo(
+    output_dir: Path, include_pdf: bool, no_pii_redaction: bool, pii_salt_file: Path | None
+) -> None:
     """Run the assessment against the bundled synthetic tenant.
 
     Produces ``demo-report.json``, ``demo-report.html``, and
@@ -439,13 +541,18 @@ def demo(output_dir: Path, include_pdf: bool, no_pii_redaction: bool) -> None:
     the package so this works after ``pip install`` without a checkout
     — see ``finops_assess.demo``.
     """
+    salt, _salt_mode = _resolve_pii_salt(pii_salt_file, no_pii_redaction)
     redact_pii = not no_pii_redaction
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     with tempfile.TemporaryDirectory(prefix="finops-demo-") as tmp:
         demo_input = materialise_demo_data(Path(tmp))
-        report, rule_counts = _execute_assessment(input_dir=demo_input, redact_pii=redact_pii)
+        report, rule_counts = _execute_assessment(
+            input_dir=demo_input,
+            redact_pii=redact_pii,
+            salt=salt,
+        )
 
     json_path = output_dir / "demo-report.json"
     html_path = output_dir / "demo-report.html"

@@ -463,16 +463,30 @@ def build_playbook_manifest(
     cleartext and ticket_keys stable across runs.  ``known_limitation``
     is non-null whenever ANY surface is ``per_run`` and references
     issue #73 (engine tenant-stable salting).
+
+    With engine tenant-stable salting (issue #73), when an operator-provided
+    salt is used (``salt_mode="tenant_stable"``), ticket_keys become stable
+    across runs even with PII redaction enabled.
     """
     run = report.get("run", {})
-    if pii_redaction:
-        stability: dict[str, str] = dict.fromkeys(
-            sorted(_STABLE_SURFACES_WHEN_CLEARTEXT), "per_run"
-        )
-        known_limitation: str | None = _KNOWN_LIMITATION_PER_RUN
-    else:
-        stability = dict.fromkeys(sorted(_STABLE_SURFACES_WHEN_CLEARTEXT), "stable")
+    salt_mode = run.get("salt_mode", "per_run")
+
+    # Per-surface ticket_key stability: ALL surfaces are "per_run" when PII
+    # redaction is on with per-run salt. With tenant-stable salt, all surfaces
+    # become stable. When PII redaction is off, all surfaces are stable.
+    if pii_redaction and salt_mode == "tenant_stable":
+        # Tenant-stable salt: all surfaces stable
+        stability = {s: "stable" for s in sorted(_STABLE_SURFACES_WHEN_CLEARTEXT)}
         known_limitation = None
+    elif pii_redaction:
+        # Per-run salt (default): all surfaces per_run
+        stability = {s: "per_run" for s in sorted(_STABLE_SURFACES_WHEN_CLEARTEXT)}
+        known_limitation = _KNOWN_LIMITATION_PER_RUN
+    else:
+        # PII redaction off: all surfaces stable
+        stability = {s: "stable" for s in sorted(_STABLE_SURFACES_WHEN_CLEARTEXT)}
+        known_limitation = None
+
     return {
         "playbook_schema_version": PLAYBOOK_SCHEMA_VERSION,
         "tool": {"name": "finops-assess", "version": __version__},
@@ -489,6 +503,7 @@ def build_playbook_manifest(
         },
         "pii_handling": {
             "mode": "salted_hash" if pii_redaction else "cleartext",
+            "salt_mode": salt_mode if pii_redaction else "disabled",
             "ticket_key_stability_by_surface": stability,
             "known_limitation": known_limitation,
         },

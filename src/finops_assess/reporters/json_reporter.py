@@ -57,6 +57,7 @@ def build_report(
             "generated_at": _generated_at(),
             "input": _redact_input_path(input_path, redact_pii),
             "pii_redaction": redact_pii,
+            "salt_mode": summary.get("salt_mode", "per_run"),
             "mode": "read-only",
         },
         "summary": {
