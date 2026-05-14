@@ -273,6 +273,12 @@ is source-agnostic.
 
 ## 9. Security & operations
 
+> **Operator reference:** the consolidated security posture lives in
+> [`docs/security.md`](security.md) — read-only contract, OIDC auth,
+> PII redaction, overlay-template sandbox, and the change-management
+> anchor for future security additions. The bullets below remain the
+> plan-level summary; deep-dives belong in `docs/security.md`.
+
 - All Graph / ARM / GitHub / ADO scopes are **read-only**. The CLI
   refuses to start if a credential with write scope is detected.
 - Live-mode runs default to **OIDC federated credentials** in GitHub

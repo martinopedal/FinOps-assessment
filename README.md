@@ -172,6 +172,9 @@ PR (`.github/workflows/docs.yml` fails the build on drift):
   an agentic FinOps program (audit half + remediation-PR-against-IaC-repo
   add-on). The binding agent contract lives at
   [`.squad/skills/agentic-finops/SKILL.md`](.squad/skills/agentic-finops/SKILL.md).
+- [`docs/security.md`](docs/security.md): security posture — read-only
+  contract, OIDC auth, PII redaction default, overlay-template sandbox,
+  and the change-management anchor for future security additions.
 
 ## Contributing
 
