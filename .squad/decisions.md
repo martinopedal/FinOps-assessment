@@ -2611,3 +2611,62 @@ Verdict is APPROVE. No lockout activated. Maya retains ownership of the next fou
 ### Stage-5 spawn
 
 Diego is cleared for stage-5 implementation on the `squad/59-impl-savings-plan-eligible` branch. Yuki backup remains valid. Five non-blocking NITs above for Diego to consider during implementation; none of them gate the implementation PR. The implementation PR will return to me for stage-4 on its own diff.
+---
+
+### 2026-05-13 — Decision: Repo-wide CRLF hygiene (issue #81, PR #98)
+
+**Context:** Issue #81 follow-up from PR #78. The PR #78 revision normalized only files Yuki authored; several existing source files still had CRLF endings. This caused spurious whitespace warnings on cross-platform contributor edits.
+
+**Decision:** Add 6 glob patterns to .gitattributes to pin LF endings for all Python, JSON, YAML, Markdown, and Jinja2 files, then run git add --renormalize . once to apply the policy repo-wide.
+
+**Globs added:**
+- *.py text eol=lf
+- *.json text eol=lf
+- *.yaml text eol=lf
+- *.yml text eol=lf
+- *.md text eol=lf
+- *.j2 text eol=lf
+
+**Renormalize impact:** 93 files touched with 13,655 lines changed (pure CRLF→LF conversion, no semantic changes).
+
+**Non-obvious decisions:**
+
+1. **No Windows-specific exceptions needed:** The one PowerShell script (scripts/Invoke-FinOpsAssess.ps1) now has LF endings. PowerShell Core (pwsh) and Windows PowerShell 5.1+ both handle LF-only scripts correctly. No 	ext eol=crlf exception was required.
+
+2. **Committed .gitattributes change separately:** First commit adds the 6 globs (no tree changes). Second commit is the renormalize result. This two-commit structure makes the policy change (commit 1) reviewable independently from the mechanical application (commit 2).
+
+3. **git diff --check clean post-renormalize:** Verified zero whitespace warnings after renormalize. This is the acceptance criterion for the PR — any remaining warnings would indicate incomplete normalization.
+
+4. **Cross-platform CI compatibility:** Git's 	ext eol=lf handling is consistent across ubuntu/windows/macos runners. The renormalize was performed on Windows and will produce identical trees on Linux/macOS checkouts.
+
+**Test delta:** Zero. All 624 tests pass (excluding PDF tests, which have a pre-existing WeasyPrint Windows dependency issue unrelated to CRLF). No fixture regeneration needed; line-ending normalization doesn't affect fixture byte content (fixtures were already LF-pinned from PR #78).
+
+**Validation gates:** All green (pytest 624/624, ruff check, ruff format, mypy, finops-assess validate, generate_docs.py --check).
+
+**Stage-4 readiness:** PR #98 is ready for Noor's adversarial review. The large diff (93 files) is expected and correct — it's the one-time cost of establishing repo-wide line-ending hygiene.
+
+---
+
+### 2026-05-13 — Decision: B9 naming strategy for get_playbook_env()
+
+**Context:** Issue #82 B9 asked whether to rename get_playbook_env() to cquire_playbook_env() / nsure_playbook_env() for clarity (it's a lazy initialiser, not a pure getter), or keep the name and add a docstring note.
+
+**Decision:** Kept the name, enhanced the docstring.
+
+**Rationale:**
+- **Callsite count:** 10 callsites across src/ and 	ests/  
+  - 2 in playbook.py  
+  - 2 in _playbook_env.py  
+  - 6 in 	ests/test_playbook_strict_undefined.py  
+- Rename would touch 10 callsites for a naming nit  
+- get_* for lazy-init singletons is a well-understood pattern in Python  
+  (see logging.getLogger(), pkgutil.get_data(), etc.)  
+- Docstring enhancement is sufficient: added **Lazy initialisation note**  
+  section explicitly documenting first-call side effects (I/O + AST parsing)
+
+**Alternative considered:** Rename to cquire_playbook_env() would be  
+cleaner for readers unfamiliar with the pattern, but disruptive for moderate  
+usage without commensurate clarity gain.
+
+**Locked into:** PR #99, commit 1d7a161  
+**Refs:** Issue #82 (B9), PR #78 (deferral source)
