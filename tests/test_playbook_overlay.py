@@ -447,6 +447,22 @@ def test_c1_reject_from_import_nodes_directly() -> None:
         _reject_include_import_nodes(source, "test.j2", env)
 
 
+def test_c1_reject_extends_nodes_directly() -> None:
+    """_reject_include_import_nodes must raise TemplateSyntaxError for {% extends %}.
+
+    Defense-in-depth (Noor #102 follow-up): even though FileSystemLoader is
+    bounded to the overlay directory, an overlay template using
+    ``{% extends "evil.j2" %}`` would side-load another template at render
+    time — banned for the same reason as ``{% include %}``.
+    """
+    from jinja2 import TemplateSyntaxError
+
+    env = get_playbook_env()
+    source = '{% extends "base.j2" %}{% block body %}x{% endblock %}'
+    with pytest.raises(TemplateSyntaxError):
+        _reject_include_import_nodes(source, "test.j2", env)
+
+
 # ---------------------------------------------------------------------------
 # C2 (Noor) — No from_string for operator content (structural guarantee)
 # ---------------------------------------------------------------------------
