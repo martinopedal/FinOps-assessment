@@ -314,8 +314,8 @@ Before writing a single byte of output, the exporter:
 Overlay templates run in a `jinja2.sandbox.SandboxedEnvironment` with these
 restrictions enforced before any render:
 
-- **`{% include %}` and `{% import %}`** are rejected at AST parse time.
-  An operator template that attempts either raises
+- **`{% include %}`, `{% import %}`, and `{% extends %}`** are rejected
+  at AST parse time. An operator template that attempts any of them raises
   `jinja2.TemplateSyntaxError` and the run aborts.
 - Arbitrary **callable invocation** is blocked at the sandbox level
   (`is_safe_callable → False`).
@@ -330,7 +330,7 @@ relax them without a new security review.
 Overlay templates are for **layout and wording customisation only**. They
 receive the same template context as bundled templates (rule metadata, finding
 fields, evidence dict). They may not import Python modules, include other
-templates, or invoke callables.
+templates, extend other templates, or invoke callables.
 
 ## Exporting findings to a FOCUS-aligned advisory CSV
 

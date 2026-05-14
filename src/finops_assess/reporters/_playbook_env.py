@@ -103,8 +103,9 @@ class _RestrictedSandbox(SandboxedEnvironment):
     1. ``is_safe_callable()`` always returns ``False`` — blocks ALL callable
        invocation from template expressions (e.g. ``{{ lipsum() }}``).
     2. ``call()`` raises ``SecurityError`` for any callable (enforces rule 1).
-    3. ``{% include %}`` and ``{% import %}`` are rejected at parse time by
-       ``_reject_include_import_nodes()`` before the template is cached.
+    3. ``{% include %}``, ``{% import %}``, and ``{% extends %}`` are
+       rejected at parse time by ``_reject_include_import_nodes()`` before
+       the template is cached.
 
     **C2 from_string guarantee:** This environment is NEVER constructed by
     calling ``Environment.from_string(operator_input)``.  Operator templates
@@ -135,20 +136,25 @@ class _RestrictedSandbox(SandboxedEnvironment):
 
 
 # ---------------------------------------------------------------------------
-# Helper: reject {% include %} / {% import %} at AST level (C1)
+# Helper: reject {% include %} / {% import %} / {% extends %} at AST level (C1)
 # ---------------------------------------------------------------------------
 
-_INCLUDE_IMPORT_NODE_TYPES = (nodes.Include, nodes.FromImport, nodes.Import)
+_INCLUDE_IMPORT_NODE_TYPES = (
+    nodes.Include,
+    nodes.FromImport,
+    nodes.Import,
+    nodes.Extends,
+)
 
 
 def _reject_include_import_nodes(source: str, name: str, env: Environment) -> None:
-    """Parse ``source`` and raise ``TemplateSyntaxError`` if it contains include/import.
+    """Parse ``source`` and raise ``TemplateSyntaxError`` if it contains include/import/extends.
 
     C1 control: overlay templates must not load other templates via
-    ``{% include %}``, ``{% import %}``, or ``{% from … import %}``.
-    These directives could be used to load arbitrary files from the
-    overlay directory (or, if the loader were mis-configured, from the
-    filesystem at large).
+    ``{% include %}``, ``{% import %}``, ``{% from … import %}``, or
+    ``{% extends %}``.  These directives could be used to load arbitrary
+    files from the overlay directory (or, if the loader were
+    mis-configured, from the filesystem at large).
 
     This function is called during pre-flight validation for every overlay
     template, before the template is entered into the Jinja2 cache.
@@ -160,14 +166,15 @@ def _reject_include_import_nodes(source: str, name: str, env: Environment) -> No
 
     Raises:
         TemplateSyntaxError: If the template contains any ``Include``,
-            ``Import``, or ``FromImport`` AST nodes.
+            ``Import``, ``FromImport``, or ``Extends`` AST nodes.
     """
     parsed = env.parse(source)
     for node in parsed.find_all(_INCLUDE_IMPORT_NODE_TYPES):
         node_type = type(node).__name__
         raise TemplateSyntaxError(
             f"Overlay template '{name}' contains a forbidden '{node_type}' directive. "
-            "{% include %} and {% import %} are not permitted in overlay templates.",
+            "{% include %}, {% import %}, and {% extends %} are not permitted in "
+            "overlay templates.",
             lineno=getattr(node, "lineno", 0),
             name=name,
         )
