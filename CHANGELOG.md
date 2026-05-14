@@ -130,8 +130,7 @@ release.
   FinOps program. Answers the recurring "is this a good base for opening
   PRs on findings?" question without changing posture.
 - Binding agent contract for any future feature that takes action OUTSIDE
-  the tool's process boundary based on a finding
-  (`.squad/skills/agentic-finops/SKILL.md`). Codifies the nine hard rules
+  the tool's process boundary based on a finding. Codifies the nine hard rules
   the remediation-PR drafter (issue #63) and other agentic features must
   satisfy: never write to the audited tenant; PR drafts to operator's own
   IaC repo only; drafts only, never auto-merge; mandatory PR-body schema;
