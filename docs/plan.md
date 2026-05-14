@@ -287,6 +287,11 @@ is source-agnostic.
   `SandboxedEnvironment`, pre-flight validation, and per-template
   SHA-256 provenance in `manifest.template_sources[]`.
   Plan: `docs/plans/074-reporter-template-overlay.md`.
+- **FOCUS exporter multi-surface** (#71, v0.6.0): extends advisory CSV
+  export to M365, GitHub, and Azure DevOps surfaces with per-surface
+  `ServiceName`/`ServiceCategory` mapping, `--surface` CLI flag, and
+  widened `pii_handling.mode` manifest enum.
+  Plan: `docs/plans/071-focus-exporter-multi-surface.md`.
 - Repo hardening (applied immediately after first PR lands):
   branch protection on `main`, required CI, required review,
   Dependabot for `pip` + `github-actions`, secret scanning + push
