@@ -311,6 +311,11 @@ Before writing a single byte of output, the exporter:
 
 ### Security sandbox
 
+> **See also:** [`docs/security.md`](security.md) — the consolidated
+> security posture (read-only contract, OIDC auth, PII redaction,
+> overlay sandbox) is anchored there. This section remains the
+> authoritative deep-dive on the overlay sandbox controls.
+
 Overlay templates run in a `jinja2.sandbox.SandboxedEnvironment` with these
 restrictions enforced before any render:
 
