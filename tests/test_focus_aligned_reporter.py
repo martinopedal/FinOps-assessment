@@ -38,12 +38,14 @@ def _load_fixture(name: str) -> dict:  # type: ignore[type-arg]
     return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
 
-def _render(report: dict, tmp_path: Path, epoch: str = "0") -> tuple[Path, Path]:  # type: ignore[type-arg]
+def _render(report: dict, tmp_path: Path, epoch: str = "0", surfaces: set[str] | None = None) -> tuple[Path, Path]:  # type: ignore[type-arg]
     """Render a report to a tmp_path CSV + manifest with the given SOURCE_DATE_EPOCH."""
     old = os.environ.get("SOURCE_DATE_EPOCH")
     os.environ["SOURCE_DATE_EPOCH"] = epoch
     try:
-        csv_path, manifest_path = write_focus_aligned_export(report, tmp_path / "out.csv")
+        csv_path, manifest_path = write_focus_aligned_export(
+            report, tmp_path / "out.csv", surfaces=surfaces
+        )
     finally:
         if old is None:
             os.environ.pop("SOURCE_DATE_EPOCH", None)
@@ -60,7 +62,9 @@ def _render(report: dict, tmp_path: Path, epoch: str = "0") -> tuple[Path, Path]
 def test_golden_csv_byte_identical(tmp_path: Path) -> None:
     """Rendered CSV bytes must match the committed golden fixture."""
     report = _load_fixture("input-azure-two-findings.json")
-    csv_path, _ = _render(report, tmp_path)
+    # Pass surfaces={"azure"} to preserve byte-identity with the v0.5.0 golden
+    # (default is now all-surfaces per C9-3 resolution, but this fixture is Azure-only).
+    csv_path, _ = _render(report, tmp_path, surfaces={"azure"})
     actual = csv_path.read_bytes()
     expected = (FIXTURES / "golden-azure.csv").read_bytes()
     assert actual == expected, "CSV output has drifted from golden-azure.csv"
@@ -74,7 +78,8 @@ def test_golden_csv_byte_identical(tmp_path: Path) -> None:
 def test_golden_manifest_byte_identical(tmp_path: Path) -> None:
     """Rendered manifest bytes must match the committed golden fixture."""
     report = _load_fixture("input-azure-two-findings.json")
-    _, manifest_path = _render(report, tmp_path)
+    # Pass surfaces={"azure"} to preserve byte-identity with the v0.5.0 golden.
+    _, manifest_path = _render(report, tmp_path, surfaces={"azure"})
     actual = manifest_path.read_bytes()
     expected = (FIXTURES / "golden-azure.manifest.json").read_bytes()
     assert actual == expected, "Manifest output has drifted from golden-azure.manifest.json"
@@ -190,7 +195,7 @@ def test_cli_help_snapshot() -> None:
 
 
 def test_skipped_surface_count_logged(tmp_path: Path) -> None:
-    """Non-Azure findings are counted and logged; CSV contains only Azure rows."""
+    """With --surface all (default), all findings are included and surfaces_skipped is empty."""
     from click.testing import CliRunner
 
     input_path = FIXTURES / "input-mixed-surfaces.json"
@@ -200,6 +205,38 @@ def test_skipped_surface_count_logged(tmp_path: Path) -> None:
         [
             "export",
             "focus-aligned",
+            "--input",
+            str(input_path),
+            "--output",
+            str(output_path),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+
+    # CSV should contain all 5 findings (all surfaces included by default).
+    with output_path.open(encoding="utf-8", newline="") as fh:
+        rows = list(csv.DictReader(fh))
+    assert len(rows) == 5
+
+    # Manifest surfaces_skipped must be empty (all surfaces included).
+    manifest = json.loads((tmp_path / "out.csv.manifest.json").read_text(encoding="utf-8"))
+    assert manifest["surfaces_skipped"] == {}
+    assert manifest["row_count"] == 5
+
+
+def test_surface_flag_azure_only_legacy(tmp_path: Path) -> None:
+    """--surface azure preserves v0.5.0 Azure-only behavior: 2 rows, skipped m365/github/ado."""
+    from click.testing import CliRunner
+
+    input_path = FIXTURES / "input-mixed-surfaces.json"
+    output_path = tmp_path / "out.csv"
+    result = CliRunner().invoke(
+        main,
+        [
+            "export",
+            "focus-aligned",
+            "--surface",
+            "azure",
             "--input",
             str(input_path),
             "--output",
@@ -232,11 +269,14 @@ def test_advisory_finding_key_stable_across_runs(tmp_path: Path) -> None:
     key2 = advisory_finding_key(finding)
     assert key1 == key2
 
-    # Round-trip: key in CSV matches helper output.
-    csv_path, _ = _render(report, tmp_path)
+    # Round-trip: key in CSV matches helper output (find the row by RuleId since
+    # rows are now sorted by (surface, RuleId, ResourceId) and may not match input order).
+    csv_path, _ = _render(report, tmp_path, surfaces={"azure"})
     with csv_path.open(encoding="utf-8", newline="") as fh:
         rows = list(csv.DictReader(fh))
-    assert rows[0]["AdvisoryFindingKey"] == key1
+    matching = [r for r in rows if r["RuleId"] == finding["rule_id"]]
+    assert len(matching) == 1
+    assert matching[0]["AdvisoryFindingKey"] == key1
 
 
 # ---------------------------------------------------------------------------
@@ -339,8 +379,9 @@ def test_empty_findings_produces_header_only_csv_and_zero_row_manifest(
 
     manifest = json.loads((tmp_path / "out.csv.manifest.json").read_text(encoding="utf-8"))
     assert manifest["row_count"] == 0
-    assert manifest["surfaces_included"] == ["azure"]
-    assert manifest["surfaces_skipped"] == {"ado": 0, "github": 0, "m365": 0}
+    # With --surface all (default) and no findings, surfaces_included is empty.
+    assert manifest["surfaces_included"] == []
+    assert manifest["surfaces_skipped"] == {}
 
 
 # ---------------------------------------------------------------------------

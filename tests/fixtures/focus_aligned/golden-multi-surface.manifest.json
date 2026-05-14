@@ -15,10 +15,13 @@
   "conformance_level": "non-conformant",
   "conformance_rationale": "Rows describe corrective recommendations, not billed consumption. Cost columns (BilledCost, ContractedCost, EffectiveCost, ListCost) are intentionally empty; advisory savings are surfaced in EstimatedMonthlySavingsUsd. See docs/focus-export.md.",
   "surfaces_included": [
-    "azure"
+    "ado",
+    "azure",
+    "github",
+    "m365"
   ],
   "surfaces_skipped": {},
-  "row_count": 2,
+  "row_count": 9,
   "unsupported_columns": [
     "BilledCost",
     "BillingAccountId",
@@ -52,7 +55,7 @@
     }
   ],
   "pii_handling": {
-    "mode": "azure_resource_id_per_run_salted_hash",
+    "mode": "principal_per_run_salted_hash",
     "salt_mode": "per_run",
     "known_limitation": "ResourceId is the engine's salted hash of the cleartext principal under default redaction; AdvisoryFindingKey rotates with the per-run salt and is unsafe for cross-run joins. Re-runs will produce duplicate advisory rows. Engine tenant-stable salting is available via #73; until then, run with --no-pii-redaction or accept the per-run instability."
   },
