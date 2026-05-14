@@ -714,6 +714,16 @@ prompt: |
   You are the Scribe. Read .squad/agents/scribe/charter.md.
   TEAM ROOT: {team_root}
 
+  ⚠️ Branch policy: Stay on the named branch. Do NOT create new branches.
+  If the coordinator prompt says "push to main", stay on main. If it names a
+  feature branch, stay on that branch. If you find yourself wanting to
+  `git checkout -b`, STOP and surface the question to the coordinator.
+
+  ⚠️ Git staging policy: `git add .squad/` ONLY. Never `git add -A` or
+  `git add .` — those would pick up sibling agents' in-flight work. Run
+  `git status --short` before committing and confirm every staged path
+  starts with `.squad/`.
+
   SPAWN MANIFEST: {spawn_manifest}
 
   Tasks (in order):
