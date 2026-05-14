@@ -18,12 +18,6 @@
 > invoice-equivalent total — the rule engine's conflict classes
 > (e.g. competing right-sizing recommendations on the same
 > resource) can double-count.
->
-> **Azure-only in v0.5.0.** Microsoft 365, GitHub, and Azure
-> DevOps findings are filtered out and counted in
-> `surfaces_skipped`. M365 ships in v0.6.0 once the
-> stable-principal-salt feature lands — see the
-> [v0.6.0 tracking issue](#v060-roadmap).
 
 ## What this export is for
 
@@ -38,9 +32,11 @@ Use it when you want to:
   already consumes your cost data.
 - Track which resources have outstanding advisory findings over time.
 
-The join key is `ResourceId` (an ARM resource ID in the Azure scope),
-which maps directly to the `ResourceId` column in FOCUS Cost-and-Usage
-datasets.
+The join key is `ResourceId`. For Azure findings, this is the ARM resource
+ID, which maps directly to the `ResourceId` column in FOCUS Cost-and-Usage
+datasets. For M365, GitHub, and Azure DevOps findings, `ResourceId` is the
+hashed principal (UPN/login), which is joinable to other `finops-assess`
+runs on the same surface but not to Azure FOCUS billing data.
 
 ## What this export is NOT for
 
@@ -52,22 +48,24 @@ datasets.
 - **Replacing your CUR/MCA dataset.** Load this alongside your
   cost data, not instead of it.
 
-## Column reference
+## Column reference (all four surfaces)
+
+Columns whose values differ per surface are marked with ✦.
 
 | Column | Type | Source | FOCUS mandatory? |
 |--------|------|--------|:---:|
 | `ServiceProviderName` | string | constant `"Microsoft"` | ✅ |
 | `HostProviderName` | string | constant `"Microsoft"` | ✅ |
-| `ServiceName` | string | constant `"Azure"` | ✅ |
-| `ServiceCategory` | string | constant `"Compute"` | ✅ |
+| `ServiceName` ✦ | string | surface-dependent (see below) | ✅ |
+| `ServiceCategory` ✦ | string | surface-dependent (see below) | ✅ |
 | `ServiceSubcategory` | string | empty | no |
 | `ChargeCategory` | string | constant `"Advisory"` | ✅ |
 | `ChargeClass` | string | constant `"Optimization"` | ✅ |
 | `ChargeFrequency` | string | constant `"Monthly"` | ✅ |
 | `ChargeDescription` | string | `finding.recommendation` | ✅ |
 | `SkuId` | string | `finding.current_sku` | no |
-| `ResourceId` | string | `finding.principal` (ARM resource ID) | ✅ |
-| `ResourceType` | string | empty | no |
+| `ResourceId` ✦ | string | `finding.principal` (see PII section) | ✅ |
+| `ResourceType` ✦ | string | surface-dependent (see below) | no |
 | `BillingPeriodStart` | datetime | first day of observation-window-end month | ✅ |
 | `BillingPeriodEnd` | datetime | first day of next month | ✅ |
 | `PricingCurrency` | string | constant `"USD"` | ✅ |
@@ -79,6 +77,15 @@ datasets.
 | `AdvisoryFindingKey` | string | SHA-256 hash of (rule_id, resource_id, evidence) | non-FOCUS |
 | `RuleId` | string | `finding.rule_id` | non-FOCUS |
 | `Severity` | string | `finding.severity` | non-FOCUS |
+
+### Per-surface column values
+
+| Surface | `ServiceName` | `ServiceCategory` | `ResourceType` |
+|---------|---------------|-------------------|----------------|
+| `azure` | `"Azure"` | `"Compute"` | `""` (empty) |
+| `m365` | `"Microsoft 365"` | `"Collaboration"` | `"user_license"` |
+| `github` | `"GitHub"` | `"Developer Tools"` | `"seat"` |
+| `ado` | `"Azure DevOps"` | `"Developer Tools"` | `"seat"` |
 
 ### Intentionally unsupported FOCUS columns
 
@@ -121,22 +128,12 @@ tuple, the key is identical across runs, tools versions (within the same
 **When to re-key:** if the evidence shape of a rule changes (e.g. a new
 field is added or a field is renamed), the rule's `evidence_key_version`
 is bumped. The manifest's `evidence_key_algorithm` string documents which
-version is active. Under `v0.5.0`:
+version is active. Under `v0.5.0` and `v0.6.0`:
 
 ```
 evidence_key_fields: ["rule_id", "resource_id", "normalized_evidence"]
 evidence_key_algorithm: "sha256(rule_id \x00 resource_id \x00 normalized_evidence_json)"
 ```
-
-When `evidence_key_version` is mixed in (v0.6.0+), the algorithm string
-will change to:
-```
-sha256(rule_id \x00 resource_id \x00 version \x00 normalized_evidence_json)
-```
-
-and `manifest_schema_version` will bump to `"0.2"`. Consumers that join
-on `AdvisoryFindingKey` should re-key their warehouse rows when they see
-a new `manifest_schema_version`.
 
 **Evidence canonicalisation:** the evidence dict is JSON-serialised with
 sorted keys, compact separators, and `allow_nan=False`. `None` maps to
@@ -160,36 +157,37 @@ This is the correct FOCUS-warehouse-joinability trade-off: the alternative
 Do not expect the exported `BillingPeriod` to equal the calendar months
 over which the waste occurred.
 
-## Why ResourceId is cleartext (not hashed)
+## ResourceId and PII: multi-surface considerations
 
-Azure ARM resource IDs are the FOCUS `ResourceId` join key. Hashing them
-would defeat the primary purpose of the export — joining advisory findings
-to cost-warehouse rows by resource ID. The manifest records
-`pii_handling: {"mode": "azure_resource_id_cleartext"}` to signal this
-posture explicitly.
+### Azure
 
-Resource names embedded in ARM IDs (e.g.
-`/.../virtualMachines/vm-john-test01`) may contain user-chosen strings that
-reveal environment hints or user names. Operators with strong PII
-requirements should apply their own redaction to the CSV before loading
-into a shared warehouse.
+Azure ARM resource IDs are the FOCUS `ResourceId` join key. The manifest
+records `pii_handling.mode: "azure_resource_id_cleartext"` (or the hashed
+variant if `--pii-redaction` is active). Resource names embedded in ARM IDs
+(e.g. `/.../virtualMachines/vm-john-test01`) may contain user-chosen strings
+that reveal environment hints or user names.
 
-M365 findings (not shipped in v0.5.0) will use a stable-salt
-principal hash — see the v0.6.0 D7 tracking issue below.
+### M365, GitHub, ADO
 
-## v0.6.0 roadmap
+For SaaS surfaces, `ResourceId` is `finding.principal`, which is the user
+identity (UPN for M365/ADO, login handle for GitHub). Under the default
+`--pii-redaction` mode, this is the engine's salted hash.
 
-M365, GitHub, and Azure DevOps surfaces are deferred pending the D7
-unblock criteria:
+- **With `--pii-redaction` (default):** `ResourceId` = salted hash. The
+  manifest records mode `"principal_per_run_salted_hash"` (per-run salt,
+  unstable across runs) or `"principal_tenant_stable_salted_hash"` (when
+  the operator has configured a tenant-stable salt via `--pii-salt-file`
+  or `FINOPS_PII_SALT`).
+- **With `--no-pii-redaction`:** `ResourceId` = cleartext UPN/login. The
+  manifest records mode `"principal_cleartext"`.
 
-1. Persisted operator-managed salt (`--principal-salt-file` or
-   `FINOPS_PRINCIPAL_SALT` env var) to make `PrincipalHash` stable
-   across runs.
-2. Cross-run stability test.
-3. Extended `pii_handling` manifest field (`salt_source`,
-   `principal_hash_algorithm`).
-4. Conflict-class documentation per M365 rule pair.
-5. Schema test that rejects empty `PrincipalHash` when redaction is on.
+SaaS `ResourceId` values are **not joinable to Azure FOCUS billing data**.
+They are joinable to other `finops-assess` runs on the same surface
+(self-join for trend analysis).
 
-All five must pass before M365 ships in the export. See the v0.6.0
-tracking issue for the full contract.
+### Currency limitation for M365
+
+`PricingCurrency` is always `"USD"` because catalog prices are USD list
+prices. M365 tenants billed in EUR, GBP, JPY, or other local currencies
+will see USD estimates, not local-currency amounts. To convert to local
+currency, apply your own exchange rate to `EstimatedMonthlySavingsUsd`.
