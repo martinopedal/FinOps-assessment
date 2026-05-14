@@ -1,8 +1,8 @@
 # Security posture
 
 `finops-assess` is **read-only by construction**. This document is the
-single anchor for security-relevant decisions and controls — the source of
-truth that other docs link to rather than restate.
+single anchor for security-relevant decisions and controls. Other docs
+link here rather than restate.
 
 ## Read-only contract
 
@@ -15,7 +15,7 @@ not designed to, modify anything in those systems.
   ending in `.ReadWrite.*` or any administrative-action equivalent are
   rejected at the credential-validation layer.
 - **CLI refuses to run** if a credential carrying a write scope is
-  detected — see `docs/plan.md` §9 and the collector implementations
+  detected. See `docs/plan.md` §9 and the collector implementations
   under `src/finops_assess/collectors/`.
 - **Mutation paths are explicitly out of scope** for this tool. Any
   remediation lives in adjacent operator workflows or the separate
@@ -40,7 +40,7 @@ operator opts in with `--no-pii-redaction`**.
 - Default redaction uses a per-run salt; `ticket_key` and similar
   cross-run join keys degrade to per-run scope and cannot be deduped
   across runs (issue #73 tracks the optional tenant-stable salt).
-- The opt-out is a deliberate, named action — passing
+- The opt-out is a deliberate, named action. Passing
   `--no-pii-redaction` writes cleartext UPNs / GitHub logins / ADO emails
   into the report and the operator owns the downstream handling.
 - See `docs/schema.md` for the `pii_handling.mode` enum and how it is
@@ -80,12 +80,13 @@ without a new security review.
 - **Determinism.** Reports are byte-deterministic when
   `SOURCE_DATE_EPOCH` is set. The docs-freshness CI gate enforces this
   for committed example artefacts.
-- **Manifest sidecars are atomic.** Multi-file reporters (data file +
-  manifest) follow the Option-C atomic-write protocol: data file written
-  via `tempfile.mkstemp` + `os.fsync` + `os.replace`, manifest written
-  last with `output_artifacts.{data_filename}_sha256` self-attestation,
-  recovery via `--cleanup-orphans`. Manifest presence is the canonical
-  readiness marker. See `src/finops_assess/reporters/_determinism.py`
+- **Manifest sidecars are atomic.** The playbook reporter writes its
+  data file and manifest sidecar via the Option-C atomic-write protocol:
+  data file written via `tempfile.mkstemp` + `os.fsync` + `os.replace`,
+  manifest written last with `output_artifacts.{data_filename}_sha256`
+  self-attestation, recovery via `--cleanup-orphans`. Manifest presence
+  is the canonical readiness marker. See
+  `src/finops_assess/reporters/playbook.py` (`write_playbook_export`)
   and `.squad/decisions.md` § 5.1.
 
 ## What is intentionally out of scope
@@ -109,13 +110,13 @@ without a new security review.
 | OIDC auth pattern | `.github/workflows/ci.yml`, `pyproject.toml` `[live]` extra |
 | PII redaction CLI | `src/finops_assess/cli.py` (`--no-pii-redaction`), `docs/schema.md` (`pii_handling.mode`) |
 | Overlay sandbox controls | `src/finops_assess/reporters/_playbook_env.py`, `docs/user-guide.md` § Security sandbox |
-| Atomic-write contract | `src/finops_assess/reporters/_determinism.py`, `.squad/decisions.md` § 5.1 |
+| Atomic-write contract | `src/finops_assess/reporters/playbook.py` (`write_playbook_export`), `.squad/decisions.md` § 5.1 |
 | Stage-4 review precedent | PR #101 (overlay sandbox), PR #107 (`{% extends %}` follow-up) |
 
 ## Change-management
 
 Future security-relevant additions (new scope refusals, PII handling
-modes, sandbox tightenings, OIDC posture changes) belong here — extend
+modes, sandbox tightenings, OIDC posture changes) belong here. Extend
 this document rather than fragmenting controls across user-guide,
 plan, and per-feature docs. Cross-link from the implementation site
 back to the relevant section here so reviewers have one place to start.
