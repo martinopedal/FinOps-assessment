@@ -134,8 +134,15 @@
       "properties": {
         "mode": {
           "type": "string",
-          "description": "PII handling mode. Values: 'azure_resource_id_cleartext' (--no-pii-redaction), 'azure_resource_id_per_run_salted_hash' (default redaction), or 'azure_resource_id_tenant_stable_salted_hash' (explicit salt provided). Consumers MUST accept unknown values.",
-          "enum": ["azure_resource_id_cleartext", "azure_resource_id_per_run_salted_hash", "azure_resource_id_tenant_stable_salted_hash"]
+          "description": "PII handling mode. Azure-only exports use 'azure_resource_id_*' names (ResourceId is an ARM resource ID). Multi-surface exports (M365/GitHub/ADO) use 'principal_*' names (ResourceId is a UPN/login). Values: 'azure_resource_id_cleartext', 'azure_resource_id_per_run_salted_hash', 'azure_resource_id_tenant_stable_salted_hash' (Azure-only); 'principal_cleartext', 'principal_per_run_salted_hash', 'principal_tenant_stable_salted_hash' (multi-surface). Consumers MUST accept unknown values.",
+          "enum": [
+            "azure_resource_id_cleartext",
+            "azure_resource_id_per_run_salted_hash",
+            "azure_resource_id_tenant_stable_salted_hash",
+            "principal_cleartext",
+            "principal_per_run_salted_hash",
+            "principal_tenant_stable_salted_hash"
+          ]
         },
         "salt_mode": {
           "type": "string",

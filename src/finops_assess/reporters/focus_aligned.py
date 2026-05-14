@@ -1,4 +1,4 @@
-"""FOCUS-aligned advisory CSV exporter (v0.5.0 — Azure-only).
+"""FOCUS-aligned advisory CSV exporter (v0.6.0 — multi-surface).
 
 Exports a ``finops-assess`` JSON findings report as a FOCUS 1.3-shaped
 advisory CSV alongside a sidecar ``manifest.json``.
@@ -10,9 +10,9 @@ advisory CSV alongside a sidecar ``manifest.json``.
     intentionally empty; advisory savings are surfaced in
     EstimatedMonthlySavingsUsd. See ``docs/focus-export.md`` before loading.
 
-Azure-only in v0.5.0: Microsoft 365, GitHub, and Azure DevOps findings are
-filtered out and counted in ``surfaces_skipped``. See the D7 tracking issue
-for the v0.6.0 M365 unblock contract.
+Multi-surface from v0.6.0: Azure, Microsoft 365, GitHub, and Azure DevOps
+findings are all included by default. Use the ``surfaces`` parameter (or
+``--surface`` CLI flag) to restrict to a specific surface.
 """
 
 from __future__ import annotations
@@ -88,6 +88,21 @@ _CONFORMANCE_RATIONALE = (
     "empty; advisory savings are surfaced in EstimatedMonthlySavingsUsd. "
     "See docs/focus-export.md."
 )
+
+# ---------------------------------------------------------------------------
+# Surface metadata — single source of truth for per-surface FOCUS column values.
+# ---------------------------------------------------------------------------
+
+#: All known surfaces supported by finops-assess.
+_ALL_SURFACES: frozenset[str] = frozenset({"azure", "m365", "github", "ado"})
+
+# surface → (ServiceName, ServiceCategory, ResourceType)
+_SURFACE_META: dict[str, tuple[str, str, str]] = {
+    "azure": ("Azure", "Compute", ""),
+    "m365": ("Microsoft 365", "Collaboration", "user_license"),
+    "github": ("GitHub", "Developer Tools", "seat"),
+    "ado": ("Azure DevOps", "Developer Tools", "seat"),
+}
 
 # ---------------------------------------------------------------------------
 # AdvisoryFindingKey helpers
@@ -211,6 +226,14 @@ def _billing_period(finding: dict[str, Any]) -> tuple[str, str]:
 
 def _row_for(finding: dict[str, Any]) -> dict[str, str]:
     """Project a single finding dict onto the FOCUS-aligned advisory column set."""
+    surface = finding.get("surface", "azure")
+    meta = _SURFACE_META.get(surface)
+    if meta is None:
+        _log.warning("Unknown surface %r — using fallback column values", surface)
+        svc_name, svc_cat, res_type = "Unknown", "Unknown", ""
+    else:
+        svc_name, svc_cat, res_type = meta
+
     bp_start, bp_end = _billing_period(finding)
     savings = finding.get("estimated_monthly_savings_usd")
     savings_str = "" if savings is None else str(savings)
@@ -218,8 +241,8 @@ def _row_for(finding: dict[str, Any]) -> dict[str, str]:
     return {
         "ServiceProviderName": "Microsoft",
         "HostProviderName": "Microsoft",
-        "ServiceName": "Azure",
-        "ServiceCategory": "Compute",
+        "ServiceName": svc_name,
+        "ServiceCategory": svc_cat,
         "ServiceSubcategory": "",
         "ChargeCategory": "Advisory",
         "ChargeClass": "Optimization",
@@ -227,7 +250,7 @@ def _row_for(finding: dict[str, Any]) -> dict[str, str]:
         "ChargeDescription": finding.get("recommendation", ""),
         "SkuId": finding.get("current_sku") or "",
         "ResourceId": finding.get("principal", ""),
-        "ResourceType": "",
+        "ResourceType": res_type,
         "BillingPeriodStart": bp_start,
         "BillingPeriodEnd": bp_end,
         "PricingCurrency": "USD",
@@ -249,22 +272,32 @@ def _row_for(finding: dict[str, Any]) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 
 
-def _partition_findings(
+def _filter_findings(
     findings: list[dict[str, Any]],
+    surfaces: set[str],
 ) -> tuple[list[dict[str, Any]], dict[str, int]]:
-    """Split findings into Azure-only rows and a per-surface skip count dict."""
-    azure_rows: list[dict[str, Any]] = []
-    skipped: dict[str, int] = {"ado": 0, "github": 0, "m365": 0}
+    """Split findings into included rows and a per-surface skip count dict.
+
+    Args:
+        findings: All findings from the report.
+        surfaces: Set of surface names to include (e.g. ``{"azure", "m365"}``).
+            Pass ``_ALL_SURFACES`` to include all known surfaces.
+
+    Returns:
+        A ``(included, skipped)`` tuple where ``included`` is the list of
+        findings whose ``surface`` field is in *surfaces*, and ``skipped``
+        is a dict mapping skipped surface names to their finding counts.
+        ``skipped`` keys are alphabetically sorted.
+    """
+    included: list[dict[str, Any]] = []
+    skipped: dict[str, int] = {}
     for f in findings:
         surface = f.get("surface", "")
-        if surface == "azure":
-            azure_rows.append(f)
-        elif surface in skipped:
-            skipped[surface] += 1
+        if surface in surfaces:
+            included.append(f)
         else:
-            # Unknown surface — count as skipped without crashing.
             skipped[surface] = skipped.get(surface, 0) + 1
-    return azure_rows, skipped
+    return included, dict(sorted(skipped.items()))
 
 
 # ---------------------------------------------------------------------------
@@ -272,27 +305,57 @@ def _partition_findings(
 # ---------------------------------------------------------------------------
 
 
+def _pii_mode_name(
+    pii_redaction: bool,
+    salt_mode: str,
+    surfaces_included: set[str],
+) -> str:
+    """Select the ``pii_handling.mode`` enum value for the manifest.
+
+    Azure-only exports retain the ``azure_resource_id_*`` names (ResourceId
+    is an ARM resource ID).  Multi-surface exports that include at least one
+    non-Azure surface use the ``principal_*`` names (ResourceId is a
+    UPN/login/handle for those surfaces).
+    """
+    has_non_azure = bool(surfaces_included - {"azure"})
+    if not pii_redaction:
+        return "principal_cleartext" if has_non_azure else "azure_resource_id_cleartext"
+    if salt_mode == "tenant_stable":
+        return (
+            "principal_tenant_stable_salted_hash"
+            if has_non_azure
+            else "azure_resource_id_tenant_stable_salted_hash"
+        )
+    return (
+        "principal_per_run_salted_hash"
+        if has_non_azure
+        else "azure_resource_id_per_run_salted_hash"
+    )
+
+
 def build_focus_aligned_manifest(
     report: dict[str, Any],
     *,
-    azure_rows: list[dict[str, Any]],
+    included_rows: list[dict[str, Any]],
     skipped: dict[str, int],
+    surfaces_requested: set[str],
 ) -> dict[str, Any]:
     """Build the sidecar manifest dict for a FOCUS-aligned advisory export.
 
-    The manifest contract is ``manifest_schema_version: "0.1"`` (v0.5.0).
+    The manifest contract is ``manifest_schema_version: "0.1"`` (v0.5.0/v0.6.0).
     Fields are declared in the order specified by Maya's stage-3 plan so that
     ``json.dumps(..., sort_keys=False)`` produces the contract-compliant field
     order documented in ``docs/schema.md``.
 
     PII handling
     ------------
-    The engine's ``ctx.redact()`` salts every principal — including Azure
-    resource IDs — with a per-run secret when ``pii_redaction=True``
-    (default).  ``ResourceId`` is therefore the salted hash, not a
-    cleartext ARM resource ID, and ``AdvisoryFindingKey`` rotates with
-    the per-run salt for cross-run joins.  ``known_limitation`` mirrors
-    the playbook reporter's contract (Noor PR #78 NIT #2 + #73).
+    The engine's ``ctx.redact()`` salts every principal with a per-run secret
+    when ``pii_redaction=True`` (default).  ``ResourceId`` is therefore the
+    salted hash, not a cleartext identifier.
+
+    For Azure-only exports, the mode is ``azure_resource_id_*`` (ResourceId is
+    an ARM resource ID).  When any non-Azure surface is included, the mode
+    switches to ``principal_*`` (ResourceId is a UPN/login/handle).
 
     With engine tenant-stable salting (issue #73), when an operator-provided
     salt is used (``salt_mode="tenant_stable"``), AdvisoryFindingKey becomes
@@ -302,9 +365,22 @@ def build_focus_aligned_manifest(
     pii_redaction = bool(run.get("pii_redaction", True))
     salt_mode = run.get("salt_mode", "per_run")
 
-    if pii_redaction and salt_mode == "tenant_stable":
+    # surfaces_included: only surfaces that actually appear in included_rows.
+    actual_surfaces: set[str] = set()
+    for row in included_rows:
+        s = row.get("surface", "")
+        if s:
+            actual_surfaces.add(s)
+
+    mode = _pii_mode_name(pii_redaction, salt_mode, actual_surfaces)
+
+    # Derive join key stability and known_limitation from the mode.
+    if mode in (
+        "azure_resource_id_tenant_stable_salted_hash",
+        "principal_tenant_stable_salted_hash",
+    ):
         pii_handling: dict[str, Any] = {
-            "mode": "azure_resource_id_tenant_stable_salted_hash",
+            "mode": mode,
             "salt_mode": "tenant_stable",
             "known_limitation": None,
         }
@@ -314,16 +390,16 @@ def build_focus_aligned_manifest(
             "Stable across runs for the same (rule_id, resource_id, evidence) "
             "with tenant-stable salt. Not a FOCUS column."
         )
-    elif pii_redaction:
+    elif mode in ("azure_resource_id_per_run_salted_hash", "principal_per_run_salted_hash"):
         pii_handling = {
-            "mode": "azure_resource_id_per_run_salted_hash",
+            "mode": mode,
             "salt_mode": "per_run",
             "known_limitation": (
-                "ResourceId is the engine's salted hash of the cleartext ARM "
-                "resource ID under default redaction; AdvisoryFindingKey rotates "
+                "ResourceId is the engine's salted hash of the cleartext principal "
+                "under default redaction; AdvisoryFindingKey rotates "
                 "with the per-run salt and is unsafe for cross-run joins. "
                 "Re-runs will produce duplicate advisory rows. Engine "
-                "tenant-stable salting is deferred to #73; until then, run "
+                "tenant-stable salting is available via #73; until then, run "
                 "with --no-pii-redaction or accept the per-run instability."
             ),
         }
@@ -335,8 +411,9 @@ def build_focus_aligned_manifest(
             "per-run salt. Not a FOCUS column."
         )
     else:
+        # cleartext modes
         pii_handling = {
-            "mode": "azure_resource_id_cleartext",
+            "mode": mode,
             "salt_mode": "disabled",
             "known_limitation": None,
         }
@@ -345,6 +422,7 @@ def build_focus_aligned_manifest(
         advisory_key_notes = (
             "Stable across runs for the same (rule_id, resource_id, evidence). Not a FOCUS column."
         )
+
     return {
         "manifest_schema_version": "0.1",
         "tool": {"name": "finops-assess", "version": __version__},
@@ -358,9 +436,9 @@ def build_focus_aligned_manifest(
         "focus_version": "1.3",
         "conformance_level": "non-conformant",
         "conformance_rationale": _CONFORMANCE_RATIONALE,
-        "surfaces_included": sorted({"azure"}),
+        "surfaces_included": sorted(actual_surfaces),
         "surfaces_skipped": dict(sorted(skipped.items())),
-        "row_count": len(azure_rows),
+        "row_count": len(included_rows),
         "unsupported_columns": list(_UNSUPPORTED_COLUMNS),
         "join_keys": [
             {
@@ -393,12 +471,28 @@ def build_focus_aligned_manifest(
 def write_focus_aligned_export(
     report: dict[str, Any],
     output_csv: Path,
+    *,
+    surfaces: set[str] | None = None,
 ) -> tuple[Path, Path]:
     """Write a FOCUS-aligned advisory CSV and sidecar manifest.
 
-    Returns ``(csv_path, manifest_path)`` — both as resolved ``Path`` objects
-    relative to the caller's working directory (inputs that are already absolute
-    are returned unchanged).
+    C9-3 default alignment: both the library API and the ``export focus-aligned``
+    CLI command default to **all surfaces** (``{"azure", "m365", "github",
+    "ado"}``).  Pass an explicit ``surfaces`` set to restrict output. For
+    exact v0.5.0 Azure-only behavior, pass ``surfaces={"azure"}``.
+
+    Args:
+        report: Parsed finops-assess findings JSON (the ``dict`` from
+            ``json.loads(report_path.read_text())``).
+        output_csv: Destination path for the advisory CSV.
+        surfaces: Set of surface names to include.  Defaults to all four
+            known surfaces (``_ALL_SURFACES``).  Pass ``{"azure"}`` to
+            reproduce the v0.5.0 Azure-only behavior exactly.
+
+    Returns:
+        ``(csv_path, manifest_path)`` — both as resolved ``Path`` objects
+        relative to the caller's working directory (inputs that are already
+        absolute are returned unchanged).
 
     The CSV uses LF line endings and UTF-8 encoding regardless of platform.
     The manifest JSON is written alongside the CSV at
@@ -407,11 +501,23 @@ def write_focus_aligned_export(
     Callers are responsible for ensuring the parent directory is writable;
     this function creates parent dirs automatically.
     """
+    if surfaces is None:
+        surfaces = set(_ALL_SURFACES)
+
     output_csv = Path(output_csv)
     output_csv.parent.mkdir(parents=True, exist_ok=True)
 
     all_findings: list[dict[str, Any]] = report.get("findings", [])
-    azure_rows, skipped = _partition_findings(all_findings)
+    included_rows, skipped = _filter_findings(all_findings, surfaces)
+
+    # Sort rows for byte-deterministic output: (surface, RuleId, ResourceId).
+    included_rows.sort(
+        key=lambda f: (
+            f.get("surface", ""),
+            f.get("rule_id", ""),
+            f.get("principal", ""),
+        )
+    )
 
     # Write CSV.
     with output_csv.open("w", encoding="utf-8", newline="") as fh:
@@ -422,11 +528,16 @@ def write_focus_aligned_export(
             lineterminator="\n",
         )
         writer.writeheader()
-        for finding in azure_rows:
+        for finding in included_rows:
             writer.writerow(_row_for(finding))
 
     # Build and write manifest.
-    manifest = build_focus_aligned_manifest(report, azure_rows=azure_rows, skipped=skipped)
+    manifest = build_focus_aligned_manifest(
+        report,
+        included_rows=included_rows,
+        skipped=skipped,
+        surfaces_requested=surfaces,
+    )
     manifest_path = output_csv.parent / (output_csv.name + ".manifest.json")
     payload = json.dumps(manifest, indent=2, sort_keys=False, ensure_ascii=False)
     manifest_path.write_text(payload + "\n", encoding="utf-8", newline="")

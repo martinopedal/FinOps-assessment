@@ -869,7 +869,20 @@ def export() -> None:
     required=True,
     help="Destination CSV path; manifest written alongside.",
 )
-def export_focus_aligned(input_path: Path, output_path: Path) -> None:
+@click.option(
+    "--surface",
+    "surface",
+    type=click.Choice(["azure", "m365", "github", "ado", "all"], case_sensitive=False),
+    default="all",
+    show_default=True,
+    help=(
+        "Surface(s) to include in the advisory CSV. "
+        "'all' exports Azure + M365 + GitHub + ADO rows (default). "
+        "Pass a single surface name to restrict output; use '--surface azure' "
+        "to reproduce the v0.5.0 Azure-only behavior exactly."
+    ),
+)
+def export_focus_aligned(input_path: Path, output_path: Path, surface: str) -> None:
     """Emit a FOCUS-aligned advisory CSV from a finops-assess findings report.
 
     This export is NOT a FOCUS 1.3 conformant Cost-and-Usage dataset. Rows
@@ -878,6 +891,8 @@ def export_focus_aligned(input_path: Path, output_path: Path) -> None:
     empty; advisory savings are surfaced in EstimatedMonthlySavingsUsd. See
     the sidecar manifest.json and docs/focus-export.md before loading.
     """
+    from finops_assess.reporters.focus_aligned import _ALL_SURFACES
+
     try:
         raw = input_path.read_text(encoding="utf-8")
     except OSError as exc:
@@ -900,21 +915,22 @@ def export_focus_aligned(input_path: Path, output_path: Path) -> None:
         )
         raise click.exceptions.Exit(1) from None
 
-    csv_path, manifest_path = write_focus_aligned_export(report, output_path)
+    surfaces: set[str] = set(_ALL_SURFACES) if surface == "all" else {surface}
+    csv_path, manifest_path = write_focus_aligned_export(report, output_path, surfaces=surfaces)
 
-    # Log skipped non-Azure findings.
-    findings: list[dict[str, Any]] = report.get("findings", [])
-    n_m365 = sum(1 for f in findings if f.get("surface") == "m365")
-    n_github = sum(1 for f in findings if f.get("surface") == "github")
-    n_ado = sum(1 for f in findings if f.get("surface") == "ado")
-    n_skipped = n_m365 + n_github + n_ado
-    if n_skipped:
-        click.echo(
-            f"Skipped {n_skipped} non-Azure findings "
-            f"(m365={n_m365}, github={n_github}, ado={n_ado})"
-        )
+    # Log skipped surfaces from the manifest.
+    manifest_path_obj = Path(str(output_path) + ".manifest.json")
+    if manifest_path_obj.exists():
+        import json as _json
 
-    n_rows = sum(1 for f in findings if f.get("surface") == "azure")
+        manifest_data: dict[str, Any] = _json.loads(manifest_path_obj.read_text(encoding="utf-8"))
+        surfaces_skipped: dict[str, int] = manifest_data.get("surfaces_skipped", {})
+        if surfaces_skipped:
+            click.echo(f"Skipped surfaces: {surfaces_skipped}")
+        n_rows: int = manifest_data.get("row_count", 0)
+    else:
+        n_rows = 0
+
     click.echo(f"Wrote {n_rows} advisory rows to {csv_path} (manifest: {manifest_path})")
 
 

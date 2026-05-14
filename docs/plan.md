@@ -237,7 +237,8 @@ Each rule has: `id`, `surface`, `severity`, `recommendation_template`,
 Findings can additionally be projected onto a FOCUS-aligned advisory CSV via
 `finops-assess export focus-aligned`; see [`docs/focus-export.md`](focus-export.md).
 This export is NOT a FOCUS 1.3 conformant Cost-and-Usage dataset — it is an advisory
-view that joins to your cost warehouse on `ResourceId`. Azure-only in v0.5.0.
+view that joins to your cost warehouse on `ResourceId`. Multi-surface (Azure, M365,
+GitHub, ADO) from v0.6.0 (#71). Use `--surface azure` for v0.5.0 Azure-only behavior.
 
 ---
 

@@ -1,0 +1,158 @@
+{
+  "run": {
+    "tool": "finops-assess",
+    "version": "0.6.0",
+    "schema_version": "1.0",
+    "generated_at": "1970-01-01T00:00:00+00:00",
+    "input": "<redacted>/run.json",
+    "pii_redaction": true,
+    "mode": "read-only"
+  },
+  "summary": {
+    "total_findings": 9,
+    "by_severity": {"high": 3, "medium": 2, "low": 2, "info": 2}
+  },
+  "findings": [
+    {
+      "rule_id": "AZ.VM_IDLE_30D",
+      "surface": "azure",
+      "severity": "high",
+      "principal": "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/vm-idle-01",
+      "current_sku": "Standard_D4s_v3",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 142.56,
+      "recommendation": "Consider deallocating this idle VM.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "avg_cpu_pct": 2.1,
+        "observation_window_end": "2024-03-31T00:00:00Z"
+      }
+    },
+    {
+      "rule_id": "AZ.UNATTACHED_DISK",
+      "surface": "azure",
+      "severity": "medium",
+      "principal": "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-test/providers/Microsoft.Compute/disks/disk-orphan-02",
+      "current_sku": "Premium_LRS",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 23.10,
+      "recommendation": "Consider deleting this unattached disk.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "attached": false,
+        "observation_window_end": "2024-03-31T00:00:00Z"
+      }
+    },
+    {
+      "rule_id": "M365.UNUSED_LICENSE_30D",
+      "surface": "m365",
+      "severity": "high",
+      "principal": "sha256:abc1111111111111111111111111111111111111111111111111111111111111",
+      "current_sku": "ENTERPRISEPACK",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 35.00,
+      "recommendation": "Consider removing this unused M365 E3 license.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "days_inactive": 45,
+        "observation_window_end": "2024-03-31T00:00:00Z"
+      }
+    },
+    {
+      "rule_id": "M365.DISABLED_WITH_LICENSE",
+      "surface": "m365",
+      "severity": "medium",
+      "principal": "sha256:abc2222222222222222222222222222222222222222222222222222222222222",
+      "current_sku": "ENTERPRISEPREMIUM",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": null,
+      "recommendation": "Consider verifying whether this disabled account requires its M365 E5 license.",
+      "evidence_ref": null,
+      "confidence": "medium",
+      "evidence": {
+        "observation_window_end": "2024-03-31T00:00:00Z"
+      }
+    },
+    {
+      "rule_id": "GH.COPILOT_INACTIVE_30D",
+      "surface": "github",
+      "severity": "low",
+      "principal": "sha256:def1111111111111111111111111111111111111111111111111111111111111",
+      "current_sku": "copilot_business",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 19.00,
+      "recommendation": "Consider removing this inactive Copilot seat.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "days_inactive": 60,
+        "observation_window_end": "2024-03-31T00:00:00Z"
+      }
+    },
+    {
+      "rule_id": "GH.INACTIVE_SEAT_90D",
+      "surface": "github",
+      "severity": "info",
+      "principal": "sha256:def2222222222222222222222222222222222222222222222222222222222222",
+      "current_sku": "github_enterprise",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 21.00,
+      "recommendation": "Consider removing this inactive GitHub Enterprise seat.",
+      "evidence_ref": null,
+      "confidence": "medium",
+      "evidence": {
+        "observation_window_end": "2024-03-31T00:00:00Z"
+      }
+    },
+    {
+      "rule_id": "ADO.UNUSED_SEAT_30D",
+      "surface": "ado",
+      "severity": "info",
+      "principal": "sha256:ghi1111111111111111111111111111111111111111111111111111111111111",
+      "current_sku": "basic",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 6.00,
+      "recommendation": "Consider downgrading or removing this idle ADO Basic seat.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "days_inactive": 35,
+        "observation_window_end": "2024-03-31T00:00:00Z"
+      }
+    },
+    {
+      "rule_id": "ADO.TEST_PLANS_UNUSED",
+      "surface": "ado",
+      "severity": "low",
+      "principal": "sha256:ghi2222222222222222222222222222222222222222222222222222222222222",
+      "current_sku": "basic_plus_test",
+      "recommended_sku": "basic",
+      "estimated_monthly_savings_usd": 0,
+      "recommendation": "Consider downgrading this ADO seat from Basic+Test Plans to Basic.",
+      "evidence_ref": null,
+      "confidence": "medium",
+      "evidence": {
+        "observation_window_end": "2024-03-31T00:00:00Z"
+      }
+    },
+    {
+      "rule_id": "AZ.VM_IDLE_30D",
+      "surface": "azure",
+      "severity": "high",
+      "principal": "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/vm-idle-03",
+      "current_sku": "Standard_D2s_v3",
+      "recommended_sku": null,
+      "estimated_monthly_savings_usd": 70.00,
+      "recommendation": "Consider deallocating this idle VM.",
+      "evidence_ref": null,
+      "confidence": "high",
+      "evidence": {
+        "avg_cpu_pct": 1.5,
+        "observation_window_end": "2024-03-31T00:00:00Z"
+      }
+    }
+  ]
+}

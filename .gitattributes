@@ -25,6 +25,11 @@ examples/playbook.jsonl.manifest.json text eol=lf
 # Must be LF on all platforms or the comparison fails on Windows-hosted runners.
 tests/fixtures/focus_aligned/golden-azure.csv text eol=lf
 tests/fixtures/focus_aligned/golden-azure.manifest.json text eol=lf
+# Multi-surface golden fixtures for FOCUS exporter v0.6.0 (issue #71).
+# C4a: these MUST be LF-only; Windows checkout with core.autocrlf=true would
+# rewrite to CRLF and break the byte-comparison tests (T1/T2) on Windows CI.
+tests/fixtures/focus_aligned/golden-multi-surface.csv text eol=lf
+tests/fixtures/focus_aligned/golden-multi-surface.manifest.json text eol=lf
 # Test golden fixtures for the playbook reporter (issue #61, v0.5.0) --
 # byte-compared in tests 11 & 12 (test_golden_jsonl_byte_identical /
 # test_golden_manifest_byte_identical). Same Windows-LE-rewrite mechanism.

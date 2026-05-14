@@ -1,6 +1,7 @@
 """Tests for the FOCUS-aligned advisory CSV exporter.
 
-Maya's 16 enumerated tests + 4 Noor stage-4 P2 additions = 20 tests total.
+Maya's 16 enumerated tests + 4 Noor stage-4 P2 additions + 15 multi-surface
+tests (issue #71, v0.6.0) = 35+ tests total.
 
 All fixtures live under ``tests/fixtures/focus_aligned/``.
 Golden artefacts were generated with ``SOURCE_DATE_EPOCH=0`` to make
@@ -38,12 +39,16 @@ def _load_fixture(name: str) -> dict:  # type: ignore[type-arg]
     return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
 
-def _render(report: dict, tmp_path: Path, epoch: str = "0") -> tuple[Path, Path]:  # type: ignore[type-arg]
+def _render(
+    report: dict, tmp_path: Path, epoch: str = "0", surfaces: set[str] | None = None
+) -> tuple[Path, Path]:  # type: ignore[type-arg]
     """Render a report to a tmp_path CSV + manifest with the given SOURCE_DATE_EPOCH."""
     old = os.environ.get("SOURCE_DATE_EPOCH")
     os.environ["SOURCE_DATE_EPOCH"] = epoch
     try:
-        csv_path, manifest_path = write_focus_aligned_export(report, tmp_path / "out.csv")
+        csv_path, manifest_path = write_focus_aligned_export(
+            report, tmp_path / "out.csv", surfaces=surfaces
+        )
     finally:
         if old is None:
             os.environ.pop("SOURCE_DATE_EPOCH", None)
@@ -60,7 +65,9 @@ def _render(report: dict, tmp_path: Path, epoch: str = "0") -> tuple[Path, Path]
 def test_golden_csv_byte_identical(tmp_path: Path) -> None:
     """Rendered CSV bytes must match the committed golden fixture."""
     report = _load_fixture("input-azure-two-findings.json")
-    csv_path, _ = _render(report, tmp_path)
+    # Pass surfaces={"azure"} to preserve byte-identity with the v0.5.0 golden
+    # (default is now all-surfaces per C9-3 resolution, but this fixture is Azure-only).
+    csv_path, _ = _render(report, tmp_path, surfaces={"azure"})
     actual = csv_path.read_bytes()
     expected = (FIXTURES / "golden-azure.csv").read_bytes()
     assert actual == expected, "CSV output has drifted from golden-azure.csv"
@@ -74,7 +81,8 @@ def test_golden_csv_byte_identical(tmp_path: Path) -> None:
 def test_golden_manifest_byte_identical(tmp_path: Path) -> None:
     """Rendered manifest bytes must match the committed golden fixture."""
     report = _load_fixture("input-azure-two-findings.json")
-    _, manifest_path = _render(report, tmp_path)
+    # Pass surfaces={"azure"} to preserve byte-identity with the v0.5.0 golden.
+    _, manifest_path = _render(report, tmp_path, surfaces={"azure"})
     actual = manifest_path.read_bytes()
     expected = (FIXTURES / "golden-azure.manifest.json").read_bytes()
     assert actual == expected, "Manifest output has drifted from golden-azure.manifest.json"
@@ -190,7 +198,7 @@ def test_cli_help_snapshot() -> None:
 
 
 def test_skipped_surface_count_logged(tmp_path: Path) -> None:
-    """Non-Azure findings are counted and logged; CSV contains only Azure rows."""
+    """With --surface all (default), all findings are included and surfaces_skipped is empty."""
     from click.testing import CliRunner
 
     input_path = FIXTURES / "input-mixed-surfaces.json"
@@ -200,6 +208,38 @@ def test_skipped_surface_count_logged(tmp_path: Path) -> None:
         [
             "export",
             "focus-aligned",
+            "--input",
+            str(input_path),
+            "--output",
+            str(output_path),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+
+    # CSV should contain all 5 findings (all surfaces included by default).
+    with output_path.open(encoding="utf-8", newline="") as fh:
+        rows = list(csv.DictReader(fh))
+    assert len(rows) == 5
+
+    # Manifest surfaces_skipped must be empty (all surfaces included).
+    manifest = json.loads((tmp_path / "out.csv.manifest.json").read_text(encoding="utf-8"))
+    assert manifest["surfaces_skipped"] == {}
+    assert manifest["row_count"] == 5
+
+
+def test_surface_flag_azure_only_legacy(tmp_path: Path) -> None:
+    """--surface azure preserves v0.5.0 Azure-only behavior: 2 rows, skipped m365/github/ado."""
+    from click.testing import CliRunner
+
+    input_path = FIXTURES / "input-mixed-surfaces.json"
+    output_path = tmp_path / "out.csv"
+    result = CliRunner().invoke(
+        main,
+        [
+            "export",
+            "focus-aligned",
+            "--surface",
+            "azure",
             "--input",
             str(input_path),
             "--output",
@@ -232,11 +272,14 @@ def test_advisory_finding_key_stable_across_runs(tmp_path: Path) -> None:
     key2 = advisory_finding_key(finding)
     assert key1 == key2
 
-    # Round-trip: key in CSV matches helper output.
-    csv_path, _ = _render(report, tmp_path)
+    # Round-trip: key in CSV matches helper output (find the row by RuleId since
+    # rows are now sorted by (surface, RuleId, ResourceId) and may not match input order).
+    csv_path, _ = _render(report, tmp_path, surfaces={"azure"})
     with csv_path.open(encoding="utf-8", newline="") as fh:
         rows = list(csv.DictReader(fh))
-    assert rows[0]["AdvisoryFindingKey"] == key1
+    matching = [r for r in rows if r["RuleId"] == finding["rule_id"]]
+    assert len(matching) == 1
+    assert matching[0]["AdvisoryFindingKey"] == key1
 
 
 # ---------------------------------------------------------------------------
@@ -339,8 +382,9 @@ def test_empty_findings_produces_header_only_csv_and_zero_row_manifest(
 
     manifest = json.loads((tmp_path / "out.csv.manifest.json").read_text(encoding="utf-8"))
     assert manifest["row_count"] == 0
-    assert manifest["surfaces_included"] == ["azure"]
-    assert manifest["surfaces_skipped"] == {"ado": 0, "github": 0, "m365": 0}
+    # With --surface all (default) and no findings, surfaces_included is empty.
+    assert manifest["surfaces_included"] == []
+    assert manifest["surfaces_skipped"] == {}
 
 
 # ---------------------------------------------------------------------------
@@ -714,3 +758,384 @@ def test_focus_manifest_salt_mode_tenant_stable() -> None:
     advisory_key = next(k for k in manifest["join_keys"] if k["column"] == "AdvisoryFindingKey")
     assert resource_id_key["stability"] == "stable"
     assert advisory_key["stability"] == "stable"
+
+
+# ===========================================================================
+# v0.6.0 multi-surface tests (T1-T15, issue #71)
+# ===========================================================================
+
+
+# ---------------------------------------------------------------------------
+# T1 — multi-surface golden CSV byte-identical
+# ---------------------------------------------------------------------------
+
+
+def test_multi_surface_golden_csv(tmp_path: Path) -> None:
+    """Golden-compare: render input-multi-surface-full.json with SOURCE_DATE_EPOCH=0.
+
+    CSV bytes must be byte-identical to the committed golden-multi-surface.csv.
+    """
+    report = _load_fixture("input-multi-surface-full.json")
+    csv_path, _ = _render(report, tmp_path)
+    actual = csv_path.read_bytes()
+    expected = (FIXTURES / "golden-multi-surface.csv").read_bytes()
+    assert actual == expected, "CSV output has drifted from golden-multi-surface.csv"
+
+
+# ---------------------------------------------------------------------------
+# T2 — multi-surface golden manifest byte-identical
+# ---------------------------------------------------------------------------
+
+
+def test_multi_surface_golden_manifest(tmp_path: Path) -> None:
+    """Golden-compare: manifest from T1 must be byte-identical to golden-multi-surface.manifest.json."""
+    report = _load_fixture("input-multi-surface-full.json")
+    _, manifest_path = _render(report, tmp_path)
+    actual = manifest_path.read_bytes()
+    expected = (FIXTURES / "golden-multi-surface.manifest.json").read_bytes()
+    assert actual == expected, "Manifest output has drifted from golden-multi-surface.manifest.json"
+
+
+# ---------------------------------------------------------------------------
+# T3 — ServiceName mapping per surface
+# ---------------------------------------------------------------------------
+
+
+def test_multi_surface_service_name_mapping(tmp_path: Path) -> None:
+    """ServiceName column must map correctly for each surface."""
+    report = _load_fixture("input-multi-surface-full.json")
+    csv_path, _ = _render(report, tmp_path)
+    with csv_path.open(encoding="utf-8", newline="") as fh:
+        rows = list(csv.DictReader(fh))
+
+    service_names = {r["RuleId"].split(".")[0]: r["ServiceName"] for r in rows}
+    assert service_names.get("AZ") == "Azure"
+    assert service_names.get("M365") == "Microsoft 365"
+    assert service_names.get("GH") == "GitHub"
+    assert service_names.get("ADO") == "Azure DevOps"
+
+
+# ---------------------------------------------------------------------------
+# T4 — ServiceCategory mapping per surface
+# ---------------------------------------------------------------------------
+
+
+def test_multi_surface_service_category_mapping(tmp_path: Path) -> None:
+    """ServiceCategory must be Compute for Azure, Collaboration for M365, Developer Tools for GH/ADO."""
+    report = _load_fixture("input-multi-surface-full.json")
+    csv_path, _ = _render(report, tmp_path)
+    with csv_path.open(encoding="utf-8", newline="") as fh:
+        rows = list(csv.DictReader(fh))
+
+    by_surface = {r["ServiceName"]: r["ServiceCategory"] for r in rows}
+    assert by_surface["Azure"] == "Compute"
+    assert by_surface["Microsoft 365"] == "Collaboration"
+    assert by_surface["GitHub"] == "Developer Tools"
+    assert by_surface["Azure DevOps"] == "Developer Tools"
+
+
+# ---------------------------------------------------------------------------
+# T5 — ResourceType mapping per surface
+# ---------------------------------------------------------------------------
+
+
+def test_multi_surface_resource_type_mapping(tmp_path: Path) -> None:
+    """ResourceType must be empty for Azure, 'user_license' for M365, 'seat' for GH/ADO."""
+    report = _load_fixture("input-multi-surface-full.json")
+    csv_path, _ = _render(report, tmp_path)
+    with csv_path.open(encoding="utf-8", newline="") as fh:
+        rows = list(csv.DictReader(fh))
+
+    for row in rows:
+        svc = row["ServiceName"]
+        res_type = row["ResourceType"]
+        if svc == "Azure":
+            assert res_type == "", f"Azure ResourceType should be empty, got {res_type!r}"
+        elif svc == "Microsoft 365":
+            assert res_type == "user_license", (
+                f"M365 ResourceType should be user_license, got {res_type!r}"
+            )
+        elif svc in ("GitHub", "Azure DevOps"):
+            assert res_type == "seat", f"{svc} ResourceType should be seat, got {res_type!r}"
+
+
+# ---------------------------------------------------------------------------
+# T6 — --surface azure produces Azure-only rows
+# ---------------------------------------------------------------------------
+
+
+def test_surface_flag_azure_only(tmp_path: Path) -> None:
+    """--surface azure with mixed-surface input produces only Azure rows."""
+    report = _load_fixture("input-multi-surface-full.json")
+    csv_path, manifest_path = write_focus_aligned_export(
+        report, tmp_path / "out.csv", surfaces={"azure"}
+    )
+    with csv_path.open(encoding="utf-8", newline="") as fh:
+        rows = list(csv.DictReader(fh))
+
+    assert all(r["ServiceName"] == "Azure" for r in rows), (
+        "Non-Azure rows found with surfaces={'azure'}"
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["surfaces_skipped"].get("m365", 0) > 0
+    assert manifest["surfaces_skipped"].get("github", 0) > 0
+    assert manifest["surfaces_skipped"].get("ado", 0) > 0
+
+
+# ---------------------------------------------------------------------------
+# T7 — --surface m365 produces M365-only rows
+# ---------------------------------------------------------------------------
+
+
+def test_surface_flag_single_non_azure(tmp_path: Path) -> None:
+    """--surface m365 with mixed-surface input produces only M365 rows."""
+    report = _load_fixture("input-mixed-surfaces.json")
+    csv_path, manifest_path = write_focus_aligned_export(
+        report, tmp_path / "out.csv", surfaces={"m365"}
+    )
+    with csv_path.open(encoding="utf-8", newline="") as fh:
+        rows = list(csv.DictReader(fh))
+
+    assert len(rows) == 1
+    assert rows[0]["ServiceName"] == "Microsoft 365"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["surfaces_skipped"].get("azure", 0) > 0
+
+
+# ---------------------------------------------------------------------------
+# T8 — PII mode name: multi-surface with per-run salt
+# ---------------------------------------------------------------------------
+
+
+def test_pii_handling_mode_multi_surface(tmp_path: Path) -> None:
+    """pii_handling.mode must be principal_per_run_salted_hash for multi-surface export."""
+    report: dict = {  # type: ignore[type-arg]
+        "run": {
+            "input": "",
+            "schema_version": "1.0",
+            "pii_redaction": True,
+            "salt_mode": "per_run",
+        },
+        "findings": [
+            {
+                "rule_id": "M365.UNUSED_LICENSE_30D",
+                "surface": "m365",
+                "severity": "high",
+                "principal": "sha256:aabbcc",
+                "current_sku": "ENTERPRISEPACK",
+                "recommendation": "Consider removing license.",
+                "evidence": {"observation_window_end": "2024-03-31T00:00:00Z"},
+            },
+            {
+                "rule_id": "AZ.VM_IDLE_30D",
+                "surface": "azure",
+                "severity": "high",
+                "principal": "/subscriptions/abc/vm/x",
+                "current_sku": "Standard_D4s_v3",
+                "recommendation": "Consider deallocating.",
+                "evidence": {"observation_window_end": "2024-03-31T00:00:00Z"},
+            },
+        ],
+    }
+    _, manifest_path = write_focus_aligned_export(
+        report, tmp_path / "out.csv", surfaces={"azure", "m365"}
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["pii_handling"]["mode"] == "principal_per_run_salted_hash"
+
+
+# ---------------------------------------------------------------------------
+# T9 — PII mode name: Azure-only preserves azure_resource_id_* names
+# ---------------------------------------------------------------------------
+
+
+def test_pii_handling_mode_azure_only(tmp_path: Path) -> None:
+    """pii_handling.mode must be azure_resource_id_per_run_salted_hash for Azure-only export."""
+    report = _load_fixture("input-azure-two-findings.json")
+    _, manifest_path = write_focus_aligned_export(report, tmp_path / "out.csv", surfaces={"azure"})
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["pii_handling"]["mode"] == "azure_resource_id_per_run_salted_hash"
+
+
+# ---------------------------------------------------------------------------
+# T10 — determinism across two runs with SOURCE_DATE_EPOCH=0
+# ---------------------------------------------------------------------------
+
+
+def test_determinism_multi_surface(tmp_path: Path) -> None:
+    """Two runs with SOURCE_DATE_EPOCH=0 and all surfaces must produce byte-identical output."""
+    report = _load_fixture("input-multi-surface-full.json")
+    p1 = tmp_path / "run1"
+    p2 = tmp_path / "run2"
+    p1.mkdir()
+    p2.mkdir()
+    csv1, m1 = _render(report, p1)
+    csv2, m2 = _render(report, p2)
+    assert csv1.read_bytes() == csv2.read_bytes(), "CSVs differ under SOURCE_DATE_EPOCH=0"
+    assert m1.read_bytes() == m2.read_bytes(), "Manifests differ under SOURCE_DATE_EPOCH=0"
+
+
+# ---------------------------------------------------------------------------
+# T11 — sort order is deterministic regardless of input order
+# ---------------------------------------------------------------------------
+
+
+def test_sort_order_deterministic(tmp_path: Path) -> None:
+    """Rows must be sorted by (surface, RuleId, ResourceId) regardless of input order."""
+    base_findings = [
+        {
+            "rule_id": "M365.UNUSED_LICENSE_30D",
+            "surface": "m365",
+            "principal": "sha256:zzz",
+            "severity": "high",
+            "recommendation": "Remove m365",
+            "evidence": {"observation_window_end": "2024-03-31T00:00:00Z"},
+        },
+        {
+            "rule_id": "AZ.VM_IDLE_30D",
+            "surface": "azure",
+            "principal": "/subscriptions/abc/vm/a",
+            "severity": "high",
+            "recommendation": "Dealloc",
+            "evidence": {"observation_window_end": "2024-03-31T00:00:00Z"},
+        },
+        {
+            "rule_id": "ADO.UNUSED_SEAT_30D",
+            "surface": "ado",
+            "principal": "sha256:aaa",
+            "severity": "info",
+            "recommendation": "Downgrade ado",
+            "evidence": {"observation_window_end": "2024-03-31T00:00:00Z"},
+        },
+    ]
+    import copy
+
+    # Reverse order
+    shuffled_report: dict = {  # type: ignore[type-arg]
+        "run": {"input": "", "schema_version": "1.0", "pii_redaction": False},
+        "findings": list(reversed(copy.deepcopy(base_findings))),
+    }
+    forward_report: dict = {  # type: ignore[type-arg]
+        "run": {"input": "", "schema_version": "1.0", "pii_redaction": False},
+        "findings": copy.deepcopy(base_findings),
+    }
+
+    p1 = tmp_path / "fwd"
+    p2 = tmp_path / "rev"
+    p1.mkdir()
+    p2.mkdir()
+    csv1, _ = write_focus_aligned_export(forward_report, p1 / "out.csv")
+    csv2, _ = write_focus_aligned_export(shuffled_report, p2 / "out.csv")
+
+    assert csv1.read_bytes() == csv2.read_bytes(), (
+        "Row order differs between forward and reversed input — sort is not stable"
+    )
+
+    # Verify sort key: ado < azure < m365
+    with csv1.open(encoding="utf-8", newline="") as fh:
+        rows = list(csv.DictReader(fh))
+    service_names = [r["ServiceName"] for r in rows]
+    assert service_names == ["Azure DevOps", "Azure", "Microsoft 365"]
+
+
+# ---------------------------------------------------------------------------
+# T12 — manifest surfaces_included is alphabetically sorted
+# ---------------------------------------------------------------------------
+
+
+def test_manifest_surfaces_included_all(tmp_path: Path) -> None:
+    """surfaces_included in manifest must be alphabetically sorted and contain all four surfaces."""
+    report = _load_fixture("input-multi-surface-full.json")
+    _, manifest_path = _render(report, tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["surfaces_included"] == ["ado", "azure", "github", "m365"]
+
+
+# ---------------------------------------------------------------------------
+# T13 — golden manifest validates against JSON Schema
+# ---------------------------------------------------------------------------
+
+
+def test_manifest_schema_validates_multi_surface(tmp_path: Path) -> None:
+    """golden-multi-surface.manifest.json must validate against focus_aligned_manifest.schema.json."""
+    jsonschema = pytest.importorskip("jsonschema", reason="install with `pip install -e '.[dev]'`")
+    from importlib import resources
+
+    schema_text = (
+        resources.files("finops_assess.schemas") / "focus_aligned_manifest.schema.json"
+    ).read_text(encoding="utf-8")
+    schema = json.loads(schema_text)
+
+    manifest = json.loads(
+        (FIXTURES / "golden-multi-surface.manifest.json").read_text(encoding="utf-8")
+    )
+
+    validator_cls = jsonschema.Draft202012Validator
+    validator_cls.check_schema(schema)
+    errors = list(validator_cls(schema).iter_errors(manifest))
+    assert not errors, f"JSON Schema validation errors: {errors}"
+
+
+# ---------------------------------------------------------------------------
+# T14 — --surface flag appears in CLI --help
+# ---------------------------------------------------------------------------
+
+
+def test_cli_surface_flag_help() -> None:
+    """--help for export focus-aligned must list --surface and its valid choices."""
+    from click.testing import CliRunner
+
+    runner = CliRunner()
+    result = runner.invoke(main, ["export", "focus-aligned", "--help"])
+    assert result.exit_code == 0
+    output = result.output
+    assert "--surface" in output
+    # Choices must be present
+    for choice in ("azure", "m365", "github", "ado", "all"):
+        assert choice in output, f"Choice {choice!r} missing from --help"
+
+
+# ---------------------------------------------------------------------------
+# T15 — null and zero savings handled correctly
+# ---------------------------------------------------------------------------
+
+
+def test_empty_savings_null_handling(tmp_path: Path) -> None:
+    """null savings → empty string; 0 savings → '0' in EstimatedMonthlySavingsUsd."""
+    report: dict = {  # type: ignore[type-arg]
+        "run": {"input": "", "schema_version": "1.0", "pii_redaction": False},
+        "findings": [
+            {
+                "rule_id": "M365.UNUSED_LICENSE_30D",
+                "surface": "m365",
+                "principal": "user@test.com",
+                "severity": "high",
+                "recommendation": "Remove",
+                "estimated_monthly_savings_usd": None,
+                "evidence": {"observation_window_end": "2024-03-31T00:00:00Z"},
+            },
+            {
+                "rule_id": "ADO.TEST_PLANS_UNUSED",
+                "surface": "ado",
+                "principal": "user2@test.com",
+                "severity": "low",
+                "recommendation": "Downgrade",
+                "estimated_monthly_savings_usd": 0,
+                "evidence": {"observation_window_end": "2024-03-31T00:00:00Z"},
+            },
+        ],
+    }
+    csv_path, _ = write_focus_aligned_export(report, tmp_path / "out.csv")
+    with csv_path.open(encoding="utf-8", newline="") as fh:
+        rows = list(csv.DictReader(fh))
+
+    # ADO row with 0 savings
+    ado_row = next(r for r in rows if r["RuleId"] == "ADO.TEST_PLANS_UNUSED")
+    assert ado_row["EstimatedMonthlySavingsUsd"] == "0", (
+        f"Expected '0' for zero savings, got {ado_row['EstimatedMonthlySavingsUsd']!r}"
+    )
+    # M365 row with null savings
+    m365_row = next(r for r in rows if r["RuleId"] == "M365.UNUSED_LICENSE_30D")
+    assert m365_row["EstimatedMonthlySavingsUsd"] == "", (
+        f"Expected empty string for null savings, got {m365_row['EstimatedMonthlySavingsUsd']!r}"
+    )
