@@ -407,7 +407,7 @@ The triage CSV column order is stable: `finding_ref`,
 
 ---
 
-## FOCUS-aligned advisory manifest (v0.5.0)
+## FOCUS-aligned advisory manifest (v0.6.0)
 
 `finops-assess export focus-aligned --input report.json --output out.csv`
 emits `out.csv` (the advisory rows) and a sidecar `out.csv.manifest.json`
@@ -417,6 +417,9 @@ for usage, column semantics, and the AdvisoryFindingKey stability contract.
 The manifest is validated against
 `src/finops_assess/schemas/focus_aligned_manifest.schema.json` (Draft 2020-12).
 The schema is **additive-only**: readers must tolerate unknown top-level fields.
+
+From v0.6.0, all four surfaces (Azure, M365, GitHub, ADO) are included by
+default. Use `--surface azure` to reproduce v0.5.0 Azure-only behavior.
 
 ### Manifest top-level fields
 
@@ -431,8 +434,29 @@ The schema is **additive-only**: readers must tolerate unknown top-level fields.
 | `advisory` | `true` | Machine-checkable advisory flag |
 | `advisory_banner` | `str` | Human-readable warning — display before loading |
 | `row_count` | `int` | Number of data rows in the CSV |
-| `surfaces_included` | `list[str]` | Surfaces with ≥1 finding in the CSV |
-| `surfaces_skipped` | `{surface: int}` | Skipped surfaces and their finding counts (always present, may be all-zero) |
+| `surfaces_included` | `list[str]` | Surfaces actually present in the CSV (alphabetically sorted). May be `[]` when there are no findings. |
+| `surfaces_skipped` | `{surface: int}` | Skipped surfaces and their finding counts. Empty when `--surface all` (default). |
 | `pii_redaction` | `bool` | Copied from the source report |
 | `evidence_key_version` | `int` | Algorithm version for AdvisoryFindingKey hashes in this file |
 | `column_order` | `list[str]` | Ordered column names for the CSV |
+
+### `pii_handling.mode` enum (v0.6.0)
+
+The `pii_handling.mode` field selects between two naming families based on
+which surfaces are actually present in the export:
+
+| Mode value | When set | Meaning |
+|---|---|---|
+| `"azure_resource_id_cleartext"` | Azure-only, `--no-pii-redaction` | `ResourceId` is a cleartext ARM resource ID |
+| `"azure_resource_id_per_run_salted_hash"` | Azure-only, default redaction | ARM resource ID salted with a per-run key |
+| `"azure_resource_id_tenant_stable_salted_hash"` | Azure-only, tenant-stable salt | ARM resource ID salted with a stable tenant key |
+| `"principal_cleartext"` | Multi-surface, `--no-pii-redaction` | `ResourceId` is a cleartext UPN/login handle |
+| `"principal_per_run_salted_hash"` | Multi-surface, default redaction | Principal salted with a per-run key |
+| `"principal_tenant_stable_salted_hash"` | Multi-surface, tenant-stable salt | Principal salted with a stable tenant key |
+
+> **JSON Schema diff (v0.5.0 → v0.6.0):** The `pii_handling.mode` enum
+> widens from 3 values (`azure_resource_id_*`) to 6 values (adds
+> `principal_cleartext`, `principal_per_run_salted_hash`,
+> `principal_tenant_stable_salted_hash`). This is an **additive** change;
+> the schema description already states "Consumers MUST accept unknown
+> values."

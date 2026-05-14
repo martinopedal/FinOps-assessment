@@ -343,13 +343,37 @@ cost dataset. The output is **advisory**, not billed consumption — see
 $ finops-assess export focus-aligned \
     --input demo-report/demo-report.json \
     --output ./focus-aligned.csv
-Wrote 7 advisory rows to focus-aligned.csv (manifest: focus-aligned.csv.manifest.json)
+Wrote 12 advisory rows to focus-aligned.csv (manifest: focus-aligned.csv.manifest.json)
 ```
 
 The output is two files: `<output>.csv` (the rows) and
 `<output>.csv.manifest.json` (the sidecar contract). Both honour
-`SOURCE_DATE_EPOCH` for byte-deterministic builds. Azure-only in v0.5.0;
-M365/GitHub/ADO ship in v0.6.0 once the stable-principal-salt feature lands.
+`SOURCE_DATE_EPOCH` for byte-deterministic builds.
+
+### `--surface` flag (v0.6.0)
+
+**C9-3 decision:** both the library API and the CLI default to **all surfaces**
+(`azure`, `m365`, `github`, `ado`). To restrict output to a single surface, pass
+`--surface <name>`. To exactly reproduce v0.5.0 Azure-only behavior, use
+`--surface azure`.
+
+| `--surface` value | Surfaces exported |
+|---|---|
+| `all` *(default)* | `azure`, `m365`, `github`, `ado` |
+| `azure` | Azure only (v0.5.0 behavior) |
+| `m365` | Microsoft 365 only |
+| `github` | GitHub only |
+| `ado` | Azure DevOps only |
+
+```console
+# Export all surfaces (default)
+$ finops-assess export focus-aligned --input report.json --output out.csv
+
+# Export Azure-only (v0.5.0 behavior)
+$ finops-assess export focus-aligned --surface azure --input report.json --output out.csv
+```
+
+Rows are sorted by `(surface, RuleId, ResourceId)` for byte-deterministic output.
 
 ## Under-licensed cases: current boundary
 
