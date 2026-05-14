@@ -375,7 +375,10 @@ def build_focus_aligned_manifest(
     mode = _pii_mode_name(pii_redaction, salt_mode, actual_surfaces)
 
     # Derive join key stability and known_limitation from the mode.
-    if mode in ("azure_resource_id_tenant_stable_salted_hash", "principal_tenant_stable_salted_hash"):
+    if mode in (
+        "azure_resource_id_tenant_stable_salted_hash",
+        "principal_tenant_stable_salted_hash",
+    ):
         pii_handling: dict[str, Any] = {
             "mode": mode,
             "salt_mode": "tenant_stable",

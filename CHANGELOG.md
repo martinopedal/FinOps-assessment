@@ -9,6 +9,19 @@ release.
 
 ### Added
 
+- **FOCUS exporter: multi-surface support (#71)**: `finops-assess export focus-aligned`
+  now exports Azure, Microsoft 365, GitHub, and Azure DevOps findings in a single
+  advisory CSV by default. New `--surface` CLI flag (choices: `azure`, `m365`,
+  `github`, `ado`, `all`; default: `all`) lets operators restrict output to a
+  single surface. Use `--surface azure` to reproduce the v0.5.0 Azure-only behavior
+  exactly. Per-surface FOCUS column mapping: `ServiceName`, `ServiceCategory`, and
+  `ResourceType` are set per-surface (e.g. `ServiceName: "Microsoft 365"`,
+  `ResourceType: "user_license"` for M365 rows). Rows are sorted by
+  `(surface, RuleId, ResourceId)` for byte-deterministic output. The manifest
+  `pii_handling.mode` now distinguishes Azure-only exports (`azure_resource_id_*`)
+  from multi-surface exports (`principal_*`). The JSON Schema enum for
+  `pii_handling.mode` widens from 3 to 6 values (additive, no version bump).
+
 - **Reporter template overlay (#74)**: New `--allow-template-overlay <dir>` CLI
   flag lets operators supply custom Jinja2 templates that override the bundled
   per-rule `.j2` files for the `--format playbook` export. Overlay templates run

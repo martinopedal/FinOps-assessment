@@ -923,9 +923,7 @@ def export_focus_aligned(input_path: Path, output_path: Path, surface: str) -> N
     if manifest_path_obj.exists():
         import json as _json
 
-        manifest_data: dict[str, Any] = _json.loads(
-            manifest_path_obj.read_text(encoding="utf-8")
-        )
+        manifest_data: dict[str, Any] = _json.loads(manifest_path_obj.read_text(encoding="utf-8"))
         surfaces_skipped: dict[str, int] = manifest_data.get("surfaces_skipped", {})
         if surfaces_skipped:
             click.echo(f"Skipped surfaces: {surfaces_skipped}")

@@ -15,14 +15,13 @@
   "conformance_level": "non-conformant",
   "conformance_rationale": "Rows describe corrective recommendations, not billed consumption. Cost columns (BilledCost, ContractedCost, EffectiveCost, ListCost) are intentionally empty; advisory savings are surfaced in EstimatedMonthlySavingsUsd. See docs/focus-export.md.",
   "surfaces_included": [
-    "azure"
+    "ado",
+    "azure",
+    "github",
+    "m365"
   ],
-  "surfaces_skipped": {
-    "ado": 4,
-    "github": 4,
-    "m365": 19
-  },
-  "row_count": 13,
+  "surfaces_skipped": {},
+  "row_count": 40,
   "unsupported_columns": [
     "BilledCost",
     "BillingAccountId",
@@ -56,7 +55,7 @@
     }
   ],
   "pii_handling": {
-    "mode": "azure_resource_id_tenant_stable_salted_hash",
+    "mode": "principal_tenant_stable_salted_hash",
     "salt_mode": "tenant_stable",
     "known_limitation": null
   },
