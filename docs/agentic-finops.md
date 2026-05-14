@@ -83,7 +83,7 @@ Tracked under epic [#57](https://github.com/martinopedal/FinOps-assessment/issue
 
 ## The contract any agentic add-on must respect
 
-The full contract is in [`.squad/skills/agentic-finops/SKILL.md`](../.squad/skills/agentic-finops/SKILL.md). The headlines:
+The contract maintainers must satisfy is documented in [`docs/contributing.md`](contributing.md). The headlines:
 
 1. **Never write to the audited tenant.** Ever. The agent's job is to draft what a human would do in code, not to take the action.
 2. **PR drafts go to the operator's own IaC repo, not the audited tenant.** The target repository is operator-owned (`operator-corp/infra-terraform`, `operator-corp/policy-as-code`, etc.).
@@ -117,5 +117,5 @@ If those four conditions are acceptable, this tool is a clean base. If your secu
 - `docs/plan.md` , source of truth for scope and milestones
 - `docs/schema.md` , the finding and evidence schema the agentic add-on consumes
 - `docs/rules.md` , the rule catalogue the agent maps to remediation templates
-- `.squad/skills/agentic-finops/SKILL.md` , the binding contract for any agentic feature
+- `docs/contributing.md` , maintainer surface (carries the binding contract for any agentic feature)
 - Epic [#57](https://github.com/martinopedal/FinOps-assessment/issues/57) , the full prioritised backlog

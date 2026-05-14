@@ -41,6 +41,44 @@ five-stage delivery loop documented in the [plan](plan.md).
 
 Full charters live under `.squad/agents/{name}/charter.md`.
 
+### Binding agent contract for any agentic feature
+
+The binding contract for any future feature that takes action OUTSIDE
+this tool's process boundary based on findings (issue #63 remediation-PR
+drafter, issue #11 catalogue drift watcher, future agentic CLI
+subcommands) lives at `.squad/skills/agentic-finops/SKILL.md`. The
+operator-facing version of the same architecture is at
+[`agentic-finops.md`](agentic-finops.md). Maintainers reviewing or
+modifying agentic features must treat the SKILL.md document as
+load-bearing.
+
+### What the squad scaffolding tracks vs leaves local
+
+The `.squad/` directory contains the team's institutional memory.
+Cross-machine continuity comes from a small set of tracked files; the
+mid-stream churn-heavy material (rubberduck transcripts, raw verdict
+drafts, per-agent scratchpads, session logs) stays local-only via
+`.gitignore` so the public repo carries the distilled audit trail and
+not the candid drafts.
+
+| Path | Tracked? | Why |
+|------|----------|-----|
+| `.squad/team.md`, `.squad/routing.md`, `.squad/ceremonies.md` | tracked | Workflows clone fresh and read these for label sync |
+| `.squad/agents/*/charter.md` | tracked | `@copilot` and other agents read charters at session start |
+| `.squad/decisions.md` | tracked | Distilled, merged audit trail; the institutional memory worth keeping public |
+| `.squad/casting/` | tracked | Name registry continuity |
+| `.squad/skills/*/SKILL.md` | tracked | Binding contracts for agent behaviour |
+| `.squad/decisions/inbox/` | local-only | Individual drop files; only the merged `decisions.md` is public |
+| `.squad/agents/*/history.md` | local-only | Personal scratchpads regrow naturally from `decisions.md` |
+| `.squad/log/`, `.squad/orchestration-log/` | local-only | Diagnostic; not authoritative |
+| `.squad/sessions/` | local-only | Per-machine session state |
+
+A second machine bootstrapping from a fresh clone has everything it
+needs (charters, routing, decisions ledger, skills) for full
+participation. Per-agent learnings regrow as new work happens.
+
+### Roster
+
 | Member | Role | Issue label |
 |--------|------|-------------|
 | **Maya** | Lead and FinOps PM (triage, plan sign-off) | `squad:lead` |

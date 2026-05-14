@@ -170,11 +170,8 @@ PR (`.github/workflows/docs.yml` fails the build on drift):
 - [`docs/agentic-finops.md`](docs/agentic-finops.md): operator-facing
   architecture guide for using `finops-assess` as the read-only base of
   an agentic FinOps program (audit half + remediation-PR-against-IaC-repo
-  add-on). The binding agent contract lives at
-  [`.squad/skills/agentic-finops/SKILL.md`](.squad/skills/agentic-finops/SKILL.md).
-- [`docs/security.md`](docs/security.md): security posture — read-only
-  contract, OIDC auth, PII redaction default, overlay-template sandbox,
-  and the change-management anchor for future security additions.
+  add-on). The binding agent contract is documented for maintainers in
+  [`docs/contributing.md`](docs/contributing.md).
 
 ## Contributing
 
