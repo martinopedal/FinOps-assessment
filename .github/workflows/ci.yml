@@ -67,7 +67,7 @@ jobs:
 
   catalog-validation:
     name: Validate YAML catalog & rules
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, personal, linux, x64]
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -93,7 +93,7 @@ jobs:
     # below, otherwise the summary will pass while the new job runs
     # ungated.
     name: required-checks
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, personal, linux, x64]
     # preflight-windows is included so the summary gate fails if the preflight
     # itself errors (e.g. reusable workflow can't be resolved). Per-OS preflight
     # design returns a fallback rather than failing in normal operation, but a

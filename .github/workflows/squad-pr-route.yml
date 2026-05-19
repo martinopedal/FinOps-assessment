@@ -20,7 +20,7 @@ permissions:
 jobs:
   route-pr:
     if: startsWith(github.event.label.name, 'squad:')
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, personal, linux, x64]
     steps:
       - uses: actions/checkout@v6
 
