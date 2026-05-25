@@ -10,31 +10,49 @@ permissions:
   contents: read
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # Preflight (Windows): probe Pool W-pub for the Windows leg of the matrix.
-  # See martinopedal/personal-runners-infra/docs/WINDOWS-PREFLIGHT.md.
-  # ---------------------------------------------------------------------------
-  preflight-windows:
-    uses: martinopedal/personal-runners-infra/.github/workflows/runner-preflight.yml@main
-    with:
-      os: windows
-      desired_label: alz-w-pub
-      min_online: 1
-
-  lint-and-test:
+  lint-and-test-hosted:
     name: Lint, type-check, test (${{ matrix.os }} / py${{ matrix.python-version }})
-    needs: [preflight-windows]
-    # Cross-OS dispatch: Windows leg routes via preflight; ubuntu/macos use the
-    # literal matrix value. matrix.os is preserved verbatim so any downstream
-    # `if: matrix.os == '...'` check (none today, but future-proof) keeps working.
-    runs-on: >-
-      ${{ matrix.os == 'windows-latest'
-          && fromJSON(needs.preflight-windows.outputs.runner_label)
-          || matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.11", "3.12"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,live]"
+
+      - name: Ruff (lint + format check)
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Mypy
+        run: mypy src
+
+      - name: Pytest
+        run: pytest --cov=finops_assess --cov-report=term-missing
+
+      - name: Smoke-test CLI (cross-platform)
+        run: finops-assess validate
+
+  lint-and-test-windows:
+    name: Lint, type-check, test (windows-latest / py${{ matrix.python-version }})
+    runs-on: [self-hosted, personal-windows]
+    strategy:
+      fail-fast: false
+      matrix:
         python-version: ["3.11", "3.12"]
     steps:
       - name: Checkout
@@ -94,11 +112,7 @@ jobs:
     # ungated.
     name: required-checks
     runs-on: ubuntu-latest
-    # preflight-windows is included so the summary gate fails if the preflight
-    # itself errors (e.g. reusable workflow can't be resolved). Per-OS preflight
-    # design returns a fallback rather than failing in normal operation, but a
-    # workflow-resolution failure must not pass silently.
-    needs: [lint-and-test, catalog-validation, preflight-windows]
+    needs: [lint-and-test-hosted, lint-and-test-windows, catalog-validation]
     if: always()
     steps:
       - name: Assert all required jobs succeeded
