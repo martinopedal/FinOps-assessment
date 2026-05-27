@@ -48,7 +48,7 @@ jobs:
     if: >-
       github.event.issue.pull_request != null &&
       github.event.comment.user.login == github.event.repository.owner.login
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, personal-linux]
     steps:
       - name: Evaluate verdict and approve if eligible
         uses: actions/github-script@v9

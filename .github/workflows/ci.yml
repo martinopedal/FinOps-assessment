@@ -12,7 +12,7 @@ permissions:
 jobs:
   lint-and-test-hosted:
     name: Lint, type-check, test (${{ matrix.os }} / py${{ matrix.python-version }})
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ startsWith(matrix.os, 'macos-') && matrix.os || (startsWith(matrix.os, 'windows-') && fromJSON('["self-hosted","personal-windows"]') || fromJSON('["self-hosted","personal-linux"]')) }}
     strategy:
       fail-fast: false
       matrix:
@@ -85,7 +85,7 @@ jobs:
 
   catalog-validation:
     name: Validate YAML catalog & rules
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, personal-linux]
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -111,7 +111,7 @@ jobs:
     # below, otherwise the summary will pass while the new job runs
     # ungated.
     name: required-checks
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, personal-linux]
     needs: [lint-and-test-hosted, lint-and-test-windows, catalog-validation]
     if: always()
     steps:
