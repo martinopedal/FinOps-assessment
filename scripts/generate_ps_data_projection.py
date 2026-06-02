@@ -45,6 +45,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import types
 import typing
 from pathlib import Path
 
@@ -118,14 +119,20 @@ def _field_kind(annotation: object) -> tuple[str, bool, object | None]:
     """Classify a pydantic field annotation.
 
     Returns ``(kind, nullable, enum_values)`` where ``kind`` is one of
-    ``string``/``int``/``float``/``bool``/``list``/``literal``. Optional
-    types (``X | None``) are unwrapped and reported as ``nullable=True``.
-    Named ``Literal`` aliases (e.g. ``GitHubSeatType``) resolve correctly
-    because ``typing.get_origin`` sees through the alias to ``Literal``.
+    ``string``/``int``/``float``/``bool``/``list``/``literal``/``dict``.
+    Optional types (``X | None``) are unwrapped and reported as
+    ``nullable=True``. Named ``Literal`` aliases (e.g. ``GitHubSeatType``)
+    resolve correctly because ``typing.get_origin`` sees through the alias
+    to ``Literal``.
+
+    PEP 604 unions (``X | None``) report different origins across Python
+    versions: ``types.UnionType`` on 3.10-3.13 but ``typing.Union`` on
+    3.14+. We accept both so the projection is byte-stable on every
+    matrix leg (the drift gate regenerates on 3.11 and 3.12).
     """
     nullable = False
     inner = annotation
-    if typing.get_origin(annotation) is typing.Union:
+    if typing.get_origin(annotation) in (typing.Union, types.UnionType):
         args = [a for a in typing.get_args(annotation) if a is not type(None)]
         nullable = type(None) in typing.get_args(annotation)
         if len(args) == 1:
@@ -136,6 +143,12 @@ def _field_kind(annotation: object) -> tuple[str, bool, object | None]:
         return "literal", nullable, list(typing.get_args(inner))
     if inner_origin in (list, typing.List):  # noqa: UP006 - runtime origin check
         return "list", nullable, None
+    if inner_origin in (dict, typing.Dict):  # noqa: UP006 - runtime origin check
+        # No CSV-backed record field is a dict today (only the non-CSV
+        # M365FamilySummary.feature_usage_signals), but classify it
+        # explicitly so a future CSV wiring trips the normaliser instead
+        # of silently storing the cell as a string.
+        return "dict", nullable, None
     if inner is bool:
         return "bool", nullable, None
     if inner is int:
@@ -144,8 +157,7 @@ def _field_kind(annotation: object) -> tuple[str, bool, object | None]:
         return "float", nullable, None
     if inner is str:
         return "string", nullable, None
-    # dict (overrides) and any unforeseen shape fall through as "string";
-    # no record model uses dict fields, so this is unreachable for records.
+    # Any unforeseen shape falls through as "string".
     return "string", nullable, None
 
 

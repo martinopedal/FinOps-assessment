@@ -657,7 +657,7 @@
         "required": false
       },
       {
-        "kind": "string",
+        "kind": "dict",
         "name": "feature_usage_signals",
         "nullable": false,
         "required": false

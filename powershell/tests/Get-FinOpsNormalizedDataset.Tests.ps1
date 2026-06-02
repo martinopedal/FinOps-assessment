@@ -215,6 +215,12 @@ Describe 'Get-FinOpsNormalizedDataset strict-column contract' {
         { script:Invoke-Normalize $dir } | Should -Throw -ExpectedMessage '*is not one of*'
     }
 
+    It 'rejects a mis-cased literal (pydantic Literal is case-sensitive)' {
+        # 'Basic' is valid; 'basic' must be rejected to match the Python engine.
+        $dir = script:New-CsvDir @{ 'ado_seats.csv' = "org,principal,sku_id,seat_type`nc,p@x,ADO.BASIC,Basic`n" }
+        { script:Invoke-Normalize $dir } | Should -Throw -ExpectedMessage '*is not one of*'
+    }
+
     It 'enforces numeric lower bounds (ge)' {
         $dir = script:New-CsvDir @{ 'users.csv' = "principal,mailbox_size_gb`nalice@x,-5`n" }
         { script:Invoke-Normalize $dir } | Should -Throw -ExpectedMessage '*less than minimum*'

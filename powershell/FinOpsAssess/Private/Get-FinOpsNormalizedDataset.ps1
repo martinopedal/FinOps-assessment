@@ -243,7 +243,10 @@ function ConvertTo-FinOpsFieldValue {
             return $parsed
         }
         'literal' {
-            if ($Spec.enum -notcontains $Value) {
+            # pydantic Literal matching is case-sensitive, so use -cnotcontains
+            # (the default -notcontains is case-insensitive and would accept
+            # mis-cased values the Python engine rejects).
+            if ($Spec.enum -cnotcontains $Value) {
                 throw "${where}: '$Value' is not one of: $($Spec.enum -join ', ')"
             }
             return $Value
