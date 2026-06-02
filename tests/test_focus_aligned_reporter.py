@@ -903,6 +903,61 @@ def test_surface_flag_single_non_azure(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Regression — BillingPeriod fallback must honour SOURCE_DATE_EPOCH
+#
+# Findings without ``evidence.observation_window_end`` (e.g. seat-based
+# GitHub/ADO findings) previously fell back to ``datetime.now(UTC)``, which
+# ignored SOURCE_DATE_EPOCH. That silently rebased the committed
+# ``examples/focus-aligned.csv`` to whatever wall-clock month it was last
+# regenerated in, time-bombing the docs-freshness gate on every calendar
+# rollover. Pin the fallback so it can never recur.
+# ---------------------------------------------------------------------------
+
+
+def _set_epoch(monkeypatch: pytest.MonkeyPatch, epoch: str | None) -> None:
+    """Set or clear SOURCE_DATE_EPOCH for the duration of a test."""
+    if epoch is None:
+        monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
+    else:
+        monkeypatch.setenv("SOURCE_DATE_EPOCH", epoch)
+
+
+def test_billing_period_fallback_honours_source_date_epoch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A finding with no observation window must bucket via SOURCE_DATE_EPOCH, not wall clock."""
+    from finops_assess.reporters.focus_aligned import _billing_period
+
+    finding: dict = {"evidence": {}}  # type: ignore[type-arg]
+
+    _set_epoch(monkeypatch, "0")  # 1970-01-01T00:00:00Z
+    assert _billing_period(finding) == (
+        "1970-01-01T00:00:00Z",
+        "1970-02-01T00:00:00Z",
+    )
+
+    # A non-zero epoch in mid-March 1970 must bucket to the March calendar month.
+    _set_epoch(monkeypatch, "6307200")  # 1970-03-15T00:00:00Z (day 73)
+    march = _billing_period(finding)
+    assert march[0].startswith("1970-03-01"), march
+    assert march[1].startswith("1970-04-01"), march
+
+
+def test_billing_period_evidence_date_unaffected_by_epoch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """When evidence carries a window end, that date wins regardless of SOURCE_DATE_EPOCH."""
+    from finops_assess.reporters.focus_aligned import _billing_period
+
+    finding: dict = {"evidence": {"observation_window_end": "2024-03-20T00:00:00Z"}}  # type: ignore[type-arg]
+    _set_epoch(monkeypatch, "0")
+    assert _billing_period(finding) == (
+        "2024-03-01T00:00:00Z",
+        "2024-04-01T00:00:00Z",
+    )
+
+
+# ---------------------------------------------------------------------------
 # T8 — PII mode name: multi-surface with per-run salt
 # ---------------------------------------------------------------------------
 

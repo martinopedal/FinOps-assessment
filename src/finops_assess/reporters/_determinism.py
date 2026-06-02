@@ -23,13 +23,18 @@ import os
 from datetime import UTC, datetime
 
 
-def generated_at_iso() -> str:
-    """Return the report timestamp as an ISO-8601 string, honouring ``SOURCE_DATE_EPOCH``.
+def now_utc() -> datetime:
+    """Return "now" as a timezone-aware UTC ``datetime``, honouring ``SOURCE_DATE_EPOCH``.
 
-    Defaults to ``datetime.now(UTC)`` so day-to-day runs continue to embed
-    the wall-clock time.  When ``SOURCE_DATE_EPOCH`` is set, the timestamp
-    is derived from that epoch, making output byte-deterministic across
-    runs of the same input.
+    Defaults to ``datetime.now(UTC)`` so day-to-day runs continue to use the
+    wall-clock time.  When ``SOURCE_DATE_EPOCH`` is set, the value is derived
+    from that epoch, making any timestamp-derived output (report ``generated_at``,
+    FOCUS ``BillingPeriod`` fallback, …) byte-deterministic across runs.
+
+    Every reporter that needs a "current time" fallback must call this helper
+    rather than ``datetime.now`` directly; otherwise the committed
+    ``examples/`` artefacts silently rebase to the wall-clock month and the
+    docs-freshness gate time-bombs on the next calendar rollover.
 
     Malformed or out-of-range epoch values (e.g. very large integers that
     overflow the OS ``gmtime`` syscall) are silently ignored and fall
@@ -38,7 +43,16 @@ def generated_at_iso() -> str:
     epoch = os.environ.get("SOURCE_DATE_EPOCH")
     if epoch:
         try:
-            return datetime.fromtimestamp(int(epoch), tz=UTC).isoformat(timespec="seconds")
+            return datetime.fromtimestamp(int(epoch), tz=UTC)
         except (TypeError, ValueError, OverflowError, OSError):
             pass
-    return datetime.now(UTC).isoformat(timespec="seconds")
+    return datetime.now(UTC)
+
+
+def generated_at_iso() -> str:
+    """Return the report timestamp as an ISO-8601 string, honouring ``SOURCE_DATE_EPOCH``.
+
+    Thin wrapper around :func:`now_utc`; see that function for the
+    determinism contract.
+    """
+    return now_utc().isoformat(timespec="seconds")

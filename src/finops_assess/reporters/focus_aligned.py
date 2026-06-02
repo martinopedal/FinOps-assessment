@@ -185,14 +185,18 @@ def _billing_period(finding: dict[str, Any]) -> tuple[str, str]:
     ``finding["evidence"]["observation_window_end"]`` at 00:00:00 UTC.
     BillingPeriodEnd = first day of the *next* month at 00:00:00 UTC.
 
-    Falls back to the current UTC month when the evidence key is absent or
-    unparseable, so the column is always populated.
+    Falls back to the current UTC month (honouring ``SOURCE_DATE_EPOCH`` via
+    :func:`~finops_assess.reporters._determinism.now_utc`) when the evidence
+    key is absent or unparseable, so the column is always populated and the
+    committed demo artefacts stay byte-deterministic across calendar months.
 
     Known limitation (R4): findings relevant to multiple months collapse to
     the observation-window-end month. Documented in docs/focus-export.md
     § "Calendar-month bucketing — known limitation".
     """
     from datetime import UTC, datetime
+
+    from finops_assess.reporters._determinism import now_utc
 
     raw = (finding.get("evidence") or {}).get("observation_window_end")
     dt: datetime | None = None
@@ -206,7 +210,7 @@ def _billing_period(finding: dict[str, Any]) -> tuple[str, str]:
             except ValueError:
                 continue
     if dt is None:
-        dt = datetime.now(UTC)
+        dt = now_utc()
 
     start = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=UTC)
     # Pure-stdlib month rollover: add enough days to reach the next month.
