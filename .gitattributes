@@ -50,6 +50,11 @@ src/finops_assess/data/playbooks/**/*.j2 text eol=lf
 # fails Windows-only. The sibling .canonical.json is already covered by the
 # repo-wide *.json rule below.
 tests/fixtures/ps_conformance/demo-report-m365.csv text eol=lf
+# Cross-engine conformance golden fixtures (PowerShell Phase 4: GitHub + ADO).
+# CSV files are byte-compared in Invoke-FinOpsGitHubAdoRules.Tests.ps1;
+# without an LF pin a Windows clone rewrites to CRLF and the byte-compare fails.
+tests/fixtures/ps_conformance/demo-report-github.csv text eol=lf
+tests/fixtures/ps_conformance/demo-report-ado.csv text eol=lf
 
 # Repo-wide line-ending policy (issue #81) — pin LF endings for all
 # source code, data, and doc files to eliminate spurious whitespace

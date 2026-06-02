@@ -43,7 +43,7 @@ Import-Module ./powershell/FinOpsAssess/FinOpsAssess.psd1 -Force
 | `info`                   | `Get-FinOpsInfo`             | ✅ implemented                     |
 | `validate`               | `Test-FinOpsConfiguration`   | 🟡 structural + version-lock only; schema validation in Phase 1 |
 | `collect`                | `Invoke-FinOpsCollection`    | ⛔ not started (Phase 6)           |
-| `run`                    | `Invoke-FinOpsAssessment`    | 🟡 report envelope + JSON reporter + **8 M365 rules** + CSV reporter (Phase 2); Azure/GitHub/ADO findings deferred to Phases 3–4 |
+| `run`                    | `Invoke-FinOpsAssessment`    | 🟡 report envelope + JSON reporter + **8 M365 rules** + CSV reporter (Phase 2); **4 GitHub rules + 4 ADO rules** (Phase 4); Azure findings deferred to Phase 3 |
 | `demo`                   | `Invoke-FinOpsDemo`          | ⛔ not started (Phase 1)           |
 | `triage`                 | `Export-FinOpsTriage`        | ⛔ not started (Phase 5)           |
 | `catalog refresh`        | `Update-FinOpsCatalog`       | ⛔ not started (Phase 6)           |
@@ -338,13 +338,63 @@ of `engine.run_rules` and `rules_impl/m365_rules.py`).
 > `csv_reporter` output in **natural report order**). The JSON compare
 > sorts findings, so the CSV compare deliberately does **not** — it
 > doubles as an emission-order drift check, since the PowerShell engine
-> mirrors Python's rule- and input-iteration order exactly. What is
-> **explicitly not** claimed: Azure/GitHub/ADO findings (their rule IDs
-> remain in `summary.rules_skipped_no_impl`, 20 of them), whole-report
-> parity, or any non-CSV reporter. `summary.total_findings` and the full
-> `rules_skipped_no_impl` list legitimately differ between engines (the
-> native engine skips 20 rules, Python skips none), so the `report-m365-v1`
-> profile masks them and filters `rule_counts` to the `M365.*` keys.
+> mirrors Python's rule- and input-iteration order exactly.
+
+## GitHub + ADO rules (Phase 4)
+
+Phase 4 ports the four `GH.*` and four `ADO.*` savings rules to the
+native engine via `Get-FinOpsGitHubRuleRegistry` and
+`Get-FinOpsAdoRuleRegistry`, extending parity to **GitHub and Azure
+DevOps findings**. Both registries are auto-discovered by the existing
+`Get-FinOpsRuleRegistry` aggregator — no edits to
+`Invoke-FinOpsRuleEngine.ps1` were required.
+
+### GitHub rules (4)
+
+| Rule ID | Severity | Signal | Savings |
+|---|---|---|---|
+| `GH.INACTIVE_SEAT_90D` | high | Enterprise/Team seat inactive ≥ 90 days | catalog seat price |
+| `GH.COPILOT_INACTIVE_30D` | high | Copilot seat with 0 acceptances in 30 days | catalog seat price |
+| `GH.GHAS_OVER_PROVISIONED` | medium | GHAS-enabled repos > actively-scanned repos | null (committer mapping not in snapshot) |
+| `GH.RUNNER_TIER_MISMATCH` | low | Runner minutes ≥ 25% above/below included quota | null (per-arch pricing not in catalog) |
+
+### ADO rules (4)
+
+| Rule ID | Severity | Signal | Savings |
+|---|---|---|---|
+| `ADO.INACTIVE_BASIC_90D` | high | Basic/Basic+Test seat inactive ≥ 90 days | catalog seat price |
+| `ADO.STAKEHOLDER_ELIGIBLE` | medium | Basic seat with only board-read activity, < 90 days inactive | full Basic seat price |
+| `ADO.PARALLEL_JOBS_OVER_PROVISIONED` | medium | Purchased hosted parallel jobs exceed P95 by ≥ 2 | surplus × hosted job price |
+| `ADO.TEST_PLANS_UNUSED` | medium | Basic+Test seat with no Test Plan activity in 60 days | Basic+Test price − Basic price; recommends ADO.BASIC |
+
+### Parity traps addressed
+
+- **No `sorted()` in either rule file** — emission order is pure dataset
+  iteration order (`github_seats` / `github_orgs` / `ado_seats` /
+  `ado_orgs`), simpler than M365.
+- **PS collection unrolling**: helpers that return collections use
+  `return ,$collection` to prevent PowerShell scalar unrolling.
+- **`[object]`-typed params**: null-capable fields (`savings`,
+  `recommended_sku`, `evidence_ref`, `current_sku` on org-level rules)
+  use `[object]` so the JSON serialiser emits `null` rather than omitting
+  the key.
+- **Ordinal case-sensitivity**: `seat_type` matches use
+  `[System.StringComparer]::Ordinal` / `-ceq` throughout.
+- **Money float typing**: catalog prices are `.00` floats; savings via
+  `[math]::Round(…, 2)` stays `[double]`; `Format-FinOpsPyFloat` appends
+  `.0` on whole numbers so `6.0` serialises correctly.
+
+> **Honest parity claim — read this.** Phase 4 proves **GitHub and ADO
+> rule-slice parity**: over the bundled demo tenant, the native engine
+> produces the same GH/ADO findings (same rule IDs firing, same fields,
+> same salted principals, same savings) and the same surface `rule_counts`
+> as Python. Four committed goldens enforce this in CI:
+> `demo-report-github.canonical.json` / `demo-report-github.csv` and
+> `demo-report-ado.canonical.json` / `demo-report-ado.csv` under
+> `tests/fixtures/ps_conformance/`. The CSV compare uses the combined
+> report output filtered to the surface prefix, preserving natural
+> emission order as a drift check. The 12 `AZ.*` rules remain in
+> `summary.rules_skipped_no_impl`; Azure parity is deferred to Phase 3.
 
 ## Conformance & CI
 
