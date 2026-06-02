@@ -118,6 +118,17 @@ function Build-FinOpsReport {
     .PARAMETER Rules
         Rule definitions, used to populate ``rules_skipped_no_impl``.
 
+    .PARAMETER RuleCounts
+        Optional per-rule finding counts (``summary.rule_counts``). When the
+        rule engine has run, the caller passes the counts it produced; when
+        omitted the report records an empty map (Phase-1c structural mode).
+
+    .PARAMETER RulesSkipped
+        Optional explicit ``rules_skipped_no_impl`` list. When the rule
+        engine has run it passes the rules it could not implement; when
+        omitted every rule id is listed (Phase-1c structural mode, where the
+        whole rule layer is absent).
+
     .OUTPUTS
         [System.Collections.Specialized.OrderedDictionary] mirroring the
         Python report envelope (run / summary / findings).
@@ -132,7 +143,9 @@ function Build-FinOpsReport {
         [ValidateSet('per_run', 'tenant_stable')]
         [string] $SaltMode = 'per_run',
         [object[]] $Findings = @(),
-        [object[]] $Rules = (Get-FinOpsDataProjection).Rules
+        [object[]] $Rules = (Get-FinOpsDataProjection).Rules,
+        [System.Collections.Specialized.OrderedDictionary] $RuleCounts,
+        [string[]] $RulesSkipped
     )
 
     $personaDistribution = [ordered]@{}
@@ -145,10 +158,15 @@ function Build-FinOpsReport {
         }
     }
 
-    $skippedRules = @($Rules | ForEach-Object { $_.id } | Sort-Object)
+    if ($PSBoundParameters.ContainsKey('RulesSkipped')) {
+        $skippedRules = @($RulesSkipped)
+    } else {
+        $skippedRules = @($Rules | ForEach-Object { $_.id } | Sort-Object)
+    }
+    $ruleCountsValue = if ($PSBoundParameters.ContainsKey('RuleCounts')) { $RuleCounts } else { [ordered]@{} }
 
     $summary = [ordered]@{
-        rule_counts               = [ordered]@{}
+        rule_counts               = $ruleCountsValue
         rules_skipped_no_impl     = $skippedRules
         total_findings            = @($Findings).Count
         principals_evaluated      = @($Dataset.users).Count

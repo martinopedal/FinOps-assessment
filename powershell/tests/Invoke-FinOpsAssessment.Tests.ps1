@@ -6,6 +6,9 @@ BeforeAll {
     $script:DemoDir = Join-Path $script:RepoRoot 'src' 'finops_assess' 'demo'
     $script:PersonaGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-personas.json'
     $script:StructuralGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-report-structural.canonical.json'
+    $script:M365Golden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-report-m365.canonical.json'
+    $script:M365CsvGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-report-m365.csv'
+    $script:FixedSalt = 'conformance-fixed-salt-v1'
     $script:Canonicaliser = Join-Path $script:RepoRoot 'scripts' 'canonicalize_report.py'
     $script:ReportSchema = Join-Path $script:RepoRoot 'src' 'finops_assess' 'schemas' 'report.schema.json'
 
@@ -200,10 +203,65 @@ Describe 'JSON report contract (layer-4 schema + layer-5 canonical equality)' {
         }
     }
 
-    It 'reports every rule as skipped (no native rule impl yet)' {
+    It 'reports only non-M365 rules as skipped (M365 rules are implemented)' {
         $report = $script:RawReport | ConvertFrom-Json
-        @($report.summary.rules_skipped_no_impl).Count | Should -Be 28
-        @($report.findings).Count | Should -Be 0
-        $report.summary.total_findings | Should -Be 0
+        $skipped = @($report.summary.rules_skipped_no_impl)
+        # The eight M365 rules now run natively; everything else is skipped.
+        $skipped.Count | Should -Be 20
+        ($skipped | Where-Object { $_ -like 'M365.*' }) | Should -BeNullOrEmpty
+        @($report.findings).Count | Should -BeGreaterThan 0
+        $report.summary.total_findings | Should -Be (@($report.findings).Count)
+        ($report.findings | Where-Object { $_.surface -ne 'm365' }) |
+            Should -BeNullOrEmpty -Because 'only M365 rules are ported in Phase 2'
+    }
+}
+
+Describe 'M365 rule-slice conformance (layer-5 findings + CSV)' {
+
+    BeforeAll {
+        $script:M365OutFile = Join-Path ([System.IO.Path]::GetTempPath()) ("ps-m365-{0}.json" -f ([guid]::NewGuid()))
+        $script:M365CsvFile = Join-Path ([System.IO.Path]::GetTempPath()) ("ps-m365-{0}.csv" -f ([guid]::NewGuid()))
+        $prev = $env:SOURCE_DATE_EPOCH
+        try {
+            $env:SOURCE_DATE_EPOCH = '0'
+            Invoke-FinOpsAssessment -InputDirectory $script:DemoDir -OutputPath $script:M365OutFile `
+                -PiiSalt $script:FixedSalt -WarningAction SilentlyContinue | Out-Null
+            Invoke-FinOpsAssessment -InputDirectory $script:DemoDir -OutputPath $script:M365CsvFile `
+                -Format csv -PiiSalt $script:FixedSalt -WarningAction SilentlyContinue | Out-Null
+        } finally {
+            if ($null -eq $prev) { Remove-Item Env:SOURCE_DATE_EPOCH -ErrorAction SilentlyContinue }
+            else { $env:SOURCE_DATE_EPOCH = $prev }
+        }
+    }
+
+    AfterAll {
+        Remove-Item -LiteralPath $script:M365OutFile -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $script:M365CsvFile -ErrorAction SilentlyContinue
+    }
+
+    It 'ships both committed M365 goldens' {
+        Test-Path -LiteralPath $script:M365Golden | Should -BeTrue
+        Test-Path -LiteralPath $script:M365CsvGolden | Should -BeTrue
+    }
+
+    It 'canonical M365 projection byte-equals the Python findings golden' {
+        $canon = Join-Path ([System.IO.Path]::GetTempPath()) ("ps-m365-{0}.canonical.json" -f ([guid]::NewGuid()))
+        try {
+            & python $script:Canonicaliser --profile report-m365-v1 --input $script:M365OutFile --output $canon
+            $LASTEXITCODE | Should -Be 0 -Because 'the shared canonicaliser must succeed'
+            $actual = [System.IO.File]::ReadAllBytes($canon)
+            $expected = [System.IO.File]::ReadAllBytes($script:M365Golden)
+            [System.Linq.Enumerable]::SequenceEqual($actual, $expected) |
+                Should -BeTrue -Because 'PS M365 findings must match the committed Python golden'
+        } finally {
+            Remove-Item -LiteralPath $canon -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'flat CSV byte-equals the Python csv_reporter golden' {
+        $actual = [System.IO.File]::ReadAllBytes($script:M365CsvFile)
+        $expected = [System.IO.File]::ReadAllBytes($script:M365CsvGolden)
+        [System.Linq.Enumerable]::SequenceEqual($actual, $expected) |
+            Should -BeTrue -Because 'PS CSV writer must match the Python csv_reporter bytes'
     }
 }
