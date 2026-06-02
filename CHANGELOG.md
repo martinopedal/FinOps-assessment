@@ -7,6 +7,18 @@ release.
 
 ## Unreleased
 
+### Changed
+
+- **PowerShell engine — multi-surface rule dispatch.** The rule runner
+  (`Invoke-FinOpsRuleEngine`) now resolves its dispatch table through a
+  new `Get-FinOpsRuleRegistry` aggregator that merges every loaded
+  `Get-FinOps<Surface>RuleRegistry` provider (M365 today; Azure, GitHub
+  and ADO auto-register once their `Private/Get-FinOps<Surface>Rule.ps1`
+  files land). This mirrors the Python engine's per-module dispatch
+  union and lets each upcoming rule surface ship as an additive file
+  without touching the runner. Behaviour-preserving: M365 rule-slice
+  conformance remains byte-identical.
+
 ### Added
 
 - **PowerShell engine — M365 rules + CSV reporter (Phase 2).**

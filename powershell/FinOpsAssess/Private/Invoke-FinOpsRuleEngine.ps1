@@ -298,6 +298,41 @@ function Format-FinOpsRecommendation {
     return $result.ToString()
 }
 
+function Get-FinOpsRuleRegistry {
+    <#
+    .SYNOPSIS
+        Merge every loaded per-surface rule registry into one id -> scriptblock map.
+    .DESCRIPTION
+        Probes for each Get-FinOps<Surface>RuleRegistry provider that is present in
+        the session and unions their entries. Adding a new surface is therefore just
+        a matter of dropping a Get-FinOps<Surface>Rule.ps1 file under Private/ that
+        defines the matching registry function; the engine runner needs no edit.
+        This mirrors the Python engine, which imports each rules_impl/<surface>_rules
+        module and unions their dispatch tables. Merge order does not affect emission
+        order: findings are produced by iterating the loaded rules list, not the
+        registry keys, so the registry is a pure lookup table.
+    #>
+    [CmdletBinding()]
+    param()
+
+    $providers = @(
+        'Get-FinOpsM365RuleRegistry'
+        'Get-FinOpsAzureRuleRegistry'
+        'Get-FinOpsGitHubRuleRegistry'
+        'Get-FinOpsAdoRuleRegistry'
+    )
+
+    $merged = @{}
+    foreach ($name in $providers) {
+        if ($null -eq (Get-Command -Name $name -ErrorAction SilentlyContinue)) { continue }
+        $registry = & $name
+        foreach ($key in $registry.Keys) {
+            $merged[$key] = $registry[$key]
+        }
+    }
+    return $merged
+}
+
 function Invoke-FinOpsRuleEngine {
     <#
     .SYNOPSIS
@@ -367,7 +402,7 @@ function Invoke-FinOpsRuleEngine {
         $saltMode = 'per_run'
     }
 
-    $registry = Get-FinOpsM365RuleRegistry
+    $registry = Get-FinOpsRuleRegistry
 
     $findings = [System.Collections.Generic.List[object]]::new()
     $counts = [ordered]@{}
