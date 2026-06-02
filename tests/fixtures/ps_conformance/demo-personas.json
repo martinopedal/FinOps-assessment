@@ -1,0 +1,68 @@
+{
+  "alice@contoso.example": {
+    "confidence": "high",
+    "matched_by": "override",
+    "persona_id": "frontline_worker",
+    "principal": "alice@contoso.example"
+  },
+  "bob@contoso.example": {
+    "confidence": "high",
+    "matched_by": "title",
+    "persona_id": "information_worker",
+    "principal": "bob@contoso.example"
+  },
+  "carol@contoso.example": {
+    "confidence": "high",
+    "matched_by": "title",
+    "persona_id": "power_user_secure",
+    "principal": "carol@contoso.example"
+  },
+  "dan@contoso.example": {
+    "confidence": "high",
+    "matched_by": "title",
+    "persona_id": "information_worker",
+    "principal": "dan@contoso.example"
+  },
+  "erin@contoso.example": {
+    "confidence": "high",
+    "matched_by": "title",
+    "persona_id": "developer",
+    "principal": "erin@contoso.example"
+  },
+  "frank@contoso.example": {
+    "confidence": "high",
+    "matched_by": "title",
+    "persona_id": "information_worker",
+    "principal": "frank@contoso.example"
+  },
+  "gloria@contoso.example": {
+    "confidence": "high",
+    "matched_by": "title",
+    "persona_id": "power_user_secure",
+    "principal": "gloria@contoso.example"
+  },
+  "hugo@external.example": {
+    "confidence": "low",
+    "matched_by": "fallback",
+    "persona_id": "guest",
+    "principal": "hugo@external.example"
+  },
+  "isla@contoso.example": {
+    "confidence": "high",
+    "matched_by": "title",
+    "persona_id": "information_worker",
+    "principal": "isla@contoso.example"
+  },
+  "mailroom@contoso.example": {
+    "confidence": "low",
+    "matched_by": "fallback",
+    "persona_id": "service_account",
+    "principal": "mailroom@contoso.example"
+  },
+  "svc-pipeline@contoso.example": {
+    "confidence": "low",
+    "matched_by": "fallback",
+    "persona_id": "service_account",
+    "principal": "svc-pipeline@contoso.example"
+  }
+}

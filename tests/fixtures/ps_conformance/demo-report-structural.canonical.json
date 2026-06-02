@@ -1,0 +1,27 @@
+{
+  "findings": "<array:masked>",
+  "run": {
+    "generated_at": "1970-01-01T00:00:00+00:00",
+    "input": "<redacted>/demo",
+    "mode": "read-only",
+    "pii_redaction": true,
+    "salt_mode": "per_run",
+    "schema_version": "1.0",
+    "tool": "finops-assess",
+    "version": "0.1.0"
+  },
+  "summary": {
+    "assignments_evaluated": 13,
+    "azure_resources_evaluated": 10,
+    "persona_distribution": {
+      "developer": 1,
+      "frontline_worker": 1,
+      "guest": 1,
+      "information_worker": 4,
+      "power_user_secure": 2,
+      "service_account": 2
+    },
+    "principals_evaluated": 11,
+    "salt_mode": "per_run"
+  }
+}

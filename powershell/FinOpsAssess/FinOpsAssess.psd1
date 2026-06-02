@@ -17,7 +17,7 @@
     PowerShellVersion      = '7.2'
     CompatiblePSEditions   = @('Core')
 
-    FunctionsToExport      = @('Assert-FinOpsReadOnlyScope', 'Get-FinOpsInfo', 'Test-FinOpsConfiguration', 'Test-FinOpsReadOnlyScope')
+    FunctionsToExport      = @('Assert-FinOpsReadOnlyScope', 'Get-FinOpsInfo', 'Invoke-FinOpsAssessment', 'Test-FinOpsConfiguration', 'Test-FinOpsReadOnlyScope')
     CmdletsToExport        = @()
     VariablesToExport      = @()
     AliasesToExport        = @()
