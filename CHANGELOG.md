@@ -5,6 +5,29 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project follows semantic versioning once it reaches a tagged
 release.
 
+## Unreleased
+
+### Changed
+
+- **PowerShell side-by-side engine — approved-to-plan (docs / governance
+  only).** `docs/plan.md` §1.7 rewritten additively: Python remains the
+  reference / conformance-oracle engine, and a native PowerShell engine
+  (`pwsh` ≥ 7.2 only; Windows PowerShell 5.1 is out of scope) is
+  admitted as a deliberately-justified, governed second runtime that
+  ships *alongside* Python. PDF reporting is delegated to Python,
+  possibly permanently. New `docs/plan.md` §1.7a records the
+  falsifiable phase gate (8 capability-parity criteria + 8 security
+  falsification gates from Noor) that would have to be cleared *before*
+  retiring Python could even be proposed at a fresh §11 stage-4. New
+  ADR `docs/decisions/0001-powershell-side-by-side.md` records the
+  decision, Noor's dissent on full transition, and the binding gating
+  PR sequence (PR #1 read-only scope-guard parity → PR #2 PII salt
+  byte-parity → conformance harness → first PS rules). New §7a
+  governance in `.github/copilot-instructions.md` makes
+  dual-maintenance binding from this commit forward. **No engine
+  code, schemas, rules, or workflows change in this release entry —
+  this is docs / governance only.**
+
 ## v0.6.0
 
 ### Added
