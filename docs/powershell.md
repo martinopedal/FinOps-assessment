@@ -201,6 +201,61 @@ the engine only needs the built-in `ConvertFrom-Json`.
 > rounding rule will be pinned (Phase 1) so cross-engine byte parity does
 > not rely on raw binary-float formatting.
 
+## Normalise core (offline CSV → normalised dataset)
+
+The PowerShell engine reimplements the offline collector
+(`finops_assess.collectors.csv_collector.collect_from_directory`): it
+reads a directory of per-surface CSV files and coerces + validates every
+cell into the same `NormalizedDataset` shape the Python engine produces.
+This is the **second** conformance layer (docs/plan.md §5a) — proving the
+two engines agree on the *normalised dataset* before any rule fires, so a
+divergence is caught at the source rather than in findings.
+
+- **Schema projection:** the same generator emits a fourth file,
+  `powershell/FinOpsAssess/data/schema.json`, derived from the pydantic
+  v2 record models. It lists, per model, each field's `kind`
+  (`string`/`int`/`float`/`bool`/`list`/`literal`), nullability,
+  required-ness, enum members, and numeric/length bounds, plus the
+  `dataset field → CSV file → model` mapping and the bool/list token
+  rules. The PowerShell normaliser is **data-driven** from this file, so
+  it never re-encodes the schema in code. Same drift gate as the data
+  projection (`tests/test_ps_data_projection.py` + `--check`).
+- **Strict-column contract (mirrors Python exactly):** the CSV header is
+  authoritative. An unknown column is an error; a row with a non-empty
+  cell beyond the header is an error; a row with fewer cells than the
+  header treats the missing cells as empty; an empty cell is omitted so
+  the schema default applies. Booleans parse from a fixed true/false
+  token set, lists split on `|` (trimmed, empties dropped), and
+  `int`/`float` parse with the invariant culture. Enum, `ge`/`le`, and
+  `min_length`/`max_length` bounds and required fields are enforced.
+- **CSV parser:** a self-contained RFC-4180 reader
+  (`ConvertFrom-FinOpsCsvText`) is used instead of `Import-Csv` so the
+  strict-column behaviour matches Python's `csv.DictReader` semantics
+  (rather than `Import-Csv`'s silent column coalescing), with no
+  dependency on `Microsoft.VisualBasic` `TextFieldParser`.
+- **`m365_family_summaries`** has no CSV source (it is derived later in
+  the Python pipeline); the normaliser emits it as an empty list for
+  dataset-shape parity, exactly as the Python collector does.
+
+> **`overrides.yaml` is a documented YAML *subset*, not full PyYAML.**
+> The normaliser reads `overrides.yaml` as a strict flat `key: value`
+> mapping (blank lines, `#` comments, and optionally quoted scalar
+> values). Nested structures, anchors, tags, and flow collections are
+> rejected with a clear error. This matches how the demo overrides file
+> is used; if a future override needs richer YAML, the limitation (and
+> the reason) must be revisited here and in the conformance harness.
+
+**Conformance status:** layer 2 (same normalised dataset) is proven
+**now** — the committed golden fixture
+`tests/fixtures/ps_conformance/demo-normalised.json` is generated from
+the Python engine
+(`scripts/generate_ps_conformance_fixtures.py`, drift-gated by
+`tests/test_ps_conformance_fixtures.py`), and a Pester test runs the
+PowerShell normaliser over the same demo tenant and deep-compares
+(type-aware: numbers as numbers) against it. Layer-5 byte-canonical
+artifact equality is **deferred** to the report/JSON-reporter slice,
+where the cross-engine money formatting/rounding rule is pinned.
+
 ## Conformance & CI
 
 CI runs PSScriptAnalyzer (settings in

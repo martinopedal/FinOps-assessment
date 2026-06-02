@@ -9,6 +9,31 @@ release.
 
 ### Added
 
+- **PowerShell engine — normalise core (offline CSV → normalised
+  dataset).** Second slice of Phase 1. The native engine reimplements the
+  offline collector (`collect_from_directory`): a self-contained RFC-4180
+  CSV reader (`ConvertFrom-FinOpsCsvText`) plus a schema-driven
+  coercer/validator (`Get-FinOpsNormalizedDataset`) turn a directory of
+  per-surface CSVs into the same `NormalizedDataset` shape the Python
+  engine produces. It honours the identical strict-column contract
+  (unknown column / extra non-empty cell = error; empty cell → schema
+  default; fixed bool token set; `|`-split lists; enum, `ge`/`le`, and
+  length bounds; required fields) and reads `overrides.yaml` as a
+  documented flat `key: value` YAML subset. A fourth projection file,
+  `powershell/FinOpsAssess/data/schema.json` (derived from the pydantic
+  v2 models by `scripts/generate_ps_data_projection.py`), makes the
+  normaliser data-driven so the schema is never re-encoded in code.
+  **Layer-2 conformance** (docs/plan.md §5a — "same normalised dataset")
+  is now proven: the committed golden
+  `tests/fixtures/ps_conformance/demo-normalised.json` is generated from
+  the Python engine by `scripts/generate_ps_conformance_fixtures.py`
+  (drift-gated by `tests/test_ps_conformance_fixtures.py`), and a Pester
+  test runs the PowerShell normaliser over the same demo tenant and
+  type-aware deep-compares against it. 15 new Pester tests
+  (counts/coercion/nulls, strict-contract failures, overrides parser,
+  conformance). Docs: `docs/powershell.md` gains a "Normalise core"
+  section. Layer-5 byte-canonical artifact equality is deferred to the
+  JSON-reporter slice.
 - **PowerShell engine — shared data projection
   (`powershell/FinOpsAssess/data`).** First slice of Phase 1. The shared
   catalogue/persona/rule YAML under `data/` is projected to canonical

@@ -45,9 +45,28 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import types
+import typing
 from pathlib import Path
 
+import annotated_types as at
+from pydantic import BaseModel
+
 from finops_assess.catalog import load_catalog
+from finops_assess.models import (
+    AdoOrgUsage,
+    AdoSeat,
+    AzureBenefitRecommendation,
+    AzureLogWorkspace,
+    AzureReservation,
+    AzureResource,
+    GitHubOrg,
+    GitHubSeat,
+    LicenseAssignment,
+    M365FamilySummary,
+    UsageSignal,
+    UserRecord,
+)
 from finops_assess.rules import load_personas, load_rules
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -56,16 +75,147 @@ PROJECTION_DIR = REPO_ROOT / "powershell" / "FinOpsAssess" / "data"
 CATALOG_FILE = "catalog.json"
 PERSONAS_FILE = "personas.json"
 RULES_FILE = "rules.json"
+SCHEMA_FILE = "schema.json"
+
+# Each NormalizedDataset list field, the record model that validates its
+# rows, and the CSV file the offline collector reads it from. Mirrors
+# ``finops_assess.collectors.csv_collector.collect_from_directory`` and
+# the field order of ``NormalizedDataset``. ``csv = None`` marks a dataset
+# field that is NOT populated from a CSV (the PowerShell normaliser still
+# emits it as an empty list for dataset-shape parity).
+DATASET_FIELDS: list[tuple[str, type[BaseModel], str | None]] = [
+    ("users", UserRecord, "users.csv"),
+    ("assignments", LicenseAssignment, "license_assignments.csv"),
+    ("usage", UsageSignal, "usage.csv"),
+    ("m365_family_summaries", M365FamilySummary, None),
+    ("azure_resources", AzureResource, "azure_resources.csv"),
+    ("azure_reservations", AzureReservation, "azure_reservations.csv"),
+    ("azure_log_workspaces", AzureLogWorkspace, "azure_log_workspaces.csv"),
+    (
+        "azure_benefit_recommendations",
+        AzureBenefitRecommendation,
+        "azure_benefit_recommendations.csv",
+    ),
+    ("github_seats", GitHubSeat, "github_seats.csv"),
+    ("github_orgs", GitHubOrg, "github_orgs.csv"),
+    ("ado_seats", AdoSeat, "ado_seats.csv"),
+    ("ado_orgs", AdoOrgUsage, "ado_orgs.csv"),
+]
+
+OVERRIDES_FILE = "overrides.yaml"
 
 
-def _to_json(items: list[dict[str, object]]) -> str:
+def _to_json(items: object) -> str:
     """Serialise ``items`` to canonical, byte-stable JSON.
 
-    Sorted object keys + LF + two-space indent + trailing newline. The
-    list order is preserved as given (loader order); only keys within
-    each object are sorted.
+    Sorted object keys + LF + two-space indent + trailing newline. List
+    order is preserved as given (loader order); only keys within objects
+    are sorted.
     """
     return json.dumps(items, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+
+
+def _field_kind(annotation: object) -> tuple[str, bool, object | None]:
+    """Classify a pydantic field annotation.
+
+    Returns ``(kind, nullable, enum_values)`` where ``kind`` is one of
+    ``string``/``int``/``float``/``bool``/``list``/``literal``/``dict``.
+    Optional types (``X | None``) are unwrapped and reported as
+    ``nullable=True``. Named ``Literal`` aliases (e.g. ``GitHubSeatType``)
+    resolve correctly because ``typing.get_origin`` sees through the alias
+    to ``Literal``.
+
+    PEP 604 unions (``X | None``) report different origins across Python
+    versions: ``types.UnionType`` on 3.10-3.13 but ``typing.Union`` on
+    3.14+. We accept both so the projection is byte-stable on every
+    matrix leg (the drift gate regenerates on 3.11 and 3.12).
+    """
+    nullable = False
+    inner = annotation
+    if typing.get_origin(annotation) in (typing.Union, types.UnionType):
+        args = [a for a in typing.get_args(annotation) if a is not type(None)]
+        nullable = type(None) in typing.get_args(annotation)
+        if len(args) == 1:
+            inner = args[0]
+
+    inner_origin = typing.get_origin(inner)
+    if inner_origin is typing.Literal:
+        return "literal", nullable, list(typing.get_args(inner))
+    if inner_origin in (list, typing.List):  # noqa: UP006 - runtime origin check
+        return "list", nullable, None
+    if inner_origin in (dict, typing.Dict):  # noqa: UP006 - runtime origin check
+        # No CSV-backed record field is a dict today (only the non-CSV
+        # M365FamilySummary.feature_usage_signals), but classify it
+        # explicitly so a future CSV wiring trips the normaliser instead
+        # of silently storing the cell as a string.
+        return "dict", nullable, None
+    if inner is bool:
+        return "bool", nullable, None
+    if inner is int:
+        return "int", nullable, None
+    if inner is float:
+        return "float", nullable, None
+    if inner is str:
+        return "string", nullable, None
+    # Any unforeseen shape falls through as "string".
+    return "string", nullable, None
+
+
+def _field_spec(name: str, field: object) -> dict[str, object]:
+    """Build the projected spec for one model field."""
+    annotation = field.annotation  # type: ignore[attr-defined]
+    kind, nullable, enum_values = _field_kind(annotation)
+
+    spec: dict[str, object] = {
+        "name": name,
+        "kind": kind,
+        "nullable": nullable,
+        "required": bool(field.is_required()),  # type: ignore[attr-defined]
+    }
+    if enum_values is not None:
+        spec["enum"] = enum_values
+
+    # Numeric / length constraints, mirrored from annotated-types metadata.
+    for meta in field.metadata:  # type: ignore[attr-defined]
+        if isinstance(meta, at.Ge):
+            spec["ge"] = meta.ge
+        elif isinstance(meta, at.Le):
+            spec["le"] = meta.le
+        elif isinstance(meta, at.MinLen):
+            spec["min_length"] = meta.min_length
+        elif isinstance(meta, at.MaxLen):
+            spec["max_length"] = meta.max_length
+
+    return spec
+
+
+def _model_spec(model: type[BaseModel]) -> list[dict[str, object]]:
+    """Project a model's fields in declaration order."""
+    return [_field_spec(name, field) for name, field in model.model_fields.items()]
+
+
+def build_schema_projection() -> str:
+    """Return the canonical JSON projection of the normalised-record schema.
+
+    The PowerShell CSV normaliser reads this to coerce and validate CSV
+    cells generically against the same field types, nullability, enum
+    membership, and numeric/length bounds that pydantic enforces in
+    Python, so it stays in lockstep with ``models.py`` instead of
+    hand-coding each record shape.
+    """
+    models_used = {field[1].__name__: field[1] for field in DATASET_FIELDS}
+    schema: dict[str, object] = {
+        "dataset_fields": [
+            {"field": name, "model": model.__name__, "csv": csv}
+            for name, model, csv in DATASET_FIELDS
+        ],
+        "overrides": {"file": OVERRIDES_FILE, "kind": "mapping"},
+        "bool_true": sorted({"true", "1", "yes", "y", "t"}),
+        "bool_false": sorted({"false", "0", "no", "n", "f"}),
+        "list_separator": "|",
+        "models": {name: _model_spec(model) for name, model in sorted(models_used.items())},
+    }
+    return _to_json(schema)
 
 
 def build_catalog_projection() -> str:
@@ -89,6 +239,7 @@ def _projection() -> dict[str, str]:
         CATALOG_FILE: build_catalog_projection(),
         PERSONAS_FILE: build_personas_projection(),
         RULES_FILE: build_rules_projection(),
+        SCHEMA_FILE: build_schema_projection(),
     }
 
 

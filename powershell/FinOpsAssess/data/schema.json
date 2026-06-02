@@ -1,0 +1,765 @@
+{
+  "bool_false": [
+    "0",
+    "f",
+    "false",
+    "n",
+    "no"
+  ],
+  "bool_true": [
+    "1",
+    "t",
+    "true",
+    "y",
+    "yes"
+  ],
+  "dataset_fields": [
+    {
+      "csv": "users.csv",
+      "field": "users",
+      "model": "UserRecord"
+    },
+    {
+      "csv": "license_assignments.csv",
+      "field": "assignments",
+      "model": "LicenseAssignment"
+    },
+    {
+      "csv": "usage.csv",
+      "field": "usage",
+      "model": "UsageSignal"
+    },
+    {
+      "csv": null,
+      "field": "m365_family_summaries",
+      "model": "M365FamilySummary"
+    },
+    {
+      "csv": "azure_resources.csv",
+      "field": "azure_resources",
+      "model": "AzureResource"
+    },
+    {
+      "csv": "azure_reservations.csv",
+      "field": "azure_reservations",
+      "model": "AzureReservation"
+    },
+    {
+      "csv": "azure_log_workspaces.csv",
+      "field": "azure_log_workspaces",
+      "model": "AzureLogWorkspace"
+    },
+    {
+      "csv": "azure_benefit_recommendations.csv",
+      "field": "azure_benefit_recommendations",
+      "model": "AzureBenefitRecommendation"
+    },
+    {
+      "csv": "github_seats.csv",
+      "field": "github_seats",
+      "model": "GitHubSeat"
+    },
+    {
+      "csv": "github_orgs.csv",
+      "field": "github_orgs",
+      "model": "GitHubOrg"
+    },
+    {
+      "csv": "ado_seats.csv",
+      "field": "ado_seats",
+      "model": "AdoSeat"
+    },
+    {
+      "csv": "ado_orgs.csv",
+      "field": "ado_orgs",
+      "model": "AdoOrgUsage"
+    }
+  ],
+  "list_separator": "|",
+  "models": {
+    "AdoOrgUsage": [
+      {
+        "kind": "string",
+        "min_length": 1,
+        "name": "org",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "purchased_parallel_jobs",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "p95_concurrent_jobs",
+        "nullable": true,
+        "required": false
+      }
+    ],
+    "AdoSeat": [
+      {
+        "kind": "string",
+        "min_length": 1,
+        "name": "principal",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "kind": "string",
+        "name": "org",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "enum": [
+          "stakeholder",
+          "basic",
+          "basic_plus_test"
+        ],
+        "kind": "literal",
+        "name": "seat_type",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "kind": "string",
+        "name": "sku_id",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "last_activity_days",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "bool",
+        "name": "only_stakeholder_activity",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "last_test_plan_days",
+        "nullable": true,
+        "required": false
+      }
+    ],
+    "AzureBenefitRecommendation": [
+      {
+        "kind": "string",
+        "min_length": 1,
+        "name": "recommendation_id",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "kind": "string",
+        "min_length": 1,
+        "name": "scope",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "enum": [
+          "Single",
+          "Shared"
+        ],
+        "kind": "literal",
+        "name": "scope_kind",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "enum": [
+          "P1Y",
+          "P3Y"
+        ],
+        "kind": "literal",
+        "name": "term",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "enum": [
+          "Last7Days",
+          "Last30Days",
+          "Last60Days"
+        ],
+        "kind": "literal",
+        "name": "lookback_period",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "kind": "string",
+        "name": "arm_sku_name",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "float",
+        "name": "cost_without_benefit_usd",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "float",
+        "name": "recommended_hourly_commit_usd",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "float",
+        "name": "net_savings_usd",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "float",
+        "name": "wastage_usd",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "enum": [
+          "SavingsPlan",
+          "Reservation"
+        ],
+        "kind": "literal",
+        "name": "benefit_kind",
+        "nullable": false,
+        "required": false
+      }
+    ],
+    "AzureLogWorkspace": [
+      {
+        "kind": "string",
+        "min_length": 1,
+        "name": "workspace_id",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "kind": "string",
+        "name": "workspace_name",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "float",
+        "name": "daily_gb",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "float",
+        "name": "commitment_tier_gb",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "string",
+        "name": "recommended_tier",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "float",
+        "le": 100,
+        "name": "est_savings_pct",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "float",
+        "name": "monthly_cost_usd",
+        "nullable": true,
+        "required": false
+      }
+    ],
+    "AzureReservation": [
+      {
+        "kind": "string",
+        "min_length": 1,
+        "name": "reservation_id",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "kind": "string",
+        "name": "reservation_name",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "string",
+        "name": "sku",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "string",
+        "name": "scope",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "float",
+        "le": 100,
+        "name": "utilization_pct",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "float",
+        "name": "monthly_cost_usd",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "string",
+        "max_length": 10,
+        "min_length": 10,
+        "name": "expiry_date",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "bool",
+        "name": "auto_renew",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "list",
+        "name": "applied_scope_subscription_ids",
+        "nullable": true,
+        "required": false
+      }
+    ],
+    "AzureResource": [
+      {
+        "kind": "string",
+        "min_length": 1,
+        "name": "resource_id",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "enum": [
+          "virtualMachine",
+          "managedDisk",
+          "publicIp"
+        ],
+        "kind": "literal",
+        "name": "resource_type",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "kind": "string",
+        "name": "sku",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "string",
+        "name": "location",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "float",
+        "le": 100,
+        "name": "avg_cpu_pct",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "float",
+        "le": 100,
+        "name": "p95_cpu_pct",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "float",
+        "le": 100,
+        "name": "p95_mem_pct",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "float",
+        "name": "avg_net_kbps",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "days_inactive",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "bool",
+        "name": "attached",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "bool",
+        "name": "associated",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "float",
+        "name": "monthly_cost_usd",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "string",
+        "name": "recommended_sku",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "string",
+        "name": "subscription_id",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "string",
+        "name": "subscription_offer",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "string",
+        "name": "env_tag",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "enum": [
+          "Windows",
+          "Linux"
+        ],
+        "kind": "literal",
+        "name": "os_type",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "string",
+        "name": "license_type",
+        "nullable": true,
+        "required": false
+      }
+    ],
+    "GitHubOrg": [
+      {
+        "kind": "string",
+        "min_length": 1,
+        "name": "org",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "ghas_repo_count",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "actively_scanned_repos",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "active_committers",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "string",
+        "name": "runner_tier",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "runner_minutes_used",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "runner_minutes_included",
+        "nullable": true,
+        "required": false
+      }
+    ],
+    "GitHubSeat": [
+      {
+        "kind": "string",
+        "min_length": 1,
+        "name": "principal",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "kind": "string",
+        "name": "org",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "enum": [
+          "enterprise",
+          "team",
+          "copilot_business",
+          "copilot_enterprise",
+          "ghas_committer"
+        ],
+        "kind": "literal",
+        "name": "seat_type",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "kind": "string",
+        "name": "sku_id",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "last_activity_days",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "copilot_acceptances_30d",
+        "nullable": true,
+        "required": false
+      }
+    ],
+    "LicenseAssignment": [
+      {
+        "kind": "string",
+        "min_length": 1,
+        "name": "principal",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "kind": "string",
+        "min_length": 1,
+        "name": "sku_id",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "kind": "string",
+        "name": "assigned_date",
+        "nullable": true,
+        "required": false
+      }
+    ],
+    "M365FamilySummary": [
+      {
+        "enum": [
+          "m365_e1_tier",
+          "m365_e3_tier",
+          "m365_e5_tier",
+          "office365",
+          "entra_p1",
+          "entra_p2",
+          "ems_e3",
+          "ems_e5",
+          "defender_o365_p1",
+          "defender_o365_p2",
+          "defender_cloud_apps",
+          "copilot_m365",
+          "copilot_pro",
+          "copilot_studio",
+          "gsa"
+        ],
+        "kind": "literal",
+        "name": "family_name",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "total_assigned",
+        "nullable": false,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "distinct_users_with_assignment",
+        "nullable": false,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "distinct_active_users",
+        "nullable": false,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "distinct_inactive_users",
+        "nullable": false,
+        "required": false
+      },
+      {
+        "kind": "dict",
+        "name": "feature_usage_signals",
+        "nullable": false,
+        "required": false
+      },
+      {
+        "kind": "string",
+        "name": "coverage_note",
+        "nullable": true,
+        "required": false
+      }
+    ],
+    "UsageSignal": [
+      {
+        "kind": "string",
+        "min_length": 1,
+        "name": "principal",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "kind": "string",
+        "min_length": 1,
+        "name": "signal",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "last_activity_days",
+        "nullable": true,
+        "required": false
+      }
+    ],
+    "UserRecord": [
+      {
+        "kind": "string",
+        "min_length": 1,
+        "name": "principal",
+        "nullable": false,
+        "required": true
+      },
+      {
+        "kind": "string",
+        "name": "display_name",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "enum": [
+          "member",
+          "guest",
+          "shared_mailbox",
+          "service"
+        ],
+        "kind": "literal",
+        "name": "user_type",
+        "nullable": false,
+        "required": false
+      },
+      {
+        "kind": "bool",
+        "name": "account_enabled",
+        "nullable": false,
+        "required": false
+      },
+      {
+        "kind": "string",
+        "name": "job_title",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "string",
+        "name": "department",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "kind": "list",
+        "name": "groups",
+        "nullable": false,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "float",
+        "name": "mailbox_size_gb",
+        "nullable": true,
+        "required": false
+      },
+      {
+        "ge": 0,
+        "kind": "int",
+        "name": "last_sign_in_days",
+        "nullable": true,
+        "required": false
+      }
+    ]
+  },
+  "overrides": {
+    "file": "overrides.yaml",
+    "kind": "mapping"
+  }
+}

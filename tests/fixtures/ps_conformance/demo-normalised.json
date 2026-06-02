@@ -1,0 +1,739 @@
+{
+  "ado_orgs": [
+    {
+      "org": "contoso",
+      "p95_concurrent_jobs": 3,
+      "purchased_parallel_jobs": 10
+    }
+  ],
+  "ado_seats": [
+    {
+      "last_activity_days": 120,
+      "last_test_plan_days": null,
+      "only_stakeholder_activity": false,
+      "org": "contoso",
+      "principal": "ado-inactive@contoso.example",
+      "seat_type": "basic",
+      "sku_id": "ADO.BASIC"
+    },
+    {
+      "last_activity_days": 5,
+      "last_test_plan_days": null,
+      "only_stakeholder_activity": true,
+      "org": "contoso",
+      "principal": "ado-boards@contoso.example",
+      "seat_type": "basic",
+      "sku_id": "ADO.BASIC"
+    },
+    {
+      "last_activity_days": 10,
+      "last_test_plan_days": 90,
+      "only_stakeholder_activity": false,
+      "org": "contoso",
+      "principal": "ado-notest@contoso.example",
+      "seat_type": "basic_plus_test",
+      "sku_id": "ADO.BASIC_TEST"
+    },
+    {
+      "last_activity_days": 3,
+      "last_test_plan_days": null,
+      "only_stakeholder_activity": false,
+      "org": "contoso",
+      "principal": "ado-active@contoso.example",
+      "seat_type": "basic",
+      "sku_id": "ADO.BASIC"
+    },
+    {
+      "last_activity_days": 7,
+      "last_test_plan_days": 2,
+      "only_stakeholder_activity": false,
+      "org": "contoso",
+      "principal": "ado-testactive@contoso.example",
+      "seat_type": "basic_plus_test",
+      "sku_id": "ADO.BASIC_TEST"
+    }
+  ],
+  "assignments": [
+    {
+      "assigned_date": "2024-06-01",
+      "principal": "alice@contoso.example",
+      "sku_id": "SPE_E5"
+    },
+    {
+      "assigned_date": "2024-01-15",
+      "principal": "bob@contoso.example",
+      "sku_id": "SPE_E5"
+    },
+    {
+      "assigned_date": "2024-01-15",
+      "principal": "carol@contoso.example",
+      "sku_id": "SPE_E3"
+    },
+    {
+      "assigned_date": "2024-02-01",
+      "principal": "carol@contoso.example",
+      "sku_id": "SHAREPOINTENTERPRISE"
+    },
+    {
+      "assigned_date": "2023-06-12",
+      "principal": "dan@contoso.example",
+      "sku_id": "SPE_E3"
+    },
+    {
+      "assigned_date": "2024-09-01",
+      "principal": "dan@contoso.example",
+      "sku_id": "M365_COPILOT"
+    },
+    {
+      "assigned_date": "2024-04-01",
+      "principal": "erin@contoso.example",
+      "sku_id": "SPE_E3"
+    },
+    {
+      "assigned_date": "2024-09-01",
+      "principal": "erin@contoso.example",
+      "sku_id": "M365_COPILOT"
+    },
+    {
+      "assigned_date": "2024-02-12",
+      "principal": "frank@contoso.example",
+      "sku_id": "SPE_E3"
+    },
+    {
+      "assigned_date": "2023-11-04",
+      "principal": "gloria@contoso.example",
+      "sku_id": "SPE_E3"
+    },
+    {
+      "assigned_date": "2024-03-15",
+      "principal": "hugo@external.example",
+      "sku_id": "SPE_E3"
+    },
+    {
+      "assigned_date": "2023-01-01",
+      "principal": "mailroom@contoso.example",
+      "sku_id": "EXCHANGESTANDARD"
+    },
+    {
+      "assigned_date": "2024-05-01",
+      "principal": "isla@contoso.example",
+      "sku_id": "SPE_E5"
+    }
+  ],
+  "azure_benefit_recommendations": [],
+  "azure_log_workspaces": [
+    {
+      "commitment_tier_gb": null,
+      "daily_gb": 120.0,
+      "est_savings_pct": 32.0,
+      "monthly_cost_usd": 1200.0,
+      "recommended_tier": "100gb_per_day_commitment",
+      "workspace_id": "/subscriptions/00000000/resourceGroups/rg-monitoring/providers/Microsoft.OperationalInsights/workspaces/law-main",
+      "workspace_name": "law-main"
+    },
+    {
+      "commitment_tier_gb": null,
+      "daily_gb": 8.5,
+      "est_savings_pct": null,
+      "monthly_cost_usd": null,
+      "recommended_tier": null,
+      "workspace_id": "/subscriptions/00000000/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security",
+      "workspace_name": "law-security"
+    }
+  ],
+  "azure_reservations": [
+    {
+      "applied_scope_subscription_ids": null,
+      "auto_renew": false,
+      "expiry_date": "2026-06-12",
+      "monthly_cost_usd": 500.0,
+      "reservation_id": "/subscriptions/00000000/providers/Microsoft.Capacity/reservationOrders/ro-001/reservations/ri-001",
+      "reservation_name": "RI-VM-D4s-EastUS",
+      "scope": "shared",
+      "sku": "Standard_D4s_v5",
+      "utilization_pct": 45.0
+    },
+    {
+      "applied_scope_subscription_ids": [
+        "/subscriptions/00000000"
+      ],
+      "auto_renew": true,
+      "expiry_date": "2026-08-30",
+      "monthly_cost_usd": 800.0,
+      "reservation_id": "/subscriptions/00000000/providers/Microsoft.Capacity/reservationOrders/ro-002/reservations/ri-002",
+      "reservation_name": "RI-SQL-WestUS",
+      "scope": "single",
+      "sku": "GP_Gen5_8",
+      "utilization_pct": 92.0
+    }
+  ],
+  "azure_resources": [
+    {
+      "associated": null,
+      "attached": null,
+      "avg_cpu_pct": 2.0,
+      "avg_net_kbps": 8.0,
+      "days_inactive": null,
+      "env_tag": null,
+      "license_type": null,
+      "location": "eastus",
+      "monthly_cost_usd": 140.0,
+      "os_type": null,
+      "p95_cpu_pct": 3.5,
+      "p95_mem_pct": 12.0,
+      "recommended_sku": null,
+      "resource_id": "/subscriptions/00000000/rg/dev/vm/vm-idle",
+      "resource_type": "virtualMachine",
+      "sku": "Standard_D4s_v5",
+      "subscription_id": null,
+      "subscription_offer": null
+    },
+    {
+      "associated": null,
+      "attached": null,
+      "avg_cpu_pct": 18.0,
+      "avg_net_kbps": 520.0,
+      "days_inactive": null,
+      "env_tag": null,
+      "license_type": null,
+      "location": "eastus",
+      "monthly_cost_usd": 280.0,
+      "os_type": null,
+      "p95_cpu_pct": 25.0,
+      "p95_mem_pct": 30.0,
+      "recommended_sku": "Standard_D4s_v5",
+      "resource_id": "/subscriptions/00000000/rg/dev/vm/vm-oversized",
+      "resource_type": "virtualMachine",
+      "sku": "Standard_D8s_v5",
+      "subscription_id": null,
+      "subscription_offer": null
+    },
+    {
+      "associated": null,
+      "attached": false,
+      "avg_cpu_pct": null,
+      "avg_net_kbps": null,
+      "days_inactive": 30,
+      "env_tag": null,
+      "license_type": null,
+      "location": "eastus",
+      "monthly_cost_usd": 42.0,
+      "os_type": null,
+      "p95_cpu_pct": null,
+      "p95_mem_pct": null,
+      "recommended_sku": null,
+      "resource_id": "/subscriptions/00000000/rg/dev/disks/disk-orphan",
+      "resource_type": "managedDisk",
+      "sku": "Premium_LRS_512",
+      "subscription_id": null,
+      "subscription_offer": null
+    },
+    {
+      "associated": false,
+      "attached": null,
+      "avg_cpu_pct": null,
+      "avg_net_kbps": null,
+      "days_inactive": null,
+      "env_tag": null,
+      "license_type": null,
+      "location": "eastus",
+      "monthly_cost_usd": 3.65,
+      "os_type": null,
+      "p95_cpu_pct": null,
+      "p95_mem_pct": null,
+      "recommended_sku": null,
+      "resource_id": "/subscriptions/00000000/rg/dev/networkInterfaces/pip-orphan",
+      "resource_type": "publicIp",
+      "sku": "Standard",
+      "subscription_id": null,
+      "subscription_offer": null
+    },
+    {
+      "associated": null,
+      "attached": null,
+      "avg_cpu_pct": 45.0,
+      "avg_net_kbps": 1200.0,
+      "days_inactive": null,
+      "env_tag": "prod",
+      "license_type": null,
+      "location": "westus",
+      "monthly_cost_usd": 120.0,
+      "os_type": null,
+      "p95_cpu_pct": 62.0,
+      "p95_mem_pct": 55.0,
+      "recommended_sku": null,
+      "resource_id": "/subscriptions/11111111/rg/prod/vm/vm-prod-in-devtest",
+      "resource_type": "virtualMachine",
+      "sku": "Standard_D4s_v3",
+      "subscription_id": "11111111",
+      "subscription_offer": "Dev/Test"
+    },
+    {
+      "associated": null,
+      "attached": null,
+      "avg_cpu_pct": 55.0,
+      "avg_net_kbps": 1200.0,
+      "days_inactive": null,
+      "env_tag": null,
+      "license_type": null,
+      "location": "eastus",
+      "monthly_cost_usd": 180.0,
+      "os_type": null,
+      "p95_cpu_pct": 68.0,
+      "p95_mem_pct": 72.0,
+      "recommended_sku": null,
+      "resource_id": "/subscriptions/sub-undercovered-001/rg/prod/vm/vm-sibling",
+      "resource_type": "virtualMachine",
+      "sku": "Standard_D4s_v5",
+      "subscription_id": "sub-undercovered-001",
+      "subscription_offer": null
+    },
+    {
+      "associated": null,
+      "attached": null,
+      "avg_cpu_pct": 40.0,
+      "avg_net_kbps": 800.0,
+      "days_inactive": null,
+      "env_tag": null,
+      "license_type": null,
+      "location": "westus",
+      "monthly_cost_usd": 200.0,
+      "os_type": null,
+      "p95_cpu_pct": 52.0,
+      "p95_mem_pct": 60.0,
+      "recommended_sku": null,
+      "resource_id": "/subscriptions/sub-scope-sibling-001/rg/prod/vm/vm-scope-sibling",
+      "resource_type": "virtualMachine",
+      "sku": "GP_Gen5_8",
+      "subscription_id": "sub-scope-sibling-001",
+      "subscription_offer": null
+    },
+    {
+      "associated": null,
+      "attached": null,
+      "avg_cpu_pct": 35.0,
+      "avg_net_kbps": 600.0,
+      "days_inactive": null,
+      "env_tag": null,
+      "license_type": null,
+      "location": "eastus",
+      "monthly_cost_usd": 160.0,
+      "os_type": "Windows",
+      "p95_cpu_pct": 50.0,
+      "p95_mem_pct": 40.0,
+      "recommended_sku": null,
+      "resource_id": "/subscriptions/00000000/rg/prod/vm/vm-win-payg",
+      "resource_type": "virtualMachine",
+      "sku": "Standard_D4s_v5",
+      "subscription_id": null,
+      "subscription_offer": null
+    },
+    {
+      "associated": null,
+      "attached": null,
+      "avg_cpu_pct": 38.0,
+      "avg_net_kbps": 700.0,
+      "days_inactive": null,
+      "env_tag": null,
+      "license_type": "Windows_Server",
+      "location": "eastus",
+      "monthly_cost_usd": 155.0,
+      "os_type": "Windows",
+      "p95_cpu_pct": 52.0,
+      "p95_mem_pct": 45.0,
+      "recommended_sku": null,
+      "resource_id": "/subscriptions/00000000/rg/prod/vm/vm-win-ahb",
+      "resource_type": "virtualMachine",
+      "sku": "Standard_D4s_v5",
+      "subscription_id": null,
+      "subscription_offer": null
+    },
+    {
+      "associated": null,
+      "attached": null,
+      "avg_cpu_pct": 42.0,
+      "avg_net_kbps": 900.0,
+      "days_inactive": null,
+      "env_tag": null,
+      "license_type": null,
+      "location": "eastus",
+      "monthly_cost_usd": 150.0,
+      "os_type": "Linux",
+      "p95_cpu_pct": 55.0,
+      "p95_mem_pct": 50.0,
+      "recommended_sku": null,
+      "resource_id": "/subscriptions/00000000/rg/prod/vm/vm-linux",
+      "resource_type": "virtualMachine",
+      "sku": "Standard_D4s_v5",
+      "subscription_id": null,
+      "subscription_offer": null
+    }
+  ],
+  "github_orgs": [
+    {
+      "active_committers": 55,
+      "actively_scanned_repos": 12,
+      "ghas_repo_count": 40,
+      "org": "contoso",
+      "runner_minutes_included": 50000,
+      "runner_minutes_used": 12000,
+      "runner_tier": "team"
+    }
+  ],
+  "github_seats": [
+    {
+      "copilot_acceptances_30d": null,
+      "last_activity_days": 180,
+      "org": "contoso",
+      "principal": "ivan@contoso.example",
+      "seat_type": "enterprise",
+      "sku_id": "GH.ENTERPRISE"
+    },
+    {
+      "copilot_acceptances_30d": null,
+      "last_activity_days": 5,
+      "org": "contoso",
+      "principal": "jade@contoso.example",
+      "seat_type": "enterprise",
+      "sku_id": "GH.ENTERPRISE"
+    },
+    {
+      "copilot_acceptances_30d": 0,
+      "last_activity_days": 45,
+      "org": "contoso",
+      "principal": "kai@contoso.example",
+      "seat_type": "copilot_business",
+      "sku_id": "GH.COPILOT_BUSINESS"
+    },
+    {
+      "copilot_acceptances_30d": 42,
+      "last_activity_days": 1,
+      "org": "contoso",
+      "principal": "lara@contoso.example",
+      "seat_type": "copilot_business",
+      "sku_id": "GH.COPILOT_BUSINESS"
+    }
+  ],
+  "m365_family_summaries": [],
+  "overrides": {
+    "alice@contoso.example": "frontline_worker"
+  },
+  "usage": [
+    {
+      "last_activity_days": 2,
+      "principal": "alice@contoso.example",
+      "signal": "exchange"
+    },
+    {
+      "last_activity_days": 1,
+      "principal": "alice@contoso.example",
+      "signal": "teams"
+    },
+    {
+      "last_activity_days": 3,
+      "principal": "alice@contoso.example",
+      "signal": "sharepoint"
+    },
+    {
+      "last_activity_days": 4,
+      "principal": "alice@contoso.example",
+      "signal": "office"
+    },
+    {
+      "last_activity_days": 1,
+      "principal": "bob@contoso.example",
+      "signal": "exchange"
+    },
+    {
+      "last_activity_days": 1,
+      "principal": "bob@contoso.example",
+      "signal": "teams"
+    },
+    {
+      "last_activity_days": 2,
+      "principal": "bob@contoso.example",
+      "signal": "sharepoint"
+    },
+    {
+      "last_activity_days": 2,
+      "principal": "bob@contoso.example",
+      "signal": "office"
+    },
+    {
+      "last_activity_days": 5,
+      "principal": "bob@contoso.example",
+      "signal": "defender_o365"
+    },
+    {
+      "last_activity_days": 7,
+      "principal": "bob@contoso.example",
+      "signal": "purview_dlp"
+    },
+    {
+      "last_activity_days": 3,
+      "principal": "bob@contoso.example",
+      "signal": "entra_p2"
+    },
+    {
+      "last_activity_days": 1,
+      "principal": "carol@contoso.example",
+      "signal": "exchange"
+    },
+    {
+      "last_activity_days": 1,
+      "principal": "carol@contoso.example",
+      "signal": "teams"
+    },
+    {
+      "last_activity_days": 1,
+      "principal": "carol@contoso.example",
+      "signal": "sharepoint"
+    },
+    {
+      "last_activity_days": 1,
+      "principal": "carol@contoso.example",
+      "signal": "office"
+    },
+    {
+      "last_activity_days": 2,
+      "principal": "carol@contoso.example",
+      "signal": "defender_o365"
+    },
+    {
+      "last_activity_days": 3,
+      "principal": "carol@contoso.example",
+      "signal": "purview_dlp"
+    },
+    {
+      "last_activity_days": 2,
+      "principal": "carol@contoso.example",
+      "signal": "entra_p2"
+    },
+    {
+      "last_activity_days": 4,
+      "principal": "erin@contoso.example",
+      "signal": "exchange"
+    },
+    {
+      "last_activity_days": 2,
+      "principal": "erin@contoso.example",
+      "signal": "teams"
+    },
+    {
+      "last_activity_days": 5,
+      "principal": "erin@contoso.example",
+      "signal": "sharepoint"
+    },
+    {
+      "last_activity_days": 1,
+      "principal": "erin@contoso.example",
+      "signal": "office"
+    },
+    {
+      "last_activity_days": 3,
+      "principal": "frank@contoso.example",
+      "signal": "exchange"
+    },
+    {
+      "last_activity_days": 1,
+      "principal": "frank@contoso.example",
+      "signal": "teams"
+    },
+    {
+      "last_activity_days": 2,
+      "principal": "frank@contoso.example",
+      "signal": "sharepoint"
+    },
+    {
+      "last_activity_days": 2,
+      "principal": "frank@contoso.example",
+      "signal": "office"
+    },
+    {
+      "last_activity_days": 2,
+      "principal": "gloria@contoso.example",
+      "signal": "exchange"
+    },
+    {
+      "last_activity_days": 1,
+      "principal": "gloria@contoso.example",
+      "signal": "teams"
+    },
+    {
+      "last_activity_days": 3,
+      "principal": "gloria@contoso.example",
+      "signal": "sharepoint"
+    },
+    {
+      "last_activity_days": 4,
+      "principal": "gloria@contoso.example",
+      "signal": "office"
+    },
+    {
+      "last_activity_days": 2,
+      "principal": "isla@contoso.example",
+      "signal": "exchange"
+    },
+    {
+      "last_activity_days": 1,
+      "principal": "isla@contoso.example",
+      "signal": "teams"
+    },
+    {
+      "last_activity_days": 3,
+      "principal": "isla@contoso.example",
+      "signal": "sharepoint"
+    },
+    {
+      "last_activity_days": 4,
+      "principal": "isla@contoso.example",
+      "signal": "office"
+    }
+  ],
+  "users": [
+    {
+      "account_enabled": true,
+      "department": "Logistics",
+      "display_name": "Alice Adams",
+      "groups": [
+        "frontline"
+      ],
+      "job_title": "Warehouse Operator",
+      "last_sign_in_days": 3,
+      "mailbox_size_gb": 1.2,
+      "principal": "alice@contoso.example",
+      "user_type": "member"
+    },
+    {
+      "account_enabled": true,
+      "department": "Finance",
+      "display_name": "Bob Brown",
+      "groups": [
+        "finance",
+        "all-staff"
+      ],
+      "job_title": "Senior Analyst",
+      "last_sign_in_days": 2,
+      "mailbox_size_gb": 42.0,
+      "principal": "bob@contoso.example",
+      "user_type": "member"
+    },
+    {
+      "account_enabled": true,
+      "department": "Legal",
+      "display_name": "Carol Cruz",
+      "groups": [
+        "legal",
+        "all-staff"
+      ],
+      "job_title": "Compliance Officer",
+      "last_sign_in_days": 1,
+      "mailbox_size_gb": 55.0,
+      "principal": "carol@contoso.example",
+      "user_type": "member"
+    },
+    {
+      "account_enabled": false,
+      "department": "PMO",
+      "display_name": "Dan Davies",
+      "groups": [
+        "pmo"
+      ],
+      "job_title": "Programme Manager",
+      "last_sign_in_days": 210,
+      "mailbox_size_gb": 18.0,
+      "principal": "dan@contoso.example",
+      "user_type": "member"
+    },
+    {
+      "account_enabled": true,
+      "department": "Engineering",
+      "display_name": "Erin Evans",
+      "groups": [
+        "engineering",
+        "all-staff"
+      ],
+      "job_title": "Engineer",
+      "last_sign_in_days": 5,
+      "mailbox_size_gb": 30.0,
+      "principal": "erin@contoso.example",
+      "user_type": "member"
+    },
+    {
+      "account_enabled": true,
+      "department": "Operations",
+      "display_name": "Frank Foster",
+      "groups": [
+        "ops"
+      ],
+      "job_title": "Specialist",
+      "last_sign_in_days": 4,
+      "mailbox_size_gb": 12.0,
+      "principal": "frank@contoso.example",
+      "user_type": "member"
+    },
+    {
+      "account_enabled": true,
+      "department": "Sales",
+      "display_name": "Gloria Gomez",
+      "groups": [
+        "sales",
+        "all-staff"
+      ],
+      "job_title": "Account Executive",
+      "last_sign_in_days": 1,
+      "mailbox_size_gb": 8.0,
+      "principal": "gloria@contoso.example",
+      "user_type": "member"
+    },
+    {
+      "account_enabled": true,
+      "department": null,
+      "display_name": "Hugo Hess",
+      "groups": [
+        "partners"
+      ],
+      "job_title": null,
+      "last_sign_in_days": 2,
+      "mailbox_size_gb": null,
+      "principal": "hugo@external.example",
+      "user_type": "guest"
+    },
+    {
+      "account_enabled": true,
+      "department": null,
+      "display_name": "Mailroom (shared)",
+      "groups": [],
+      "job_title": null,
+      "last_sign_in_days": null,
+      "mailbox_size_gb": 9.5,
+      "principal": "mailroom@contoso.example",
+      "user_type": "shared_mailbox"
+    },
+    {
+      "account_enabled": true,
+      "department": null,
+      "display_name": "SVC Pipeline",
+      "groups": [],
+      "job_title": null,
+      "last_sign_in_days": null,
+      "mailbox_size_gb": 0.0,
+      "principal": "svc-pipeline@contoso.example",
+      "user_type": "service"
+    },
+    {
+      "account_enabled": true,
+      "department": "Finance",
+      "display_name": "Isla Inkpen",
+      "groups": [
+        "finance",
+        "all-staff"
+      ],
+      "job_title": "Senior Manager",
+      "last_sign_in_days": 7,
+      "mailbox_size_gb": 40.0,
+      "principal": "isla@contoso.example",
+      "user_type": "member"
+    }
+  ]
+}
