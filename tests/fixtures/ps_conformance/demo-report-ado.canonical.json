@@ -1,0 +1,105 @@
+{
+  "findings": [
+    {
+      "confidence": "high",
+      "current_sku": "ADO.BASIC",
+      "estimated_monthly_savings_usd": 6.0,
+      "evidence": {
+        "last_activity_days": 120,
+        "org": "contoso",
+        "seat_type": "basic",
+        "window_days": 90
+      },
+      "evidence_ref": null,
+      "principal": "sha256:f86577225f7d8e6e",
+      "recommendation": "sha256:f86577225f7d8e6e holds an ADO Basic seat but shows no work-item, code, or pipeline activity in 90 days. Reclaim the seat.",
+      "recommended_sku": null,
+      "rule_id": "ADO.INACTIVE_BASIC_90D",
+      "severity": "high",
+      "surface": "ado"
+    },
+    {
+      "confidence": "high",
+      "current_sku": null,
+      "estimated_monthly_savings_usd": 280.0,
+      "evidence": {
+        "p95_concurrent_jobs": 3,
+        "purchased_parallel_jobs": 10,
+        "surplus_jobs": 7
+      },
+      "evidence_ref": null,
+      "principal": "sha256:c4ad5df30840a9d2",
+      "recommendation": "The organization owns 10 Microsoft-hosted parallel jobs but P95 concurrent usage was 3. Reduce the purchased count.",
+      "recommended_sku": null,
+      "rule_id": "ADO.PARALLEL_JOBS_OVER_PROVISIONED",
+      "severity": "medium",
+      "surface": "ado"
+    },
+    {
+      "confidence": "high",
+      "current_sku": "ADO.BASIC",
+      "estimated_monthly_savings_usd": 6.0,
+      "evidence": {
+        "last_activity_days": 5,
+        "only_stakeholder_activity": true,
+        "org": "contoso",
+        "seat_type": "basic"
+      },
+      "evidence_ref": null,
+      "principal": "sha256:8b833b79a9a4b66d",
+      "recommendation": "sha256:8b833b79a9a4b66d's only ADO activity in 90 days is reading boards and commenting. Step them down to the free Stakeholder access level.",
+      "recommended_sku": null,
+      "rule_id": "ADO.STAKEHOLDER_ELIGIBLE",
+      "severity": "medium",
+      "surface": "ado"
+    },
+    {
+      "confidence": "high",
+      "current_sku": "ADO.BASIC_TEST",
+      "estimated_monthly_savings_usd": 46.0,
+      "evidence": {
+        "last_test_plan_days": 90,
+        "org": "contoso",
+        "seat_type": "basic_plus_test",
+        "window_days": 60
+      },
+      "evidence_ref": null,
+      "principal": "sha256:8e3e740e6e0a9abf",
+      "recommendation": "sha256:8e3e740e6e0a9abf holds a Basic + Test Plans seat but has not opened or modified a Test Plan in 60 days. Step down to Basic.",
+      "recommended_sku": "ADO.BASIC",
+      "rule_id": "ADO.TEST_PLANS_UNUSED",
+      "severity": "medium",
+      "surface": "ado"
+    }
+  ],
+  "run": {
+    "generated_at": "1970-01-01T00:00:00+00:00",
+    "input": "<redacted>/demo",
+    "mode": "read-only",
+    "pii_redaction": true,
+    "salt_mode": "tenant_stable",
+    "schema_version": "1.0",
+    "tool": "finops-assess",
+    "version": "0.1.0"
+  },
+  "summary": {
+    "assignments_evaluated": 13,
+    "azure_resources_evaluated": 10,
+    "persona_distribution": {
+      "developer": 1,
+      "frontline_worker": 1,
+      "guest": 1,
+      "information_worker": 4,
+      "power_user_secure": 2,
+      "service_account": 2
+    },
+    "principals_evaluated": 11,
+    "rule_counts": {
+      "ADO.INACTIVE_BASIC_90D": 1,
+      "ADO.PARALLEL_JOBS_OVER_PROVISIONED": 1,
+      "ADO.STAKEHOLDER_ELIGIBLE": 1,
+      "ADO.TEST_PLANS_UNUSED": 1
+    },
+    "salt_mode": "tenant_stable"
+  }
+}

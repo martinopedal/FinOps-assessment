@@ -88,7 +88,7 @@ from typing import Any
 #: Python report and an empty PowerShell report project identically.
 FINDINGS_MASK = "<array:masked>"
 
-PROFILES = ("report-structural-v1", "report-m365-v1")
+PROFILES = ("report-structural-v1", "report-m365-v1", "report-github-v1", "report-ado-v1")
 
 #: The eight M365 rule ids the PowerShell engine implements in Phase 2.
 #: Used by ``report-m365-v1`` to assert the slice is fully exercised.
@@ -102,6 +102,28 @@ _M365_RULE_IDS = frozenset(
         "M365.GUEST_PREMIUM_LICENSED",
         "M365.COPILOT_INACTIVE_60D",
         "M365.E5_FEATURES_UNUSED",
+    }
+)
+
+#: The four GitHub rule ids the PowerShell engine implements in Phase 4.
+#: Used by ``report-github-v1`` to assert the slice is fully exercised.
+_GITHUB_RULE_IDS = frozenset(
+    {
+        "GH.INACTIVE_SEAT_90D",
+        "GH.COPILOT_INACTIVE_30D",
+        "GH.GHAS_OVER_PROVISIONED",
+        "GH.RUNNER_TIER_MISMATCH",
+    }
+)
+
+#: The four ADO rule ids the PowerShell engine implements in Phase 4.
+#: Used by ``report-ado-v1`` to assert the slice is fully exercised.
+_ADO_RULE_IDS = frozenset(
+    {
+        "ADO.INACTIVE_BASIC_90D",
+        "ADO.STAKEHOLDER_ELIGIBLE",
+        "ADO.PARALLEL_JOBS_OVER_PROVISIONED",
+        "ADO.TEST_PLANS_UNUSED",
     }
 )
 
@@ -245,6 +267,97 @@ def _project_m365(report: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _project_surface(
+    report: dict[str, Any],
+    *,
+    prefix: str,
+    surface: str,
+    rule_ids: frozenset[str],
+) -> dict[str, Any]:
+    """Generic surface-slice projector (GitHub or ADO).
+
+    Mirrors ``_project_m365`` but parameterised over a rule-id prefix,
+    expected surface string, and the expected rule-id set. Kept as a
+    private helper so the two public projectors stay readable.
+    """
+    if not isinstance(report, dict):
+        raise ValueError("report must be a JSON object")
+
+    run = report.get("run")
+    if not isinstance(run, dict):
+        raise ValueError("report.run must be a JSON object")
+
+    summary = report.get("summary")
+    if not isinstance(summary, dict):
+        raise ValueError("report.summary must be a JSON object")
+
+    findings = report.get("findings")
+    if not isinstance(findings, list):
+        raise ValueError("report.findings must be a JSON array")
+
+    surface_findings = [
+        f for f in findings if isinstance(f, dict) and str(f.get("rule_id", "")).startswith(prefix)
+    ]
+    for f in surface_findings:
+        if f.get("surface") != surface:
+            raise ValueError(
+                f"{prefix}* rule {f.get('rule_id')!r} produced a non-{surface} surface:"
+                f" {f.get('surface')!r}"
+            )
+
+    rule_counts = summary.get("rule_counts")
+    if not isinstance(rule_counts, dict):
+        raise ValueError("report.summary.rule_counts must be a JSON object")
+    surface_rule_counts = {k: v for k, v in rule_counts.items() if str(k).startswith(prefix)}
+
+    missing = sorted(rule_ids - set(surface_rule_counts))
+    if missing:
+        raise ValueError(f"report.summary.rule_counts missing {prefix}* rules: {missing}")
+
+    observed: dict[str, int] = {}
+    for f in surface_findings:
+        rid = str(f.get("rule_id"))
+        observed[rid] = observed.get(rid, 0) + 1
+    for rid, declared in surface_rule_counts.items():
+        if observed.get(rid, 0) != declared:
+            raise ValueError(
+                f"rule_count for {rid} is {declared} but {observed.get(rid, 0)} findings projected"
+            )
+
+    projected_summary: dict[str, Any] = {
+        key: summary[key] for key in _STRUCTURAL_SUMMARY_KEYS if key in summary
+    }
+    projected_summary["rule_counts"] = surface_rule_counts
+
+    projected_findings = sorted((_coerce_money(f) for f in surface_findings), key=_finding_sort_key)
+
+    return {
+        "run": dict(run),
+        "summary": projected_summary,
+        "findings": projected_findings,
+    }
+
+
+def _project_github(report: dict[str, Any]) -> dict[str, Any]:
+    """Return the ``report-github-v1`` projection of ``report``."""
+    return _project_surface(
+        report,
+        prefix="GH.",
+        surface="github",
+        rule_ids=_GITHUB_RULE_IDS,
+    )
+
+
+def _project_ado(report: dict[str, Any]) -> dict[str, Any]:
+    """Return the ``report-ado-v1`` projection of ``report``."""
+    return _project_surface(
+        report,
+        prefix="ADO.",
+        surface="ado",
+        rule_ids=_ADO_RULE_IDS,
+    )
+
+
 def canonicalize(report: dict[str, Any], profile: str) -> str:
     """Return the canonical string for ``report`` under ``profile``.
 
@@ -255,6 +368,10 @@ def canonicalize(report: dict[str, Any], profile: str) -> str:
         projected = _project_structural(report)
     elif profile == "report-m365-v1":
         projected = _project_m365(report)
+    elif profile == "report-github-v1":
+        projected = _project_github(report)
+    elif profile == "report-ado-v1":
+        projected = _project_ado(report)
     else:
         raise ValueError(f"unknown canonicaliser profile: {profile!r}")
 

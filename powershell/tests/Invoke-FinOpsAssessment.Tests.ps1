@@ -203,16 +203,19 @@ Describe 'JSON report contract (layer-4 schema + layer-5 canonical equality)' {
         }
     }
 
-    It 'reports only non-M365 rules as skipped (M365 rules are implemented)' {
+    It 'reports only Azure rules as skipped (M365, GitHub, ADO rules are implemented)' {
         $report = $script:RawReport | ConvertFrom-Json
         $skipped = @($report.summary.rules_skipped_no_impl)
-        # The eight M365 rules now run natively; everything else is skipped.
-        $skipped.Count | Should -Be 20
+        # M365 (8), GitHub (4), and ADO (4) rules now run natively; only the
+        # 12 AZ.* rules are skipped in Phase 4.
+        $skipped.Count | Should -Be 12
         ($skipped | Where-Object { $_ -like 'M365.*' }) | Should -BeNullOrEmpty
+        ($skipped | Where-Object { $_ -like 'GH.*' }) | Should -BeNullOrEmpty
+        ($skipped | Where-Object { $_ -like 'ADO.*' }) | Should -BeNullOrEmpty
         @($report.findings).Count | Should -BeGreaterThan 0
         $report.summary.total_findings | Should -Be (@($report.findings).Count)
-        ($report.findings | Where-Object { $_.surface -ne 'm365' }) |
-            Should -BeNullOrEmpty -Because 'only M365 rules are ported in Phase 2'
+        ($report.findings | Where-Object { $_.surface -notin @('m365', 'github', 'ado') }) |
+            Should -BeNullOrEmpty -Because 'only M365, GitHub, and ADO rules are ported in Phase 4'
     }
 }
 
@@ -259,7 +262,14 @@ Describe 'M365 rule-slice conformance (layer-5 findings + CSV)' {
     }
 
     It 'flat CSV byte-equals the Python csv_reporter golden' {
-        $actual = [System.IO.File]::ReadAllBytes($script:M365CsvFile)
+        # Phase 4: the combined CSV contains GH/ADO/M365 rows. Filter to the
+        # M365 slice before byte-comparing against the M365-only golden.
+        $raw = [System.IO.File]::ReadAllText($script:M365CsvFile, [System.Text.Encoding]::UTF8)
+        $lines = $raw -split "`n"
+        $header = $lines[0]
+        $m365Lines = @($lines | Where-Object { $_ -match '^M365\.' })
+        $m365Csv = ($header, ($m365Lines -join "`n") -join "`n") + "`n"
+        $actual = [System.Text.Encoding]::UTF8.GetBytes($m365Csv)
         $expected = [System.IO.File]::ReadAllBytes($script:M365CsvGolden)
         [System.Linq.Enumerable]::SequenceEqual($actual, $expected) |
             Should -BeTrue -Because 'PS CSV writer must match the Python csv_reporter bytes'
