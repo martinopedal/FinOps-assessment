@@ -12,19 +12,25 @@ for the architecture decision.
 
 ## Status: Phase 0 (scaffold)
 
-This release proves the runtime and the CI gate only. It ships two
-cmdlets and **no cloud collectors**:
+This release proves the runtime and the CI gate, and adds the read-only
+credential scope guard. It ships four cmdlets and **no cloud
+collectors**:
 
-| Cmdlet                     | Purpose                                              |
-|----------------------------|------------------------------------------------------|
-| `Get-FinOpsInfo`           | Module version, read-only posture, in-scope surfaces |
-| `Test-FinOpsConfiguration` | Structural self-test + version lock to the Python pkg |
+| Cmdlet                       | Purpose                                              |
+|------------------------------|------------------------------------------------------|
+| `Get-FinOpsInfo`             | Module version, read-only posture, in-scope surfaces |
+| `Test-FinOpsConfiguration`   | Structural self-test + version lock to the Python pkg |
+| `Test-FinOpsReadOnlyScope`   | Non-throwing classifier: read / write / unknown scope |
+| `Assert-FinOpsReadOnlyScope` | Fail-closed guard: throws on a write or unknown scope |
 
-> **Read-only posture, not yet enforced at runtime.** The module makes
-> no cloud calls and contains no mutation paths, but the credential
-> scope guard (which refuses to run against a write-scoped token) lands
-> in a later, separately reviewed release. `Get-FinOpsInfo` reports
-> `RuntimeScopeGuardEnforced = $false` in Phase 0.
+> **Read-only scope guard: implemented, not yet wired.** The guard
+> cmdlets (`Assert-FinOpsReadOnlyScope` / `Test-FinOpsReadOnlyScope`)
+> are implemented and unit-tested today, but no credential-bearing code
+> path ships yet for them to sit in front of (live collectors land in
+> Phase 6). `Get-FinOpsInfo` therefore reports
+> `RuntimeScopeGuardEnforced = $false`. ARM tokens are refused
+> fail-closed because read-only cannot be proven from token claims
+> (it is RBAC-side). Do not treat this module as security-complete.
 
 ## Requirements
 
@@ -49,5 +55,5 @@ Invoke-ScriptAnalyzer -Path ./powershell -Recurse -Settings ./powershell/PSScrip
 Invoke-Pester -Path ./powershell/tests
 ```
 
-CI runs the same two gates across `{ubuntu, windows, macos}` on pwsh 7
+CI runs the same gates across `{ubuntu, windows, macos}` on pwsh 7
 and folds them into the `required-checks` summary.
