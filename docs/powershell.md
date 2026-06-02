@@ -43,7 +43,7 @@ Import-Module ./powershell/FinOpsAssess/FinOpsAssess.psd1 -Force
 | `info`                   | `Get-FinOpsInfo`             | ✅ implemented                     |
 | `validate`               | `Test-FinOpsConfiguration`   | 🟡 structural + version-lock only; schema validation in Phase 1 |
 | `collect`                | `Invoke-FinOpsCollection`    | ⛔ not started (Phase 6)           |
-| `run`                    | `Invoke-FinOpsAssessment`    | ⛔ not started (Phase 1+)          |
+| `run`                    | `Invoke-FinOpsAssessment`    | 🟡 report envelope + JSON reporter (no rules yet); findings empty until Phase 2+ |
 | `demo`                   | `Invoke-FinOpsDemo`          | ⛔ not started (Phase 1)           |
 | `triage`                 | `Export-FinOpsTriage`        | ⛔ not started (Phase 5)           |
 | `catalog refresh`        | `Update-FinOpsCatalog`       | ⛔ not started (Phase 6)           |
@@ -255,6 +255,50 @@ PowerShell normaliser over the same demo tenant and deep-compares
 (type-aware: numbers as numbers) against it. Layer-5 byte-canonical
 artifact equality is **deferred** to the report/JSON-reporter slice,
 where the cross-engine money formatting/rounding rule is pinned.
+
+## Report model + JSON reporter (`Invoke-FinOpsAssessment`)
+
+The third slice of Phase 1 ports the shared report envelope and the JSON
+reporter. `Invoke-FinOpsAssessment` runs the native pipeline end to end
+on offline CSVs — normalise → persona assignment → build report → write
+JSON — and is a faithful port of Python's `build_report` /
+`write_json_report`:
+
+- **Run metadata** (`run.tool`, `run.version`, `run.generated_at`,
+  `run.input`, `run.salt_mode`, `run.pii_redaction`, …) matches Python
+  field-for-field. `run.version` is sourced from the module manifest
+  `ModuleVersion`, so the conformance compare mechanically fails if the
+  PowerShell module version ever drifts from the Python package version.
+- **Determinism** honours `SOURCE_DATE_EPOCH` exactly as Python does
+  (`Get-FinOpsGeneratedAt`): a valid epoch renders a UTC, colon-bearing
+  ISO-8601 timestamp (`1970-01-01T00:00:00+00:00`); an unset or
+  out-of-range value silently falls back to wall-clock UTC.
+- **Persona assignment** is ported in `Get-FinOpsPersonaAssignment`
+  using `[regex]::IsMatch` (case-sensitive, honouring inline `(?i)`) so
+  the title/group matching is byte-for-byte equivalent to Python's
+  `re.search`, producing an identical `summary.persona_distribution`.
+- **PII redaction** defaults on; `-NoPiiRedaction` opts out, and
+  `-PiiSalt` selects the tenant-stable salt mode (otherwise `per_run`).
+
+> **Honest parity claim — read this.** This slice proves **report-
+> envelope parity**, not findings parity. There are no rule
+> implementations yet, so the native engine emits an empty `findings`
+> array and self-documents that fact (`summary.rule_counts = {}`,
+> `summary.total_findings = 0`, `summary.rules_skipped_no_impl` lists all
+> 28 rule IDs). To compare honestly, both engines' reports are projected
+> through a **declared canonicaliser profile**, `report-structural-v1`
+> (`scripts/canonicalize_report.py`), which masks the rule-dependent
+> fields and collapses `findings` to a fixed sentinel. The committed
+> golden `tests/fixtures/ps_conformance/demo-report-structural.canonical.json`
+> is generated from a **real** Python report (with real findings); the
+> native report projects to the **same bytes** because the masked fields
+> are exactly the ones that differ. What is proven: run-metadata +
+> dataset-derived counts + persona-distribution + a schema-valid envelope
+> (`src/finops_assess/schemas/report.schema.json`) + `findings` is an
+> array. What is **explicitly not** claimed: finding contents, savings
+> numbers, or which rules fire — all deferred to the rule phases (2–5),
+> where the money formatting/rounding rule is pinned and the canonical
+> compare is extended to include findings.
 
 ## Conformance & CI
 

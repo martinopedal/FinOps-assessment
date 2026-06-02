@@ -9,6 +9,26 @@ release.
 
 ### Added
 
+- **PowerShell engine — report model + JSON reporter
+  (`Invoke-FinOpsAssessment`).** Third slice of Phase 1. The native
+  engine now runs end to end on offline CSVs (normalise → persona
+  assignment → build report → write JSON), porting Python's
+  `build_report`/`write_json_report`: identical run metadata,
+  `SOURCE_DATE_EPOCH`-honouring deterministic timestamps
+  (`Get-FinOpsGeneratedAt`), persona assignment via `[regex]::IsMatch`
+  for case-sensitive `re.search` parity (`Get-FinOpsPersonaAssignment`),
+  and PII-redaction defaults with `-NoPiiRedaction`/`-PiiSalt`. A shared
+  cross-engine canonicaliser (`scripts/canonicalize_report.py`, profile
+  `report-structural-v1`) and a draft-07 report schema
+  (`src/finops_assess/schemas/report.schema.json`) stand up §5a
+  conformance layers 4–5. Goldens are generated from a **real** Python
+  report (`scripts/generate_ps_report_fixtures.py`, drift-gated by
+  `tests/test_ps_report_fixtures.py`); the native report projects to the
+  same canonical bytes. **Honest scope:** this proves report-envelope
+  parity (run metadata, dataset-derived counts, persona distribution,
+  schema-valid envelope, `findings` is an array) — **not** findings
+  parity, which is deferred to the rule phases (no rules are implemented
+  yet, so `findings` is empty and the summary self-documents that).
 - **PowerShell engine — normalise core (offline CSV → normalised
   dataset).** Second slice of Phase 1. The native engine reimplements the
   offline collector (`collect_from_directory`): a self-contained RFC-4180

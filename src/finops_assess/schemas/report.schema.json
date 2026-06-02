@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/martinopedal/FinOps-assessment/schemas/report.schema.json",
+  "title": "finops-assess JSON report",
+  "description": "Structural contract for the canonical JSON report emitted by both the Python engine (src/finops_assess/reporters/json_reporter.py) and the native PowerShell engine. Conformance layer 4 (see docs/plan.md §5a): both engines' raw report output must validate against this schema. Finding contents are intentionally permissive here; finding-field parity is asserted separately per rule phase.",
+  "type": "object",
+  "required": ["run", "summary", "findings"],
+  "additionalProperties": false,
+  "properties": {
+    "run": {
+      "type": "object",
+      "required": [
+        "tool",
+        "version",
+        "schema_version",
+        "generated_at",
+        "input",
+        "pii_redaction",
+        "salt_mode",
+        "mode"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "tool": { "type": "string", "enum": ["finops-assess"] },
+        "version": { "type": "string", "minLength": 1 },
+        "schema_version": { "type": "string", "minLength": 1 },
+        "generated_at": { "type": "string", "minLength": 1 },
+        "input": { "type": "string" },
+        "pii_redaction": { "type": "boolean" },
+        "salt_mode": { "type": "string", "enum": ["per_run", "tenant_stable"] },
+        "mode": { "type": "string", "enum": ["read-only"] }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "principals_evaluated",
+        "assignments_evaluated",
+        "azure_resources_evaluated",
+        "salt_mode",
+        "persona_distribution"
+      ],
+      "properties": {
+        "principals_evaluated": { "type": "integer", "minimum": 0 },
+        "assignments_evaluated": { "type": "integer", "minimum": 0 },
+        "azure_resources_evaluated": { "type": "integer", "minimum": 0 },
+        "salt_mode": { "type": "string", "enum": ["per_run", "tenant_stable"] },
+        "total_findings": { "type": "integer", "minimum": 0 },
+        "rule_counts": { "type": "object" },
+        "rules_skipped_no_impl": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "persona_distribution": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "type": "object" }
+    }
+  }
+}
