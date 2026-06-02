@@ -1,4 +1,4 @@
-﻿# Squad Decisions
+# Squad Decisions
 
 ## Active Decisions
 
@@ -2670,3 +2670,24 @@ usage without commensurate clarity gain.
 
 **Locked into:** PR #99, commit 1d7a161  
 **Refs:** Issue #82 (B9), PR #78 (deferral source)
+
+---
+
+### 2026-06-02 — Decision: Agent model policy (stronger models per role)
+
+**Context:** Martin directed the squad to use stronger models — "Sonnet 4.6, Opus 4.8 for heavy reasoning, GPT 5.5, Codex 5.3 for code generation etc."
+
+**Decision:** Pin per-role model overrides in `.squad/config.json` `agentModelOverrides`:
+- `maya` (Lead / planning / consensus) → `claude-opus-4.8`
+- `noor` (Security/compliance adversarial Stage-4) → `claude-opus-4.8`
+- `diego` (Azure impl) → `gpt-5.3-codex`
+- `sam` (GitHub/ADO impl) → `gpt-5.3-codex`
+- `priya` (M365 impl) → `gpt-5.3-codex`
+- `yuki` (Tester / CI) → `claude-sonnet-4.6`
+
+**Rationale:** Heavy reasoning (planning §11 stage 3, adversarial review §11 stage 4, consensus) is the most consequential work in the delivery loop and warrants the strongest reasoning model (Opus 4.8). Code generation is well-served by a code-specialised model (Codex 5.3). General/test work uses Sonnet 4.6. Keys are durable squad-member ids, not transient per-task agent names.
+
+**Status:** Applied from PR #128 (Phase 4 GitHub/ADO) onward — Noor's Stage-4 reviews on #128 and #129 (Phase 3 Azure) both ran on Opus 4.8.
+
+**Locked into:** PR (this chore branch `squad/model-policy-overrides`)
+**Refs:** User directive 2026-06-02

@@ -1,3 +1,11 @@
 {
+  "agentModelOverrides": {
+    "maya": "claude-opus-4.8",
+    "noor": "claude-opus-4.8",
+    "diego": "gpt-5.3-codex",
+    "sam": "gpt-5.3-codex",
+    "priya": "gpt-5.3-codex",
+    "yuki": "claude-sonnet-4.6"
+  },
   "version": 1
 }
