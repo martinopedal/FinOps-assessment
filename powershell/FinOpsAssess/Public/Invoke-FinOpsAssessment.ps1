@@ -5,41 +5,47 @@ function Invoke-FinOpsAssessment {
 
     .DESCRIPTION
         Native counterpart of the Python ``finops-assess run`` command. It
-        normalises the input CSVs, assigns personas, and emits the canonical
-        JSON report.
+        normalises the input CSVs, assigns personas, runs the rule engine,
+        and emits the report (JSON) or the flat findings CSV.
 
-        PREVIEW / PARTIAL PARITY: the savings-rule engines are not ported yet
-        (they arrive in later phases), so ``findings`` is always empty and the
-        report's ``summary.rules_skipped_no_impl`` lists every rule id. What is
-        already at parity: the read CSV contract, the normalised dataset, the
-        persona engine (``summary.persona_distribution``), the run metadata,
-        PII-redaction of the input path, and the deterministic timestamp. Do
-        not treat this as a drop-in replacement for the Python assessment until
-        the rule phases land.
+        PARTIAL PARITY: only the eight ``M365.*`` rules and the CSV reporter
+        are ported natively (Phase 2). Azure/GitHub/ADO rules are not yet
+        implemented, so their ids appear in ``summary.rules_skipped_no_impl``
+        and never produce findings. The M365 rule slice, the read CSV
+        contract, the normalised dataset, the persona engine, run metadata,
+        deterministic PII redaction, and the JSON/CSV reporters are at
+        cross-engine conformance parity. Use the Python engine for
+        non-M365 findings until the later rule phases land.
 
     .PARAMETER InputDirectory
         Directory containing the normalised CSVs (and optional overrides.yaml).
 
     .PARAMETER OutputPath
-        Optional path to write the JSON report to. When omitted, the report
-        object is returned on the pipeline.
+        Optional path to write the report to. When omitted, the report
+        object is returned on the pipeline (``json``) or the CSV text is
+        emitted as a string (``csv``).
 
     .PARAMETER Format
-        Output format. Only ``json`` is supported in this preview.
+        Output format: ``json`` (default) or ``csv`` (flat findings table).
 
     .PARAMETER NoPiiRedaction
         Disables PII redaction (redaction is on by default).
 
     .PARAMETER PiiSalt
-        When supplied, the report records ``salt_mode = tenant_stable`` (a
-        caller-pinned, tenant-stable salt); otherwise ``per_run``. Finding-level
-        salting is deferred until the rule phases produce findings to salt.
+        When supplied, principals are salted with this caller-pinned,
+        tenant-stable salt and the report records ``salt_mode =
+        tenant_stable``; otherwise a per-run random salt is used and
+        ``salt_mode = per_run``.
 
     .OUTPUTS
-        [System.Collections.Specialized.OrderedDictionary] report object.
+        [System.Collections.Specialized.OrderedDictionary] report object
+        (``json``) or [string] CSV (``csv``).
 
     .EXAMPLE
         Invoke-FinOpsAssessment -InputDirectory ./tenant -OutputPath ./report.json
+
+    .EXAMPLE
+        Invoke-FinOpsAssessment -InputDirectory ./tenant -Format csv -OutputPath ./findings.csv
     #>
     [CmdletBinding()]
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
@@ -51,7 +57,7 @@ function Invoke-FinOpsAssessment {
         [string] $OutputPath,
 
         [Parameter()]
-        [ValidateSet('json')]
+        [ValidateSet('json', 'csv')]
         [string] $Format = 'json',
 
         [Parameter()]
@@ -65,23 +71,38 @@ function Invoke-FinOpsAssessment {
         throw "Input directory not found: $InputDirectory"
     }
 
-    Write-Warning ('FinOpsAssess is in report-contract preview: no savings rules are ' +
-        "implemented natively yet, so 'findings' is empty. Persona distribution, run " +
-        'metadata, and the normalised dataset are produced natively. Use the Python ' +
-        'engine for findings until the rule phases land.')
-
     $redactPii = -not $NoPiiRedaction.IsPresent
-    $saltMode = if ($PSBoundParameters.ContainsKey('PiiSalt') -and $PiiSalt) { 'tenant_stable' } else { 'per_run' }
 
     $dataset = Get-FinOpsNormalizedDataset -InputDirectory $InputDirectory
     $assignments = Get-FinOpsPersonaAssignment -Dataset $dataset
+
+    $engineArgs = @{
+        Dataset            = $dataset
+        PersonaAssignments = $assignments
+        RedactPii          = $redactPii
+    }
+    if ($PSBoundParameters.ContainsKey('PiiSalt') -and $PiiSalt) {
+        $engineArgs['Salt'] = $PiiSalt
+    }
+    $engine = Invoke-FinOpsRuleEngine @engineArgs
 
     $report = Build-FinOpsReport `
         -Dataset $dataset `
         -PersonaAssignments $assignments `
         -InputPath $InputDirectory `
         -RedactPii $redactPii `
-        -SaltMode $saltMode
+        -SaltMode $engine.SaltMode `
+        -Findings $engine.Findings `
+        -RuleCounts $engine.RuleCounts `
+        -RulesSkipped $engine.RulesSkipped
+
+    if ($Format -ceq 'csv') {
+        if ($OutputPath) {
+            [void] (Write-FinOpsCsvReport -Finding $engine.Findings -OutputPath $OutputPath)
+            return
+        }
+        return (ConvertTo-FinOpsCsvReport -Finding $engine.Findings)
+    }
 
     if ($OutputPath) {
         [void] (Write-FinOpsJsonReport -Report $report -OutputPath $OutputPath)

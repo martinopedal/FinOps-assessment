@@ -43,7 +43,7 @@ Import-Module ./powershell/FinOpsAssess/FinOpsAssess.psd1 -Force
 | `info`                   | `Get-FinOpsInfo`             | ✅ implemented                     |
 | `validate`               | `Test-FinOpsConfiguration`   | 🟡 structural + version-lock only; schema validation in Phase 1 |
 | `collect`                | `Invoke-FinOpsCollection`    | ⛔ not started (Phase 6)           |
-| `run`                    | `Invoke-FinOpsAssessment`    | 🟡 report envelope + JSON reporter (no rules yet); findings empty until Phase 2+ |
+| `run`                    | `Invoke-FinOpsAssessment`    | 🟡 report envelope + JSON reporter + **8 M365 rules** + CSV reporter (Phase 2); Azure/GitHub/ADO findings deferred to Phases 3–4 |
 | `demo`                   | `Invoke-FinOpsDemo`          | ⛔ not started (Phase 1)           |
 | `triage`                 | `Export-FinOpsTriage`        | ⛔ not started (Phase 5)           |
 | `catalog refresh`        | `Update-FinOpsCatalog`       | ⛔ not started (Phase 6)           |
@@ -299,6 +299,52 @@ JSON — and is a faithful port of Python's `build_report` /
 > numbers, or which rules fire — all deferred to the rule phases (2–5),
 > where the money formatting/rounding rule is pinned and the canonical
 > compare is extended to include findings.
+
+## M365 rules + CSV reporter (Phase 2)
+
+Phase 2 ports the eight `M365.*` savings rules and the flat-CSV reporter
+to the native engine, lifting `Invoke-FinOpsAssessment` from
+report-envelope parity to **M365 rule-slice parity**. The ported rules
+are `M365.UNUSED_LICENSE_30D`, `M365.OVER_LICENSED_VS_PERSONA`,
+`M365.DUPLICATE_BUNDLE`, `M365.DISABLED_USER_LICENSED`,
+`M365.SHARED_MAILBOX_LICENSED`, `M365.GUEST_PREMIUM_LICENSED`,
+`M365.COPILOT_INACTIVE_60D`, and `M365.E5_FEATURES_UNUSED`
+(`Invoke-FinOpsRuleEngine` + `Get-FinOpsM365RuleRegistry`, faithful ports
+of `engine.run_rules` and `rules_impl/m365_rules.py`).
+
+- **CSV output**: `Invoke-FinOpsAssessment -Format csv` emits the flat
+  findings table (`ConvertTo-FinOpsCsvReport` / `Write-FinOpsCsvReport`),
+  a hand-rolled port of `reporters/csv_reporter.py` — fixed column order,
+  `evidence_json` serialised by a Python-`json.dumps`-compatible compact
+  serialiser (`ConvertTo-FinOpsCompactJson`), `csv.QUOTE_MINIMAL`
+  quoting, the same formula-injection cell sanitiser, and LF line
+  endings. `Export-Csv` is **not** used (it quotes differently and adds a
+  `#TYPE` header).
+- **Determinism for findings**: pass `-PiiSalt <salt>` to pin the
+  tenant-stable salt so the salted-hash of each principal is reproducible
+  across runs and engines; combined with `SOURCE_DATE_EPOCH` this makes
+  the whole findings set byte-reproducible.
+
+> **Honest parity claim — read this.** Phase 2 proves **M365 rule-slice
+> parity**: over the bundled demo tenant, the native engine produces the
+> same M365 findings (same rule IDs firing, same finding fields, same
+> evidence, same salted principals, same savings numbers) and the same
+> M365 `rule_counts` as Python, and the CSV reporter matches Python
+> byte-for-byte. Two committed goldens enforce this in CI:
+> `tests/fixtures/ps_conformance/demo-report-m365.canonical.json` (the
+> `report-m365-v1` canonical projection — full M365 finding contents,
+> sorted, with the money field coerced to float so int/float JSON
+> formatting cannot diverge) and `…/demo-report-m365.csv` (the
+> `csv_reporter` output in **natural report order**). The JSON compare
+> sorts findings, so the CSV compare deliberately does **not** — it
+> doubles as an emission-order drift check, since the PowerShell engine
+> mirrors Python's rule- and input-iteration order exactly. What is
+> **explicitly not** claimed: Azure/GitHub/ADO findings (their rule IDs
+> remain in `summary.rules_skipped_no_impl`, 20 of them), whole-report
+> parity, or any non-CSV reporter. `summary.total_findings` and the full
+> `rules_skipped_no_impl` list legitimately differ between engines (the
+> native engine skips 20 rules, Python skips none), so the `report-m365-v1`
+> profile masks them and filters `rule_counts` to the `M365.*` keys.
 
 ## Conformance & CI
 

@@ -9,8 +9,25 @@ release.
 
 ### Added
 
-- **PowerShell engine — report model + JSON reporter
-  (`Invoke-FinOpsAssessment`).** Third slice of Phase 1. The native
+- **PowerShell engine — M365 rules + CSV reporter (Phase 2).**
+  `Invoke-FinOpsAssessment` now runs the eight `M365.*` savings rules
+  natively (`Invoke-FinOpsRuleEngine` + `Get-FinOpsM365RuleRegistry`,
+  faithful ports of `engine.run_rules` and `rules_impl/m365_rules.py`)
+  and gains a `-Format csv` output (`ConvertTo-FinOpsCsvReport` /
+  `Write-FinOpsCsvReport`, a hand-rolled port of `csv_reporter.py` with a
+  Python-`json.dumps`-compatible compact serialiser, `QUOTE_MINIMAL`
+  quoting, formula-injection cell sanitising, and LF endings). Two new
+  committed goldens enforce **M365 rule-slice parity** in CI: the
+  `report-m365-v1` canonical projection
+  (`tests/fixtures/ps_conformance/demo-report-m365.canonical.json` — full
+  M365 finding contents with the money field float-coerced) and the CSV
+  (`…/demo-report-m365.csv`, byte-compared in natural report order as an
+  emission-order drift check). Goldens are generated from a **real**
+  Python report (`scripts/generate_ps_m365_fixtures.py`, drift-gated by
+  `tests/test_ps_m365_fixtures.py`) under a fixed salt + `SOURCE_DATE_EPOCH`.
+  **Honest scope:** this proves the M365 rule slice + CSV reporter match
+  byte-for-byte; Azure/GitHub/ADO rules (20 IDs) remain in
+  `rules_skipped_no_impl` and are deferred to Phases 3–4.
   engine now runs end to end on offline CSVs (normalise → persona
   assignment → build report → write JSON), porting Python's
   `build_report`/`write_json_report`: identical run metadata,

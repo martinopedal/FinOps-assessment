@@ -43,6 +43,13 @@ tests/fixtures/playbook/golden-azure.jsonl.manifest.json text eol=lf
 # only. Test 16 (test_packaged_j2_templates_are_lf_only) is the regression
 # net if this line is ever removed. Same defence Yuki added for #58.
 src/finops_assess/data/playbooks/**/*.j2 text eol=lf
+# Cross-engine conformance golden fixtures (PowerShell side-by-side, Phase
+# 2). The CSV is byte-compared against the native PowerShell csv_reporter
+# output in Invoke-FinOpsAssessment.Tests.ps1; without an LF pin a Windows
+# clone with core.autocrlf=true rewrites it to CRLF and the byte-compare
+# fails Windows-only. The sibling .canonical.json is already covered by the
+# repo-wide *.json rule below.
+tests/fixtures/ps_conformance/demo-report-m365.csv text eol=lf
 
 # Repo-wide line-ending policy (issue #81) — pin LF endings for all
 # source code, data, and doc files to eliminate spurious whitespace
