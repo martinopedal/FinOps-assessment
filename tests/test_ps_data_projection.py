@@ -44,8 +44,14 @@ PROJECTIONS = {
     "rules.json": (GEN.build_rules_projection, load_rules),
 }
 
+# schema.json is an object, not a list of model instances, so it gets
+# byte/LF/parse coverage but not the loader-order parity check.
+GENERATED_FILES = sorted([*PROJECTIONS, "schema.json"])
 
-@pytest.mark.parametrize("filename", sorted(PROJECTIONS))
+SCHEMA_BUILDERS = {"schema.json": GEN.build_schema_projection}
+
+
+@pytest.mark.parametrize("filename", GENERATED_FILES)
 def test_projection_file_exists(filename: str) -> None:
     assert (PROJECTION_DIR / filename).is_file(), (
         f"Missing projection {filename}; run scripts/generate_ps_data_projection.py"
@@ -64,7 +70,7 @@ def test_projection_is_byte_identical_to_regeneration(filename: str) -> None:
     )
 
 
-@pytest.mark.parametrize("filename", sorted(PROJECTIONS))
+@pytest.mark.parametrize("filename", GENERATED_FILES)
 def test_projection_is_lf_no_bom(filename: str) -> None:
     raw = (PROJECTION_DIR / filename).read_bytes()
     assert not raw.startswith(b"\xef\xbb\xbf"), f"{filename} must not have a UTF-8 BOM"
@@ -81,6 +87,41 @@ def test_projection_parses_and_matches_loader_order(filename: str) -> None:
     loaded = list(loader())
     assert len(parsed) == len(loaded)
     assert [item["id"] for item in parsed] == [obj.id for obj in loaded]
+
+
+@pytest.mark.parametrize("filename", sorted(SCHEMA_BUILDERS))
+def test_schema_projection_is_byte_identical_to_regeneration(filename: str) -> None:
+    expected = SCHEMA_BUILDERS[filename]().encode("utf-8")
+    actual = (PROJECTION_DIR / filename).read_bytes()
+    assert actual == expected, (
+        f"{filename} has drifted from models.py. "
+        "Run `python scripts/generate_ps_data_projection.py` and commit the result."
+    )
+
+
+def test_schema_dataset_fields_match_normalized_dataset() -> None:
+    """The schema projection's dataset fields mirror NormalizedDataset.
+
+    Guards against a new normalised-dataset field landing in Python
+    without the PowerShell normaliser learning about it (it would
+    otherwise silently omit the new collection).
+    """
+    from finops_assess.models import NormalizedDataset
+
+    schema = json.loads((PROJECTION_DIR / "schema.json").read_text(encoding="utf-8"))
+    projected = [entry["field"] for entry in schema["dataset_fields"]]
+    # NormalizedDataset list fields, in declaration order, excluding the
+    # non-list ``overrides`` mapping which the projection tracks separately.
+    dataset_list_fields = [
+        name for name, field in NormalizedDataset.model_fields.items() if name != "overrides"
+    ]
+    assert projected == dataset_list_fields
+
+
+def test_schema_models_cover_every_dataset_field() -> None:
+    schema = json.loads((PROJECTION_DIR / "schema.json").read_text(encoding="utf-8"))
+    referenced = {entry["model"] for entry in schema["dataset_fields"]}
+    assert referenced == set(schema["models"].keys())
 
 
 def test_check_projection_reports_no_drift() -> None:
