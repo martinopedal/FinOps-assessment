@@ -57,6 +57,8 @@ function Get-FinOpsReadOnlyScopePolicy {
         '^gist$',                     # write gists
         '^codespace$',                # manage codespaces
         '^project$',                  # write projects
+        '^public_repo$',              # read/WRITE on public repos (push, statuses, deployments)
+        '^repo:status$',              # read/WRITE on commit statuses
         # Azure DevOps (vso.*) write/manage/execute/publish families.
         '_write(\b|$)',
         '_manage(\b|$)',
@@ -87,8 +89,6 @@ function Get-FinOpsReadOnlyScopePolicy {
         # above too. WRITE patterns are evaluated first, so this only ever
         # reaches genuinely read-shaped bare scopes.
         '^vso\.[a-z]+$',
-        '^public_repo$',              # GitHub read of public repos (no write)
-        '^repo:status$',              # commit status read
         '^openid$', '^profile$', '^email$', '^offline_access$'  # OIDC, non-resource
     )
 

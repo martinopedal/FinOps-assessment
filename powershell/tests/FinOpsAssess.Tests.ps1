@@ -174,6 +174,18 @@ Describe 'Read-only scope guard: write/admin scopes are refused' {
         { Assert-FinOpsReadOnlyScope -Scope 'admin:org' -Surface GitHub } | Should -Throw
         { Assert-FinOpsReadOnlyScope -Scope 'workflow' -Surface GitHub } | Should -Throw
     }
+
+    It 'refuses GitHub public_repo (read/write on public repos)' {
+        # public_repo grants read/WRITE to code, statuses, and deployments on
+        # public repos -- a write-capable "read-shaped" scope.
+        { Assert-FinOpsReadOnlyScope -Scope 'public_repo' -Surface GitHub } | Should -Throw
+        (Test-FinOpsReadOnlyScope -Scope 'public_repo' -Surface GitHub).IsReadOnly | Should -BeFalse
+    }
+
+    It 'refuses GitHub repo:status (read/write on commit statuses)' {
+        { Assert-FinOpsReadOnlyScope -Scope 'repo:status' -Surface GitHub } | Should -Throw
+        (Test-FinOpsReadOnlyScope -Scope 'repo:status' -Surface GitHub).IsReadOnly | Should -BeFalse
+    }
 }
 
 Describe 'Read-only scope guard: read-only credentials pass' {
