@@ -9,6 +9,24 @@ release.
 
 ### Added
 
+- **PowerShell engine — read-only credential scope guard
+  (`powershell/FinOpsAssess`).** Implements the Phase-0 security contract
+  (plan.md §4.1 / §1.7a criterion 9). New exported cmdlets
+  `Test-FinOpsReadOnlyScope` (non-throwing classifier) and
+  `Assert-FinOpsReadOnlyScope` (fail-closed guard that throws on any
+  write scope always, and on unknown/claim-insufficient scopes unless
+  `-AllowUnknownScopes`). Classification is pattern-based for the write
+  decision (Graph/Entra, GitHub classic, Azure DevOps, ARM), so novel or
+  renamed write scopes are still refused; read patterns only ever allow.
+  Surface routing is by JWT `aud` claim (no signature verification by
+  design — see threat-model notes). **Azure Resource Manager** tokens are
+  refused fail-closed because read-only is RBAC-side and not provable
+  from claims (RBAC introspection lands in Phase 6). `Get-FinOpsInfo`
+  gains a structured `ScopeGuard` coverage field;
+  `RuntimeScopeGuardEnforced` stays `$false` until the guard is wired
+  into a live credential path. ~22 new Pester tests (adversarial scope
+  corpus + round-trip JWT). Docs updated: `docs/powershell.md`,
+  `powershell/README.md`.
 - **PowerShell engine — Phase 0 scaffold (`powershell/FinOpsAssess`).**
   First native PowerShell module delivered side-by-side with the Python
   tool. Ships `Get-FinOpsInfo` (version, read-only posture, in-scope

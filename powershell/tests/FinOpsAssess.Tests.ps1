@@ -13,7 +13,7 @@ AfterAll {
 Describe 'FinOpsAssess module surface' {
     It 'exports exactly the expected public functions' {
         $exported = (Get-Command -Module FinOpsAssess -CommandType Function).Name | Sort-Object
-        $exported | Should -Be @('Get-FinOpsInfo', 'Test-FinOpsConfiguration')
+        $exported | Should -Be @('Assert-FinOpsReadOnlyScope', 'Get-FinOpsInfo', 'Test-FinOpsConfiguration', 'Test-FinOpsReadOnlyScope')
     }
 
     It 'declares PowerShell 7.2+ as the minimum supported version' {
@@ -31,10 +31,17 @@ Describe 'Get-FinOpsInfo' {
         $script:info.ModuleVersion | Should -Be $manifest.ModuleVersion
     }
 
-    It 'advertises a read-only posture with the scope guard NOT yet enforced' {
+    It 'advertises a read-only posture with the scope guard available but not yet enforced' {
         $script:info.ReadOnly | Should -BeTrue
         $script:info.RuntimeScopeGuardEnforced | Should -BeFalse
-        $script:info.PostureStatement | Should -Match 'not yet implemented'
+        $script:info.PostureStatement | Should -Match 'enforcement at the credential boundary'
+    }
+
+    It 'reports structured scope-guard coverage including the honest ARM limitation' {
+        $script:info.ScopeGuard.Available | Should -BeTrue
+        $script:info.ScopeGuard.Enforced | Should -BeFalse
+        $script:info.ScopeGuard.DefaultPolicy | Should -Be 'fail-closed-on-write-or-unknown'
+        $script:info.ScopeGuard.Coverage.AzureResourceManager | Should -Match 'insufficient:token-claims'
     }
 
     It 'lists the four in-scope surfaces' {
@@ -65,9 +72,17 @@ Describe 'Test-FinOpsConfiguration' {
 }
 
 Describe 'Read-only tripwire: no mutation-shaped code in the module' {
+    BeforeAll {
+        # The scope-guard policy file is the ONE legitimate home for the
+        # forbidden literal patterns (it enumerates them to detect them).
+        # Every other module file must stay clean.
+        $script:PolicyFileName = 'Get-FinOpsReadOnlyScopePolicy.ps1'
+    }
+
     It 'contains no forbidden patterns in module source' {
         $scanRoot = Join-Path $PSScriptRoot '..' 'FinOpsAssess'
-        $files = Get-ChildItem -Path $scanRoot -Recurse -Include '*.ps1', '*.psm1', '*.psd1' -File
+        $files = Get-ChildItem -Path $scanRoot -Recurse -Include '*.ps1', '*.psm1', '*.psd1' -File |
+            Where-Object { $_.Name -ne $script:PolicyFileName }
 
         $patterns = @(
             'Invoke-Expression',
@@ -86,5 +101,169 @@ Describe 'Read-only tripwire: no mutation-shaped code in the module' {
         }
 
         $hits | Should -BeNullOrEmpty
+    }
+
+    It 'counter-tripwire: the ONLY file carrying the .ReadWrite. literal is the policy file' {
+        $scanRoot = Join-Path $PSScriptRoot '..' 'FinOpsAssess'
+        $files = Get-ChildItem -Path $scanRoot -Recurse -Include '*.ps1', '*.psm1', '*.psd1' -File
+
+        $carriers = foreach ($file in $files) {
+            $text = Get-Content -LiteralPath $file.FullName -Raw
+            if ($text -match '\.ReadWrite\.') { $file.Name }
+        }
+
+        @($carriers) | Should -Be @($script:PolicyFileName)
+    }
+}
+
+Describe 'Read-only scope guard: write/admin scopes are refused' {
+    BeforeAll {
+        # Build a minimal JWT (header.payload.signature) from a claims
+        # hashtable so the corpus round-trips through real base64url decoding.
+        function script:New-TestJwt {
+            param([hashtable] $Claims)
+            $enc = {
+                param($obj)
+                $json = $obj | ConvertTo-Json -Compress -Depth 5
+                $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($json))
+                $b64.TrimEnd('=').Replace('+', '-').Replace('/', '_')
+            }
+            $header = & $enc @{ alg = 'none'; typ = 'JWT' }
+            $payload = & $enc $Claims
+            "$header.$payload.sig"
+        }
+    }
+
+    It 'refuses a Graph delegated write scope (scp)' {
+        $jwt = New-TestJwt -Claims @{ aud = 'https://graph.microsoft.com'; scp = 'User.ReadWrite.All' }
+        { Assert-FinOpsReadOnlyScope -AccessToken $jwt } | Should -Throw -ExpectedMessage '*write/admin scope*'
+    }
+
+    It 'refuses a Graph application write role (roles)' {
+        $jwt = New-TestJwt -Claims @{ aud = '00000003-0000-0000-c000-000000000000'; roles = @('Directory.ReadWrite.All') }
+        { Assert-FinOpsReadOnlyScope -AccessToken $jwt } | Should -Throw -ExpectedMessage '*write/admin scope*'
+    }
+
+    It 'refuses a mixed read+write token (write wins)' {
+        $jwt = New-TestJwt -Claims @{ aud = 'https://graph.microsoft.com'; scp = 'User.Read.All Group.ReadWrite.All' }
+        { Assert-FinOpsReadOnlyScope -AccessToken $jwt } | Should -Throw -ExpectedMessage '*Group.ReadWrite.All*'
+    }
+
+    It 'refuses .AccessAsUser.All (write capability without the word Write)' {
+        $jwt = New-TestJwt -Claims @{ aud = 'https://graph.microsoft.com'; scp = 'Directory.AccessAsUser.All' }
+        { Assert-FinOpsReadOnlyScope -AccessToken $jwt } | Should -Throw
+    }
+
+    It 'refuses Mail.Send (mutation that does not say Write)' {
+        $jwt = New-TestJwt -Claims @{ aud = 'https://graph.microsoft.com'; scp = 'Mail.Send' }
+        { Assert-FinOpsReadOnlyScope -AccessToken $jwt } | Should -Throw
+    }
+
+    It 'refuses full_access_as_app (Exchange full mailbox)' {
+        $jwt = New-TestJwt -Claims @{ aud = '00000003-0000-0000-c000-000000000000'; roles = @('full_access_as_app') }
+        { Assert-FinOpsReadOnlyScope -AccessToken $jwt } | Should -Throw
+    }
+
+    It 'refuses an Azure DevOps write scope' {
+        $jwt = New-TestJwt -Claims @{ aud = '499b84ac-1321-427f-aa17-267ca6975798'; scp = 'vso.work_write' }
+        { Assert-FinOpsReadOnlyScope -AccessToken $jwt } | Should -Throw -ExpectedMessage '*write/admin scope*'
+    }
+
+    It 'refuses GitHub classic write/admin scopes' {
+        { Assert-FinOpsReadOnlyScope -Scope 'repo', 'read:org' -Surface GitHub } | Should -Throw
+        { Assert-FinOpsReadOnlyScope -Scope 'admin:org' -Surface GitHub } | Should -Throw
+        { Assert-FinOpsReadOnlyScope -Scope 'workflow' -Surface GitHub } | Should -Throw
+    }
+}
+
+Describe 'Read-only scope guard: read-only credentials pass' {
+    BeforeAll {
+        function script:New-TestJwt {
+            param([hashtable] $Claims)
+            $enc = {
+                param($obj)
+                $json = $obj | ConvertTo-Json -Compress -Depth 5
+                $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($json))
+                $b64.TrimEnd('=').Replace('+', '-').Replace('/', '_')
+            }
+            $header = & $enc @{ alg = 'none'; typ = 'JWT' }
+            $payload = & $enc $Claims
+            "$header.$payload.sig"
+        }
+    }
+
+    It 'passes a Graph read-only delegated token' {
+        $jwt = New-TestJwt -Claims @{ aud = 'https://graph.microsoft.com'; scp = 'User.Read.All Directory.Read.All' }
+        { Assert-FinOpsReadOnlyScope -AccessToken $jwt } | Should -Not -Throw
+        (Test-FinOpsReadOnlyScope -AccessToken $jwt).IsReadOnly | Should -BeTrue
+    }
+
+    It 'passes a Graph read-only application token' {
+        $jwt = New-TestJwt -Claims @{ aud = '00000003-0000-0000-c000-000000000000'; roles = @('User.Read.All', 'Organization.Read.All') }
+        { Assert-FinOpsReadOnlyScope -AccessToken $jwt } | Should -Not -Throw
+    }
+
+    It 'passes GitHub read-only scopes' {
+        { Assert-FinOpsReadOnlyScope -Scope 'read:org', 'read:packages' -Surface GitHub } | Should -Not -Throw
+    }
+
+    It 'passes an Azure DevOps read scope' {
+        $jwt = New-TestJwt -Claims @{ aud = '499b84ac-1321-427f-aa17-267ca6975798'; scp = 'vso.work' }
+        { Assert-FinOpsReadOnlyScope -AccessToken $jwt } | Should -Not -Throw
+    }
+
+    It 'classifies the surface from the audience claim' {
+        $jwt = New-TestJwt -Claims @{ aud = 'https://graph.microsoft.com'; scp = 'User.Read.All' }
+        (Test-FinOpsReadOnlyScope -AccessToken $jwt).Surface | Should -Be 'Graph'
+    }
+}
+
+Describe 'Read-only scope guard: fail-closed on unknown / insufficient claims' {
+    BeforeAll {
+        function script:New-TestJwt {
+            param([hashtable] $Claims)
+            $enc = {
+                param($obj)
+                $json = $obj | ConvertTo-Json -Compress -Depth 5
+                $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($json))
+                $b64.TrimEnd('=').Replace('+', '-').Replace('/', '_')
+            }
+            $header = & $enc @{ alg = 'none'; typ = 'JWT' }
+            $payload = & $enc $Claims
+            "$header.$payload.sig"
+        }
+    }
+
+    It 'refuses an ARM token (read-only not provable from claims)' {
+        $jwt = New-TestJwt -Claims @{ aud = 'https://management.azure.com'; scp = 'user_impersonation' }
+        { Assert-FinOpsReadOnlyScope -AccessToken $jwt } | Should -Throw
+        $r = Test-FinOpsReadOnlyScope -AccessToken $jwt
+        $r.Surface | Should -Be 'AzureResourceManager'
+        $r.ClaimsSufficient | Should -BeFalse
+        $r.IsReadOnly | Should -BeFalse
+    }
+
+    It 'refuses an unrecognised scope by default (fail-closed)' {
+        { Assert-FinOpsReadOnlyScope -Scope 'Something.Mysterious.All' } | Should -Throw -ExpectedMessage '*fail-closed*'
+    }
+
+    It 'refuses an empty granted-scope list (e.g. fine-grained PAT)' {
+        { Assert-FinOpsReadOnlyScope -Scope @() } | Should -Throw
+    }
+
+    It 'refuses a token-shaped string passed as a scope' {
+        { Assert-FinOpsReadOnlyScope -Scope 'github_pat_11ABCDEF0example' } | Should -Throw
+    }
+
+    It '-AllowUnknownScopes downgrades unknown to a warning but still passes' {
+        { Assert-FinOpsReadOnlyScope -Scope 'Something.Mysterious.All' -AllowUnknownScopes -WarningAction SilentlyContinue } | Should -Not -Throw
+    }
+
+    It '-AllowUnknownScopes does NOT rescue a write scope' {
+        { Assert-FinOpsReadOnlyScope -Scope 'repo' -Surface GitHub -AllowUnknownScopes -WarningAction SilentlyContinue } | Should -Throw -ExpectedMessage '*write/admin scope*'
+    }
+
+    It 'rejects a malformed (non-JWT) token' {
+        { Test-FinOpsReadOnlyScope -AccessToken 'not-a-jwt' } | Should -Throw
     }
 }
