@@ -57,3 +57,12 @@ src/finops_assess/data/playbooks/**/*.j2 text eol=lf
 *.yml text eol=lf
 *.md text eol=lf
 *.j2 text eol=lf
+
+# PowerShell engine (powershell/**). Pin LF so the Pester version-lock /
+# byte-compare tests and PSScriptAnalyzer behave identically on the
+# Windows-hosted runner (core.autocrlf=true would otherwise rewrite to
+# CRLF). Covers the about-help .txt under powershell/ too.
+*.ps1 text eol=lf
+*.psm1 text eol=lf
+*.psd1 text eol=lf
+powershell/**/*.txt text eol=lf

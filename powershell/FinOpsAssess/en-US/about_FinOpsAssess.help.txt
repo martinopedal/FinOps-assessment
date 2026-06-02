@@ -1,0 +1,42 @@
+TOPIC
+    about_FinOpsAssess
+
+SHORT DESCRIPTION
+    Native PowerShell engine (side-by-side with the Python tool) for the
+    read-only FinOps assessment across Microsoft 365, Azure, GitHub, and
+    Azure DevOps.
+
+LONG DESCRIPTION
+    FinOpsAssess is the PowerShell counterpart of the Python
+    'finops-assess' CLI. It is being delivered incrementally; the engines
+    run side by side and are kept in parity by a cross-engine conformance
+    harness (see docs/powershell.md and docs/decisions/0001-powershell-
+    side-by-side.md).
+
+    PHASE 0 (this release) provides only:
+
+        Get-FinOpsInfo            Module version, read-only posture, and
+                                  the four in-scope surfaces. No cloud
+                                  calls.
+
+        Test-FinOpsConfiguration  Structural self-test: manifest imports,
+                                  module layout is intact, and the module
+                                  version is locked to the Python package
+                                  version.
+
+    READ-ONLY POSTURE
+        This module performs no cloud calls and contains no mutation
+        paths. It is read-only by design. However, runtime credential-
+        scope enforcement (the guard that refuses to run against a
+        write-scoped credential) is NOT yet implemented in Phase 0; it
+        lands in a dedicated, separately reviewed scope-guard release. Do
+        not treat the Phase-0 module as security-complete.
+
+    COMPATIBILITY
+        PowerShell 7.2 or later on Linux, macOS, and Windows. Windows
+        PowerShell 5.1 is unsupported and carries no parity guarantee.
+
+SEE ALSO
+    Get-FinOpsInfo
+    Test-FinOpsConfiguration
+    https://github.com/martinopedal/FinOps-assessment/blob/main/docs/powershell.md
