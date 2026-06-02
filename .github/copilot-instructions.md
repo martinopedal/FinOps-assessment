@@ -103,6 +103,17 @@ This is the default , it does not require the user to ask for a PR.
    relationships live in versioned YAML under `data/catalog/`. Rules
    reference catalogue entries by `id`. Do not hard-code SKU strings
    in Python.
+6. **Dual-maintenance is the default end-state for the second runtime
+   (§7a, mirrors `docs/plan.md` §7a / §1.7a).** No new Python rule,
+   collector, or reporter reaches stable unless **(a)** PowerShell
+   parity lands in the same PR / release, **or (b)** the PowerShell
+   module explicitly declares the feature unsupported with a dated
+   compatibility note and the conformance harness is updated to skip
+   it intentionally. The conformance CI job mechanically enforces
+   this; reviewers do not chase it manually. Retiring Python in
+   favour of a PowerShell-only engine is gated by the falsifiable
+   criteria in `docs/plan.md` §1.7a and a fresh §11 stage-4
+   adversarial review — it is not pre-approved.
 
 ## Tech stack & conventions
 

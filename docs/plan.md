@@ -39,17 +39,158 @@
    Azure retail prices API). Rules reference catalogue entries by ID.
 6. **No redistribution of third-party copyrighted material.** We link
    to and credit source diagrams; we do not copy them.
-7. **Python is the engine language.** Cross-platform, first-class SDKs
-   for Graph / ARM / GitHub / ADO, strong schema/typing tools
-   (pydantic v2, mypy strict). PowerShell is a great *admin shell* but
-   not a great normalisation/reporting engine, and we need one engine
-   that runs identically on Linux runners, in containers, and on a
-   Windows admin's laptop. A thin PowerShell wrapper script
-   (`scripts/Invoke-FinOpsAssess.ps1`) ships alongside the Python CLI so
-   PowerShell-native operators can pipeline our JSON output without
-   touching Python directly; collectors may shell out to `pwsh` only
-   when a PowerShell-only module returns materially richer data than
-   the raw API (documented exception, not the default).
+7. **Python is the reference / conformance-oracle engine; a native
+   PowerShell engine is admitted as a deliberately-justified, governed
+   second runtime that ships *alongside* Python.** Python remains the
+   normative implementation: the schemas in `src/finops_assess/models.py`
+   (pydantic v2, `extra="forbid"`), the rule semantics in
+   `data/rules/**`, and the byte-deterministic reporter outputs are the
+   conformance oracle that any second runtime must reproduce. A native
+   PowerShell engine (PowerShell 7.2+ only; Windows PowerShell 5.1 is
+   out of scope) is admitted because a non-trivial fraction of the
+   target operator population (M365 / Entra / Defender / Purview / Intune
+   admins) lives in `pwsh` natively, and a PS-native CLI removes the
+   "install Python first" friction barrier for those operators. The PS
+   engine is a peer engine, not a wrapper: it runs its own collectors,
+   rules, and JSON/CSV/manifest reporters, and is held to the same
+   read-only / PII-redaction / no-secrets / no-third-party-copyright
+   hard rules as Python. **PDF reporting is explicitly delegated to
+   Python** (the PS engine renders to JSON/CSV/Markdown and shells out
+   to the Python CLI for PDF, or simply does not offer PDF) — possibly
+   permanently. The PS engine is governed by the same five-stage
+   delivery loop (§11), the same docs-voice rules, and the same
+   no-mutation posture as Python. **Dual-maintenance is the default
+   end-state, not a transition phase**: every new Python rule,
+   collector, or reporter must either land PS parity in the same PR /
+   release, or declare the feature explicitly unsupported in PS with a
+   dated compatibility note (see §7a, and the §7a governance rule
+   mirrored into `.github/copilot-instructions.md`). Retiring Python in
+   favour of PS-only is **deferred** to a separate decision gate (§1.7a)
+   and explicitly does **not** happen in this initiative; even reaching
+   §1.7a's bar requires a fresh stage-4 adversarial review and is not
+   pre-approved here. Until the PS engine ships its first parity
+   release, the legacy thin wrapper (`scripts/Invoke-FinOpsAssess.ps1`)
+   stays in place; collectors may continue to shell out to `pwsh` for a
+   Python rule only when a PowerShell-only module returns materially
+   richer data than the raw API (documented exception, not the
+   default).
+
+---
+
+### 1.7a Go-full-PowerShell phase gate
+
+This sub-section is **only** the falsification gate that would have to
+be cleared *before* the project could even propose retiring Python in
+favour of a PS-only engine. Reaching this bar does **not** automatically
+trigger retirement; it merely unlocks a fresh stage-3 plan and a fresh
+stage-4 adversarial review on a future "go-PS-only" proposal. Until
+every criterion below is satisfied with public, reproducible evidence,
+the answer to "can we drop Python yet?" is **no**, and dual-maintenance
+(§1.7 and §7a) remains in force.
+
+**Capability-parity criteria.** The PS engine must demonstrate, with
+public evidence linked from the gate-evaluation issue:
+
+1. **Sustained conformance parity for ≥ 3 consecutive releases.** A
+   conformance harness produces byte-identical (or formally
+   equivalence-classed) JSON / CSV / manifest outputs for a shared
+   fixture corpus across both engines, green for three consecutive
+   tagged releases with no engine-specific xfails accumulating.
+2. **3-OS CI parity on `pwsh` 7.2+.** The PS engine's full test +
+   conformance + lint matrix passes on `{ubuntu-latest,
+   windows-latest, macos-latest} × pwsh ≥ 7.2`, included in the
+   single `required-checks` summary context (see §11) — not as an
+   ungated parallel job.
+3. **PDF resolved or formally accepted as Python-only.** Either the PS
+   engine renders PDF natively at parity, **or** the project records a
+   binding ADR that PDF remains a Python-delegated capability
+   permanently (in which case "go PS-only" implies dropping native
+   PDF — that trade-off must be re-ratified at the future stage-4).
+4. **Live-collector read-only parity.** Every live collector (Graph,
+   ARM, Cost Management, GitHub, Azure DevOps) is implemented natively
+   in PS using read-only scopes only, with the §9 scope-guard refusing
+   to run on a write-capable token — and has been exercised against a
+   real tenant under OIDC federated credentials (no PATs / secrets) for
+   ≥ 6 months without a read-only escape.
+5. **Measured maintenance-cost data.** ≥ 2 consecutive quarters of
+   tracked engineering-time data on dual-maintenance (PR-level labels
+   `engine:python` / `engine:powershell` / `engine:both`, time-to-merge,
+   defect rates). Retirement requires *measured* evidence that PS-only
+   would lower total cost without lowering quality — not assertion.
+6. **Operator adoption ≥ 50 % across ≥ 3 distinct organisations.**
+   Voluntary, opt-in telemetry or attestations from real operators
+   showing the PS engine is materially used in production (not just
+   dogfooded by maintainers), across at least three independent
+   organisations.
+7. **PII algorithm formally pinned.** The salted-hash redaction
+   algorithm (HMAC variant, salt derivation, normalisation rules) is
+   pinned in a versioned spec document, with shared test vectors that
+   both engines reproduce byte-for-byte and that any future change goes
+   through a `pii_algorithm_version` bump in the manifest.
+8. **Zero open 🔴 conformance defects.** No open `conformance:🔴`
+   issues at the gate-evaluation moment; any closed ones are closed
+   with linked regression fixtures.
+
+**Security-falsification gates (Noor, binding).** In addition to the
+capability criteria above, retirement requires:
+
+9. **Token-claim catch-rate ≥ Python for ≥ 2 releases.** The §9
+   read-only scope-guard in PS, exercising actual-token claim
+   introspection (not static config), catches every write/admin scope
+   the Python guard catches across a shared adversarial corpus, for
+   two consecutive tagged releases.
+10. **Shared PII test vectors green for ≥ 6 months.** The shared
+    PII-redaction test-vector suite (HR-4 byte-parity) is green on
+    both engines continuously for ≥ 6 months with no
+    PS-engine-specific deviations or `xfail`-on-PS exemptions.
+11. **No growing `xfail`-on-PS list.** The conformance harness reports
+    a non-increasing count of PS-engine `xfail`s release-over-release;
+    a sustained upward trend disqualifies the gate.
+12. **Schema rigor equivalence.** The PS engine enforces schema rigor
+    operationally equivalent to pydantic v2 `extra="forbid"` —
+    unknown fields rejected at ingest, type coercion explicit, optional
+    vs required parity — verified by a shared fuzz / property-based
+    schema-conformance test corpus.
+13. **`pwsh`-only-on-Linux including live OIDC for ≥ 6 months.** The PS
+    engine runs end-to-end on `pwsh` on Linux runners, including live
+    OIDC-federated collector runs against a real tenant, for ≥ 6
+    months continuously — closing the "PS = Windows-only" historical
+    risk Noor flagged.
+14. **Independent security review.** A non-Noor, non-maintainer
+    reviewer (external pen-test or an explicitly different security
+    reviewer of equivalent rigor) signs off on the PS engine's
+    read-only posture, secret-handling, and PII implementation.
+15. **HR-3 copyright audit.** A repo-wide audit confirms the PS engine
+    introduced no third-party copyrighted material (vendored modules,
+    bundled diagrams, copied pricing tables) — same bar as Python.
+16. **Sunset ADR preserves CodeQL / Dependabot equivalents.** Before
+    Python is retired, an ADR records equivalent supply-chain controls
+    for the PS engine (static analysis comparable to CodeQL, dependency
+    update / advisory tracking comparable to Dependabot) — Python's
+    existing controls are not silently dropped.
+
+**Decisions recorded as binding inputs to this gate** (Martin, owner,
+2026-06-02):
+
+- **D1 — Dual-maintenance funding:** PERMANENT; the §7a governance
+  rule (no new Python rule / collector / reporter reaches stable
+  without same-PR PS parity, or an explicit dated unsupported-note) is
+  ACCEPTED and binding.
+- **D2 — Transition intent:** REAL COMMITMENT — the project will
+  invest in §1.7a so Python *can* eventually be retired once the gate
+  is met; this is not a paper exercise.
+- **D3 — PDF:** Python-only (delegated) is ACCEPTED, possibly
+  permanent (criterion 3 codifies the re-ratification requirement).
+- **D4 — PS version:** PowerShell 7.2+ only; Windows PowerShell 5.1 is
+  out of scope.
+
+**Process to retire Python.** Even if every criterion 1–16 is
+demonstrably met, retiring Python requires a fresh §11 cycle —
+research → rubberduck → stage-3 plan → **fresh stage-4 adversarial
+review (Noor or successor)** → consensus → implementation. Noor's
+stage-4 verdict on the *current* initiative explicitly REJECTS
+pre-approving full transition; that rejection stands until the fresh
+stage-4 reverses it.
 
 ---
 
@@ -254,6 +395,48 @@ GitHub, ADO) from v0.6.0 (#71). Use `--surface azure` for v0.5.0 Azure-only beha
 
 All collectors emit the same normalized record shape so the rule engine
 is source-agnostic.
+
+---
+
+## 7a. Dual-maintenance governance (PowerShell side-by-side)
+
+This section is the canonical home of the §7a governance rule
+referenced by §1.7 / §1.7a and mirrored into
+`.github/copilot-instructions.md`. It is binding from the moment the
+docs-only "approve PowerShell side-by-side engine" PR merges and stays
+in force until and unless retirement of either engine is approved
+through a fresh §11 stage-4 review (see §1.7a).
+
+**Rule.** No new Python rule, collector, or reporter reaches stable
+unless either:
+
+- **(a)** PowerShell parity (same rule / collector / reporter,
+  reproducing byte-deterministic outputs against the shared
+  conformance fixture corpus) lands in the *same* PR or release; or
+- **(b)** the PowerShell module explicitly declares the feature
+  unsupported with a dated compatibility note (`unsupported_since:
+  YYYY-MM-DD`, with a one-line rationale and a link to a tracking
+  issue), and the conformance harness is updated to skip it
+  intentionally (an explicit `xfail` / skip with the same dated
+  rationale, *not* an implicit silent miss).
+
+The conformance CI job mechanically enforces this: a Python rule /
+collector / reporter that has neither a PS implementation nor a
+matching dated unsupported-note + harness skip causes the conformance
+job to fail, which fails the single `required-checks` summary
+context. Reviewers do not chase compliance manually.
+
+**Symmetry.** The same rule applies in reverse once the PS engine
+ships its first parity release: a PS rule / collector / reporter
+without same-PR Python parity (or a dated Python unsupported-note +
+harness skip) also fails conformance. Neither engine is permitted to
+quietly diverge.
+
+**Out of scope of §7a.** PDF reporting is delegated to Python by
+explicit decision (§1.7 / §1.7a criterion 3); the PS engine is *not*
+required to ship PDF parity, and the lack of PS-native PDF does not
+trigger a §7a violation. Any future change to that delegation
+requires re-ratification at a fresh stage-4.
 
 ---
 
