@@ -1,0 +1,1425 @@
+[
+  {
+    "cloud": "ado",
+    "display_name": "Azure DevOps Stakeholder",
+    "family": "ado_seat",
+    "features": [
+      "ado.boards.read",
+      "ado.work_items.basic"
+    ],
+    "id": "ADO.STAKEHOLDER",
+    "includes": [],
+    "list_price_usd_month": 0.0,
+    "notes": null,
+    "source_url": "https://azure.microsoft.com/en-us/pricing/details/devops/azure-devops-services/",
+    "successor_of": []
+  },
+  {
+    "cloud": "ado",
+    "display_name": "Azure DevOps Basic",
+    "family": "ado_seat",
+    "features": [
+      "ado.boards.full",
+      "ado.repos.full",
+      "ado.pipelines.full"
+    ],
+    "id": "ADO.BASIC",
+    "includes": [],
+    "list_price_usd_month": 6.0,
+    "notes": null,
+    "source_url": "https://azure.microsoft.com/en-us/pricing/details/devops/azure-devops-services/",
+    "successor_of": [
+      "ADO.STAKEHOLDER"
+    ]
+  },
+  {
+    "cloud": "ado",
+    "display_name": "Azure DevOps Basic + Test Plans",
+    "family": "ado_seat",
+    "features": [
+      "ado.boards.full",
+      "ado.repos.full",
+      "ado.pipelines.full",
+      "ado.test_plans"
+    ],
+    "id": "ADO.BASIC_TEST",
+    "includes": [],
+    "list_price_usd_month": 52.0,
+    "notes": null,
+    "source_url": "https://azure.microsoft.com/en-us/pricing/details/devops/azure-devops-services/",
+    "successor_of": [
+      "ADO.BASIC"
+    ]
+  },
+  {
+    "cloud": "ado",
+    "display_name": "Azure Pipelines — Microsoft-hosted parallel job",
+    "family": "ado_pipelines",
+    "features": [
+      "ado.pipelines.parallel.hosted"
+    ],
+    "id": "ADO.PARALLEL_JOB_HOSTED",
+    "includes": [],
+    "list_price_usd_month": 40.0,
+    "notes": null,
+    "source_url": "https://azure.microsoft.com/en-us/pricing/details/devops/azure-devops-services/",
+    "successor_of": []
+  },
+  {
+    "cloud": "ado",
+    "display_name": "Azure Pipelines — self-hosted parallel job",
+    "family": "ado_pipelines",
+    "features": [
+      "ado.pipelines.parallel.selfhosted"
+    ],
+    "id": "ADO.PARALLEL_JOB_SELFHOSTED",
+    "includes": [],
+    "list_price_usd_month": 15.0,
+    "notes": null,
+    "source_url": "https://azure.microsoft.com/en-us/pricing/details/devops/azure-devops-services/",
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure VM Standard_B2s",
+    "family": "azure_compute_burstable",
+    "features": [
+      "vm.cpu.2",
+      "vm.mem.4gb",
+      "vm.burstable"
+    ],
+    "id": "AZ.VM.Standard_B2s",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": null,
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure VM Standard_D2s_v5",
+    "family": "azure_compute_general",
+    "features": [
+      "vm.cpu.2",
+      "vm.mem.8gb"
+    ],
+    "id": "AZ.VM.Standard_D2s_v5",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": null,
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure VM Standard_D4s_v5",
+    "family": "azure_compute_general",
+    "features": [
+      "vm.cpu.4",
+      "vm.mem.16gb"
+    ],
+    "id": "AZ.VM.Standard_D4s_v5",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": null,
+    "successor_of": [
+      "AZ.VM.Standard_D2s_v5"
+    ]
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure VM Standard_E4s_v5",
+    "family": "azure_compute_memory",
+    "features": [
+      "vm.cpu.4",
+      "vm.mem.32gb"
+    ],
+    "id": "AZ.VM.Standard_E4s_v5",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": null,
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure Premium SSD managed disk",
+    "family": "azure_storage_disk",
+    "features": [
+      "disk.premium"
+    ],
+    "id": "AZ.DISK.Premium_SSD",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": null,
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure Standard SSD managed disk",
+    "family": "azure_storage_disk",
+    "features": [
+      "disk.standard.ssd"
+    ],
+    "id": "AZ.DISK.Standard_SSD",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": null,
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure Blob Storage (Hot)",
+    "family": "azure_storage_blob",
+    "features": [
+      "blob.hot"
+    ],
+    "id": "AZ.STORAGE.Blob_Hot",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": null,
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure SQL Database S1",
+    "family": "azure_sql_dtu",
+    "features": [
+      "sql.dtu.20"
+    ],
+    "id": "AZ.SQL.S1",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": null,
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure SQL Database GP_Gen5_2 (vCore)",
+    "family": "azure_sql_vcore",
+    "features": [
+      "sql.vcore.2",
+      "sql.gp"
+    ],
+    "id": "AZ.SQL.GP_Gen5_2",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": null,
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Log Analytics — Pay-As-You-Go",
+    "family": "azure_observability",
+    "features": [
+      "logs.payg"
+    ],
+    "id": "AZ.LOG.PerGB",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": null,
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Log Analytics — 100 GB/day commitment",
+    "family": "azure_observability",
+    "features": [
+      "logs.commitment.100gb"
+    ],
+    "id": "AZ.LOG.Commitment100",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": null,
+    "successor_of": [
+      "AZ.LOG.PerGB"
+    ]
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure Standard Public IP",
+    "family": "azure_network",
+    "features": [
+      "network.public_ip.standard"
+    ],
+    "id": "AZ.IP.Standard",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": null,
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure VM Standard_F4s_v2",
+    "family": "azure_compute_optimized",
+    "features": [
+      "vm.cpu.4",
+      "vm.mem.8gb",
+      "vm.compute_optimized"
+    ],
+    "id": "AZ.VM.Standard_F4s_v2",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://azure.microsoft.com/en-us/pricing/details/virtual-machines/linux/",
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure VM Standard_L8s_v3",
+    "family": "azure_compute_storage",
+    "features": [
+      "vm.cpu.8",
+      "vm.mem.64gb",
+      "vm.storage_optimized"
+    ],
+    "id": "AZ.VM.Standard_L8s_v3",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://azure.microsoft.com/en-us/pricing/details/virtual-machines/linux/",
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure VM Standard_NC6s_v3 (GPU)",
+    "family": "azure_compute_gpu",
+    "features": [
+      "vm.cpu.6",
+      "vm.mem.112gb",
+      "vm.gpu"
+    ],
+    "id": "AZ.VM.Standard_NC6s_v3",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://azure.microsoft.com/en-us/pricing/details/virtual-machines/linux/",
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure Standard HDD managed disk",
+    "family": "azure_storage_disk",
+    "features": [
+      "disk.standard.hdd"
+    ],
+    "id": "AZ.DISK.Standard_HDD",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://azure.microsoft.com/en-us/pricing/details/managed-disks/",
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure Blob Storage (Cool)",
+    "family": "azure_storage_blob",
+    "features": [
+      "blob.cool"
+    ],
+    "id": "AZ.STORAGE.Blob_Cool",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://azure.microsoft.com/en-us/pricing/details/storage/blobs/",
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure Blob Storage (Archive)",
+    "family": "azure_storage_blob",
+    "features": [
+      "blob.archive"
+    ],
+    "id": "AZ.STORAGE.Blob_Archive",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://azure.microsoft.com/en-us/pricing/details/storage/blobs/",
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure SQL Database Hyperscale (HS_Gen5_2)",
+    "family": "azure_sql_hyperscale",
+    "features": [
+      "sql.vcore.2",
+      "sql.hyperscale"
+    ],
+    "id": "AZ.SQL.HS_Gen5_2",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://azure.microsoft.com/en-us/pricing/details/azure-sql-database/single/",
+    "successor_of": []
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure SQL Database Business Critical (BC_Gen5_2)",
+    "family": "azure_sql_vcore",
+    "features": [
+      "sql.vcore.2",
+      "sql.bc"
+    ],
+    "id": "AZ.SQL.BC_Gen5_2",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://azure.microsoft.com/en-us/pricing/details/azure-sql-database/single/",
+    "successor_of": [
+      "AZ.SQL.GP_Gen5_2"
+    ]
+  },
+  {
+    "cloud": "azure",
+    "display_name": "Azure SQL Managed Instance GP_Gen5_4",
+    "family": "azure_sql_managed_instance",
+    "features": [
+      "sql.vcore.4",
+      "sql.gp",
+      "sql.managed_instance"
+    ],
+    "id": "AZ.SQLMI.GP_Gen5_4",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://azure.microsoft.com/en-us/pricing/details/azure-sql-managed-instance/single/",
+    "successor_of": []
+  },
+  {
+    "cloud": "github",
+    "display_name": "GitHub Enterprise (per user)",
+    "family": "github_seat",
+    "features": [
+      "github.enterprise"
+    ],
+    "id": "GH.ENTERPRISE",
+    "includes": [],
+    "list_price_usd_month": 21.0,
+    "notes": null,
+    "source_url": "https://github.com/pricing",
+    "successor_of": []
+  },
+  {
+    "cloud": "github",
+    "display_name": "GitHub Team (per user)",
+    "family": "github_seat",
+    "features": [
+      "github.team"
+    ],
+    "id": "GH.TEAM",
+    "includes": [],
+    "list_price_usd_month": 4.0,
+    "notes": null,
+    "source_url": "https://github.com/pricing",
+    "successor_of": []
+  },
+  {
+    "cloud": "github",
+    "display_name": "GitHub Copilot Business (per user)",
+    "family": "github_addon",
+    "features": [
+      "copilot.github.business"
+    ],
+    "id": "GH.COPILOT_BUSINESS",
+    "includes": [],
+    "list_price_usd_month": 19.0,
+    "notes": null,
+    "source_url": "https://github.com/features/copilot",
+    "successor_of": []
+  },
+  {
+    "cloud": "github",
+    "display_name": "GitHub Copilot Enterprise (per user)",
+    "family": "github_addon",
+    "features": [
+      "copilot.github.business",
+      "copilot.github.enterprise"
+    ],
+    "id": "GH.COPILOT_ENTERPRISE",
+    "includes": [],
+    "list_price_usd_month": 39.0,
+    "notes": null,
+    "source_url": "https://github.com/features/copilot",
+    "successor_of": [
+      "GH.COPILOT_BUSINESS"
+    ]
+  },
+  {
+    "cloud": "github",
+    "display_name": "GitHub Advanced Security (per active committer)",
+    "family": "github_addon",
+    "features": [
+      "ghas.code_scanning",
+      "ghas.secret_scanning",
+      "ghas.dependency_review"
+    ],
+    "id": "GH.GHAS",
+    "includes": [],
+    "list_price_usd_month": 49.0,
+    "notes": null,
+    "source_url": "https://github.com/enterprise/advanced-security",
+    "successor_of": []
+  },
+  {
+    "cloud": "github",
+    "display_name": "GitHub Free (per user)",
+    "family": "github_seat",
+    "features": [
+      "github.free"
+    ],
+    "id": "GH.FREE",
+    "includes": [],
+    "list_price_usd_month": 0.0,
+    "notes": null,
+    "source_url": "https://github.com/pricing",
+    "successor_of": []
+  },
+  {
+    "cloud": "github",
+    "display_name": "GitHub Pro (per user)",
+    "family": "github_seat",
+    "features": [
+      "github.pro"
+    ],
+    "id": "GH.PRO",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://github.com/pricing",
+    "successor_of": [
+      "GH.FREE"
+    ]
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft 365 E1",
+    "family": "m365_enterprise",
+    "features": [
+      "mailbox.50gb",
+      "office.web",
+      "teams.full",
+      "sharepoint.full"
+    ],
+    "id": "SPE_E1",
+    "includes": [
+      "EXCHANGE_S_STANDARD",
+      "SHAREPOINTSTANDARD",
+      "TEAMS1",
+      "YAMMER_ENTERPRISE"
+    ],
+    "list_price_usd_month": 12.5,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft 365 E3",
+    "family": "m365_enterprise",
+    "features": [
+      "mailbox.100gb",
+      "office.desktop",
+      "teams.full",
+      "sharepoint.full",
+      "intune.mdm",
+      "intune.mam",
+      "entra.p1"
+    ],
+    "id": "SPE_E3",
+    "includes": [
+      "EXCHANGE_S_ENTERPRISE",
+      "SHAREPOINTENTERPRISE",
+      "TEAMS1",
+      "OFFICESUBSCRIPTION",
+      "INTUNE_A",
+      "AAD_PREMIUM"
+    ],
+    "list_price_usd_month": 36.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": [
+      "SPE_E1"
+    ]
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft 365 E5",
+    "family": "m365_enterprise",
+    "features": [
+      "mailbox.100gb",
+      "office.desktop",
+      "teams.full",
+      "sharepoint.full",
+      "intune.mdm",
+      "intune.mam",
+      "entra.p2",
+      "defender.o365.p2",
+      "purview.dlp",
+      "purview.records"
+    ],
+    "id": "SPE_E5",
+    "includes": [
+      "EXCHANGE_S_ENTERPRISE",
+      "SHAREPOINTENTERPRISE",
+      "TEAMS1",
+      "OFFICESUBSCRIPTION",
+      "INTUNE_A",
+      "AAD_PREMIUM_P2",
+      "THREAT_INTELLIGENCE",
+      "INFORMATION_BARRIERS",
+      "PURVIEW_DLP"
+    ],
+    "list_price_usd_month": 57.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": [
+      "SPE_E3"
+    ]
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft 365 F1",
+    "family": "m365_frontline",
+    "features": [
+      "teams.basic",
+      "sharepoint.read"
+    ],
+    "id": "SPE_F1",
+    "includes": [],
+    "list_price_usd_month": 2.25,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft 365 F3",
+    "family": "m365_frontline",
+    "features": [
+      "mailbox.2gb",
+      "office.web",
+      "teams.basic",
+      "intune.mam",
+      "entra.p1.frontline"
+    ],
+    "id": "SPE_F3",
+    "includes": [
+      "EXCHANGE_S_DESKLESS",
+      "SHAREPOINTDESKLESS",
+      "TEAMS1",
+      "INTUNE_A"
+    ],
+    "list_price_usd_month": 8.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": [
+      "SPE_F1"
+    ]
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft 365 Business Basic",
+    "family": "m365_business",
+    "features": [
+      "mailbox.50gb",
+      "office.web",
+      "teams.full",
+      "sharepoint.full"
+    ],
+    "id": "O365_BUSINESS_ESSENTIALS",
+    "includes": [],
+    "list_price_usd_month": 6.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft 365 Business Standard",
+    "family": "m365_business",
+    "features": [
+      "mailbox.50gb",
+      "office.desktop",
+      "teams.full",
+      "sharepoint.full"
+    ],
+    "id": "O365_BUSINESS_PREMIUM",
+    "includes": [],
+    "list_price_usd_month": 12.5,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft 365 Business Premium",
+    "family": "m365_business",
+    "features": [
+      "mailbox.50gb",
+      "office.desktop",
+      "teams.full",
+      "sharepoint.full",
+      "intune.mdm",
+      "intune.mam",
+      "entra.p1",
+      "defender.o365.p1",
+      "defender.endpoint.business"
+    ],
+    "id": "SPB",
+    "includes": [],
+    "list_price_usd_month": 22.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft 365 Apps for Enterprise",
+    "family": "m365_apps",
+    "features": [
+      "office.desktop"
+    ],
+    "id": "M365_APPS_FOR_ENTERPRISE",
+    "includes": [],
+    "list_price_usd_month": 12.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft 365 Copilot",
+    "family": "m365_addon",
+    "features": [
+      "copilot.m365"
+    ],
+    "id": "M365_COPILOT",
+    "includes": [],
+    "list_price_usd_month": 30.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Office 365 E1",
+    "family": "o365_enterprise",
+    "features": [
+      "mailbox.50gb",
+      "office.web",
+      "teams.full",
+      "sharepoint.full"
+    ],
+    "id": "STANDARDPACK",
+    "includes": [
+      "EXCHANGE_S_STANDARD",
+      "SHAREPOINTSTANDARD",
+      "TEAMS1",
+      "YAMMER_ENTERPRISE"
+    ],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Office 365 E3",
+    "family": "o365_enterprise",
+    "features": [
+      "mailbox.100gb",
+      "office.desktop",
+      "teams.full",
+      "sharepoint.full",
+      "purview.dlp"
+    ],
+    "id": "ENTERPRISEPACK",
+    "includes": [
+      "EXCHANGE_S_ENTERPRISE",
+      "SHAREPOINTENTERPRISE",
+      "TEAMS1",
+      "OFFICESUBSCRIPTION"
+    ],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": [
+      "STANDARDPACK"
+    ]
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Office 365 E5",
+    "family": "o365_enterprise",
+    "features": [
+      "mailbox.100gb",
+      "office.desktop",
+      "teams.full",
+      "sharepoint.full",
+      "defender.o365.p2",
+      "purview.dlp",
+      "purview.records",
+      "powerbi.pro"
+    ],
+    "id": "ENTERPRISEPREMIUM",
+    "includes": [
+      "EXCHANGE_S_ENTERPRISE",
+      "SHAREPOINTENTERPRISE",
+      "TEAMS1",
+      "OFFICESUBSCRIPTION",
+      "THREAT_INTELLIGENCE",
+      "PURVIEW_DLP",
+      "MCOMEETADV"
+    ],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": [
+      "ENTERPRISEPACK"
+    ]
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Office 365 F3",
+    "family": "o365_frontline",
+    "features": [
+      "mailbox.2gb",
+      "office.web",
+      "teams.basic"
+    ],
+    "id": "DESKLESSPACK",
+    "includes": [
+      "EXCHANGE_S_DESKLESS",
+      "SHAREPOINTDESKLESS",
+      "TEAMS1"
+    ],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Entra ID P1",
+    "family": "entra",
+    "features": [
+      "entra.p1"
+    ],
+    "id": "AAD_PREMIUM",
+    "includes": [],
+    "list_price_usd_month": 6.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Entra ID P2",
+    "family": "entra",
+    "features": [
+      "entra.p1",
+      "entra.p2"
+    ],
+    "id": "AAD_PREMIUM_P2",
+    "includes": [],
+    "list_price_usd_month": 9.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": [
+      "AAD_PREMIUM"
+    ]
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Enterprise Mobility + Security E3",
+    "family": "ems",
+    "features": [
+      "entra.p1",
+      "intune.mdm",
+      "intune.mam"
+    ],
+    "id": "EMS_E3",
+    "includes": [
+      "AAD_PREMIUM",
+      "INTUNE_A"
+    ],
+    "list_price_usd_month": 10.6,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Enterprise Mobility + Security E5",
+    "family": "ems",
+    "features": [
+      "entra.p1",
+      "entra.p2",
+      "intune.mdm",
+      "intune.mam"
+    ],
+    "id": "EMS_E5",
+    "includes": [
+      "AAD_PREMIUM_P2",
+      "INTUNE_A"
+    ],
+    "list_price_usd_month": 16.4,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": [
+      "EMS_E3"
+    ]
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Intune Plan 1",
+    "family": "intune",
+    "features": [
+      "intune.mdm",
+      "intune.mam"
+    ],
+    "id": "INTUNE_A",
+    "includes": [],
+    "list_price_usd_month": 8.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Defender for Office 365 Plan 1",
+    "family": "defender",
+    "features": [
+      "defender.o365.p1"
+    ],
+    "id": "ATP_ENTERPRISE",
+    "includes": [],
+    "list_price_usd_month": 2.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Defender for Office 365 Plan 2",
+    "family": "defender",
+    "features": [
+      "defender.o365.p1",
+      "defender.o365.p2"
+    ],
+    "id": "THREAT_INTELLIGENCE",
+    "includes": [],
+    "list_price_usd_month": 5.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": [
+      "ATP_ENTERPRISE"
+    ]
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Defender for Endpoint Plan 2",
+    "family": "defender",
+    "features": [
+      "defender.endpoint.p2"
+    ],
+    "id": "WIN_DEF_ATP",
+    "includes": [],
+    "list_price_usd_month": 5.2,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Purview Data Loss Prevention",
+    "family": "purview",
+    "features": [
+      "purview.dlp"
+    ],
+    "id": "PURVIEW_DLP",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Purview Information Protection & Governance",
+    "family": "purview",
+    "features": [
+      "purview.records",
+      "purview.classification"
+    ],
+    "id": "INFORMATION_PROTECTION_AND_GOVERNANCE",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Defender for Endpoint Plan 1",
+    "family": "defender",
+    "features": [
+      "defender.endpoint.p1"
+    ],
+    "id": "MDE_P1",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Defender for Identity",
+    "family": "defender",
+    "features": [
+      "defender.identity"
+    ],
+    "id": "ATA",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Defender for Cloud Apps",
+    "family": "defender",
+    "features": [
+      "defender.cloudapps"
+    ],
+    "id": "ADALLOM_S_STANDALONE",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft 365 E5 Security",
+    "family": "m365_addon",
+    "features": [
+      "entra.p2",
+      "defender.o365.p2",
+      "defender.endpoint.p2",
+      "defender.identity",
+      "defender.cloudapps"
+    ],
+    "id": "M365_SECURITY",
+    "includes": [
+      "AAD_PREMIUM_P2",
+      "THREAT_INTELLIGENCE",
+      "WIN_DEF_ATP",
+      "ATA",
+      "ADALLOM_S_STANDALONE"
+    ],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft 365 E5 Compliance",
+    "family": "m365_addon",
+    "features": [
+      "purview.dlp",
+      "purview.records",
+      "purview.classification",
+      "purview.ediscovery.premium",
+      "purview.insider_risk",
+      "purview.audit.premium"
+    ],
+    "id": "M365_E5_COMPLIANCE",
+    "includes": [
+      "PURVIEW_DLP",
+      "INFORMATION_PROTECTION_AND_GOVERNANCE"
+    ],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Purview eDiscovery (Premium)",
+    "family": "purview",
+    "features": [
+      "purview.ediscovery.premium"
+    ],
+    "id": "EQUIVIO_ANALYTICS",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Purview Insider Risk Management",
+    "family": "purview",
+    "features": [
+      "purview.insider_risk"
+    ],
+    "id": "INSIDER_RISK_MANAGEMENT",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Purview Audit (Premium)",
+    "family": "purview",
+    "features": [
+      "purview.audit.premium"
+    ],
+    "id": "M365_ADVANCED_AUDITING",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Exchange Online (Plan 1)",
+    "family": "exchange",
+    "features": [
+      "mailbox.50gb"
+    ],
+    "id": "EXCHANGESTANDARD",
+    "includes": [],
+    "list_price_usd_month": 4.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Exchange Online (Plan 2)",
+    "family": "exchange",
+    "features": [
+      "mailbox.100gb"
+    ],
+    "id": "EXCHANGEENTERPRISE",
+    "includes": [],
+    "list_price_usd_month": 8.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": [
+      "EXCHANGESTANDARD"
+    ]
+  },
+  {
+    "cloud": "m365",
+    "display_name": "SharePoint Online (Plan 1)",
+    "family": "sharepoint",
+    "features": [
+      "sharepoint.full"
+    ],
+    "id": "SHAREPOINTSTANDARD",
+    "includes": [],
+    "list_price_usd_month": 5.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "SharePoint Online (Plan 2)",
+    "family": "sharepoint",
+    "features": [
+      "sharepoint.full",
+      "sharepoint.advanced"
+    ],
+    "id": "SHAREPOINTENTERPRISE",
+    "includes": [],
+    "list_price_usd_month": 10.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": [
+      "SHAREPOINTSTANDARD"
+    ]
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Teams Essentials",
+    "family": "teams",
+    "features": [
+      "teams.basic"
+    ],
+    "id": "TEAMS_ESSENTIALS",
+    "includes": [],
+    "list_price_usd_month": 4.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Teams Phone Standard",
+    "family": "teams",
+    "features": [
+      "teams.phone"
+    ],
+    "id": "TEAMS_PHONE_STANDARD",
+    "includes": [],
+    "list_price_usd_month": 8.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Teams Premium",
+    "family": "teams",
+    "features": [
+      "teams.premium"
+    ],
+    "id": "TEAMS_PREMIUM",
+    "includes": [],
+    "list_price_usd_month": 10.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Power BI Pro",
+    "family": "power_platform",
+    "features": [
+      "powerbi.pro"
+    ],
+    "id": "POWER_BI_PRO",
+    "includes": [],
+    "list_price_usd_month": 14.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Power BI Premium Per User",
+    "family": "power_platform",
+    "features": [
+      "powerbi.pro",
+      "powerbi.premium"
+    ],
+    "id": "POWER_BI_PREMIUM_PER_USER",
+    "includes": [],
+    "list_price_usd_month": 24.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": [
+      "POWER_BI_PRO"
+    ]
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Power Apps Premium (per user)",
+    "family": "power_platform",
+    "features": [
+      "powerapps.premium"
+    ],
+    "id": "POWERAPPS_PER_USER",
+    "includes": [],
+    "list_price_usd_month": 20.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Power Automate Premium (per user)",
+    "family": "power_platform",
+    "features": [
+      "powerautomate.premium"
+    ],
+    "id": "FLOW_PER_USER",
+    "includes": [],
+    "list_price_usd_month": 15.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Project Plan 3",
+    "family": "project",
+    "features": [
+      "project.plan3"
+    ],
+    "id": "PROJECT_P3",
+    "includes": [],
+    "list_price_usd_month": 30.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Project Plan 1",
+    "family": "project",
+    "features": [
+      "project.plan1"
+    ],
+    "id": "PROJECT_P1",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Project Plan 5",
+    "family": "project",
+    "features": [
+      "project.plan3",
+      "project.plan5"
+    ],
+    "id": "PROJECT_P5",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": [
+      "PROJECT_P3"
+    ]
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Visio Plan 2",
+    "family": "visio",
+    "features": [
+      "visio.plan2"
+    ],
+    "id": "VISIOCLIENT",
+    "includes": [],
+    "list_price_usd_month": 15.0,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Visio Plan 1",
+    "family": "visio",
+    "features": [
+      "visio.plan1"
+    ],
+    "id": "VISIO_PLAN1",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft 365 Audio Conferencing",
+    "family": "voice",
+    "features": [
+      "teams.audio_conferencing"
+    ],
+    "id": "MCOMEETADV",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Teams Phone (Resource Account)",
+    "family": "voice",
+    "features": [
+      "teams.phone.resource"
+    ],
+    "id": "MCOEV",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Microsoft Teams Domestic Calling Plan",
+    "family": "voice",
+    "features": [
+      "teams.calling.domestic"
+    ],
+    "id": "MCOPSTN1",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Windows 10/11 Enterprise E3",
+    "family": "windows",
+    "features": [
+      "windows.enterprise.e3"
+    ],
+    "id": "WIN10_VDA_E3",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": []
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Windows 10/11 Enterprise E5",
+    "family": "windows",
+    "features": [
+      "windows.enterprise.e3",
+      "windows.enterprise.e5",
+      "defender.endpoint.p2"
+    ],
+    "id": "WIN10_VDA_E5",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://m365maps.com/",
+    "successor_of": [
+      "WIN10_VDA_E3"
+    ]
+  },
+  {
+    "cloud": "m365",
+    "display_name": "Windows 365 Business 2vCPU/4GB/128GB",
+    "family": "windows_365",
+    "features": [
+      "windows365.cloudpc"
+    ],
+    "id": "CPC_B_2C_4RAM_128GB",
+    "includes": [],
+    "list_price_usd_month": null,
+    "notes": null,
+    "source_url": "https://www.microsoft.com/en-us/windows-365",
+    "successor_of": []
+  }
+]

@@ -100,6 +100,8 @@ jobs:
         run: python -m finops_assess.catalog validate
       - name: Validate personas + rules
         run: python -m finops_assess.rules validate
+      - name: Check PowerShell data projection is up to date
+        run: python scripts/generate_ps_data_projection.py --check
 
   lint-and-test-powershell:
     name: PowerShell lint + Pester (${{ matrix.os }})

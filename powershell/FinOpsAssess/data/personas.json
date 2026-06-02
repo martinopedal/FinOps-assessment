@@ -1,0 +1,96 @@
+[
+  {
+    "description": "Excluded from licensing recommendations.",
+    "display_name": "Service / non-human account",
+    "group_patterns": [],
+    "id": "service_account",
+    "required_features": [],
+    "title_patterns": [
+      "(?i)^svc[-_]",
+      "(?i)service account"
+    ]
+  },
+  {
+    "description": "Shared device, schedule + comms only, no email at desk.",
+    "display_name": "Frontline kiosk worker",
+    "group_patterns": [],
+    "id": "frontline_kiosk",
+    "required_features": [
+      "teams.basic"
+    ],
+    "title_patterns": [
+      "(?i)kiosk",
+      "(?i)shared station"
+    ]
+  },
+  {
+    "description": "Deskless, mobile-first, light productivity.",
+    "display_name": "Frontline worker",
+    "group_patterns": [],
+    "id": "frontline_worker",
+    "required_features": [
+      "mailbox.2gb",
+      "office.web",
+      "teams.basic",
+      "intune.mam"
+    ],
+    "title_patterns": [
+      "(?i)retail|warehouse|technician|driver|nurse|operator"
+    ]
+  },
+  {
+    "description": "Full productivity suite, desktop apps, large mailbox.",
+    "display_name": "Information worker",
+    "group_patterns": [],
+    "id": "information_worker",
+    "required_features": [
+      "mailbox.50gb",
+      "office.desktop",
+      "teams.full",
+      "sharepoint.full"
+    ],
+    "title_patterns": [
+      "(?i)analyst|manager|coordinator|specialist|consultant"
+    ]
+  },
+  {
+    "description": "Information worker + advanced security & compliance.",
+    "display_name": "Power / regulated user",
+    "group_patterns": [],
+    "id": "power_user_secure",
+    "required_features": [
+      "mailbox.100gb",
+      "office.desktop",
+      "teams.full",
+      "entra.p2",
+      "defender.o365.p2",
+      "purview.dlp"
+    ],
+    "title_patterns": [
+      "(?i)executive|legal|compliance|finance lead|ciso|cfo|ceo"
+    ]
+  },
+  {
+    "description": "Information worker + GitHub + dev tooling.",
+    "display_name": "Developer / engineer",
+    "group_patterns": [],
+    "id": "developer",
+    "required_features": [
+      "mailbox.50gb",
+      "office.web",
+      "teams.full",
+      "github.enterprise"
+    ],
+    "title_patterns": [
+      "(?i)developer|engineer|sre|devops|programmer"
+    ]
+  },
+  {
+    "description": "Should not carry an interactive license unless explicitly justified.",
+    "display_name": "External guest (B2B)",
+    "group_patterns": [],
+    "id": "guest",
+    "required_features": [],
+    "title_patterns": []
+  }
+]

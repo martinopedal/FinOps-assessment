@@ -9,6 +9,24 @@ release.
 
 ### Added
 
+- **PowerShell engine — shared data projection
+  (`powershell/FinOpsAssess/data`).** First slice of Phase 1. The shared
+  catalogue/persona/rule YAML under `data/` is projected to canonical
+  JSON at build time by `scripts/generate_ps_data_projection.py` (run via
+  the already-validated Python loaders, so the JSON carries fully
+  resolved pydantic shapes and defaults). The module reads it at runtime
+  with the built-in `ConvertFrom-Json` — no PowerShell YAML dependency.
+  New private loader `Get-FinOpsDataProjection` returns
+  `Catalog`/`Personas`/`Rules` as arrays (single-element-safe) and throws
+  clearly on a missing/unparseable file; `Test-FinOpsConfiguration` now
+  asserts the projection loads and is non-empty. List order preserves the
+  Python loader iteration order (not a re-sort by `id`) so both engines
+  iterate identically. Drift is gated two ways: a new pytest
+  (`tests/test_ps_data_projection.py`, byte-compares a fresh regeneration
+  across the required Python matrix) and a `--check` step added to the
+  `catalog-validation` CI job. 8 new Pester tests (load path, array
+  shape, counts, UTF-8 round-trip, missing-file error). Docs:
+  `docs/powershell.md` gains a "Shared data projection" section.
 - **PowerShell engine — read-only credential scope guard
   (`powershell/FinOpsAssess`).** Implements the Phase-0 security contract
   (plan.md §4.1 / §1.7a criterion 9). New exported cmdlets
