@@ -7,6 +7,21 @@ release.
 
 ## Unreleased
 
+### Added
+
+- **PowerShell engine — Phase 0 scaffold (`powershell/FinOpsAssess`).**
+  First native PowerShell module delivered side-by-side with the Python
+  tool. Ships `Get-FinOpsInfo` (version, read-only posture, in-scope
+  surfaces) and `Test-FinOpsConfiguration` (structural self-test +
+  version-lock to the Python package). Module targets `pwsh` ≥ 7.2 only.
+  Read-only by design (no cloud calls / mutation paths, enforced by a
+  PSScriptAnalyzer + Pester tripwire) — but `Get-FinOpsInfo` reports
+  `RuntimeScopeGuardEnforced = $false`: runtime credential-scope
+  enforcement is deferred to a later, separately reviewed PR. New CI job
+  `lint-and-test-powershell` (PSScriptAnalyzer + Pester across
+  ubuntu/windows/macos on pwsh 7), folded into the `required-checks`
+  summary. New docs: `docs/powershell.md`, `powershell/README.md`.
+
 ### Changed
 
 - **PowerShell side-by-side engine — approved-to-plan (docs / governance

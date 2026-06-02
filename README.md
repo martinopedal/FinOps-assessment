@@ -113,6 +113,18 @@ $report = ./scripts/Invoke-FinOpsAssess.ps1 -Demo -OutputDir ./out
 $report.findings | Where-Object severity -eq 'high' | Format-Table
 ```
 
+A **native PowerShell module** (`FinOpsAssess`) is being delivered
+side-by-side with the Python engine for operators who prefer to stay in
+PowerShell end-to-end. It is shipped in phases; Phase 0 provides
+`Get-FinOpsInfo` and `Test-FinOpsConfiguration`. See
+[`docs/powershell.md`](docs/powershell.md) for the cmdlet reference,
+parity matrix, and conformance contract.
+
+```powershell
+Import-Module ./powershell/FinOpsAssess/FinOpsAssess.psd1 -Force
+Get-FinOpsInfo
+```
+
 ## Run inside a GitHub Actions workflow
 
 Drop this into any repo's `.github/workflows/finops.yml`:
