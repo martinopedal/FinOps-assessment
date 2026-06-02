@@ -158,6 +158,49 @@ enforce it *at* until the Phase-6 collectors land. The structured
 ARM limitation above). Do not treat the Phase-0 module as
 security-complete.
 
+## Shared data projection
+
+The PowerShell engine must read the **same** catalogue, persona, and
+rule data as the Python tool, but adding a PowerShell YAML parser would
+introduce a third-party dependency and risk a second, subtly different
+parser. Instead the shared YAML under `data/` is projected to canonical
+JSON at build time and packaged with the module under
+`powershell/FinOpsAssess/data/{catalog,personas,rules}.json`. At runtime
+the engine only needs the built-in `ConvertFrom-Json`.
+
+- **Generator:** `scripts/generate_ps_data_projection.py` runs the
+  already-validated Python loaders (`load_catalog`, `load_personas`,
+  `load_rules`), so the JSON carries fully resolved shapes — including
+  pydantic defaults such as `rule.enabled`, `evidence_key_version`, and
+  `adapter_class`. The PowerShell side never re-implements validation or
+  defaulting.
+- **Ordering:** each list preserves the **Python loader iteration order**
+  (sorted file paths, then document order), *not* a re-sort by `id`, so
+  both engines iterate the data identically and order-sensitive
+  behaviour stays in parity. Object keys are sorted for byte-stable
+  output (irrelevant to PowerShell, which reads by property name).
+- **Drift gate:** the projection is a generated artifact, never
+  hand-edited. `tests/test_ps_data_projection.py` regenerates in memory
+  and byte-compares against the committed files, and the
+  `catalog-validation` CI job runs
+  `python scripts/generate_ps_data_projection.py --check`. A PR that
+  edits the shared YAML must regenerate and commit the projection or CI
+  fails.
+- **Runtime loader:** the private `Get-FinOpsDataProjection` cmdlet reads
+  the three files via `ConvertFrom-Json`, returns a `[pscustomobject]`
+  with `Catalog`/`Personas`/`Rules`, always materialises each as an
+  array (so single-element projections never unwrap to a scalar), and
+  throws a clear error on a missing or unparseable file.
+  `Test-FinOpsConfiguration` now asserts the projection loads and is
+  non-empty.
+
+> **Money values stay floats for now.** The projection serialises prices
+> as JSON numbers (`model_dump` → `ConvertFrom-Json` `[double]`), which
+> is fine for *loading* static data. Before the JSON reporter and
+> conformance harness perform savings arithmetic, a money formatting/
+> rounding rule will be pinned (Phase 1) so cross-engine byte parity does
+> not rely on raw binary-float formatting.
+
 ## Conformance & CI
 
 CI runs PSScriptAnalyzer (settings in

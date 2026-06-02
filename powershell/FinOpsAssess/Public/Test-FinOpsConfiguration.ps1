@@ -10,11 +10,14 @@ function Test-FinOpsConfiguration {
 
           * the module manifest is importable,
           * the Public/ and Private/ layout is intact,
-          * the module version is locked to the Python package version.
+          * the module version is locked to the Python package version,
+          * the shared data projection (catalogue/personas/rules) loads
+            and is non-empty.
 
-        Full catalogue + personas + rules schema validation is
-        DEFERRED to Phase 1 (when the shared data projection lands). This
-        cmdlet does not yet assert schema parity and says so.
+        Full catalogue + personas + rules schema validation against the
+        JSON Schemas is DEFERRED to a later phase; this cmdlet asserts
+        that the build-time projection is present and loadable, not that
+        every field re-validates in PowerShell.
 
         Emits an error and throws when any check fails, so it is safe to
         use as a CI gate. Use -PassThru to obtain the structured result
@@ -74,6 +77,21 @@ function Test-FinOpsConfiguration {
         } catch {
             & $record 'version-lock' 'skipped' "Python package source not available: $($_.Exception.Message)"
         }
+    }
+
+    # 4. Shared data projection loads and is non-empty.
+    try {
+        $data = Get-FinOpsDataProjection
+        foreach ($name in 'Catalog', 'Personas', 'Rules') {
+            $count = @($data.$name).Count
+            if ($count -lt 1) {
+                & $record "data-projection-$($name.ToLowerInvariant())" 'fail' "$name projection is empty"
+            } else {
+                & $record "data-projection-$($name.ToLowerInvariant())" 'pass' "$count $name entr$(if ($count -eq 1) { 'y' } else { 'ies' })"
+            }
+        }
+    } catch {
+        & $record 'data-projection' 'fail' $_.Exception.Message
     }
 
     $failed = @($checks | Where-Object { $_.Status -eq 'fail' })
