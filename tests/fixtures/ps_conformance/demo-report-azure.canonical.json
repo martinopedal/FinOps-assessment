@@ -1,0 +1,299 @@
+{
+  "findings": [
+    {
+      "confidence": "high",
+      "current_sku": "Standard_D4s_v5",
+      "estimated_monthly_savings_usd": null,
+      "evidence": {
+        "license_type": null,
+        "location": "eastus",
+        "os_type": "Windows",
+        "resource_id": "sha256:c0ec52abf9bf4f97",
+        "sku": "Standard_D4s_v5"
+      },
+      "evidence_ref": null,
+      "principal": "sha256:c0ec52abf9bf4f97",
+      "recommendation": "VM sha256:c0ec52abf9bf4f97 (Standard_D4s_v5, eastus) has os_type=Windows but license_type=(none). Consider enabling Azure Hybrid Benefit (Windows_Server) to reduce the Windows Server licence cost component. Verify that the organisation holds sufficient Windows Server SA or subscription licences before toggling.",
+      "recommended_sku": null,
+      "rule_id": "AZ.AHB_ELIGIBLE",
+      "severity": "info",
+      "surface": "azure"
+    },
+    {
+      "confidence": "high",
+      "current_sku": "Standard_D4s_v5",
+      "estimated_monthly_savings_usd": null,
+      "evidence": {
+        "monthly_cost_usd": 500.0,
+        "reservation_name": "RI-VM-D4s-EastUS",
+        "scope_kind": "Shared",
+        "sibling_on_demand_spend_usd": 120.0,
+        "sibling_sub": "sha256:b9e41fceb6ed778d",
+        "sku": "Standard_D4s_v5",
+        "utilization_pct": 45.0
+      },
+      "evidence_ref": null,
+      "principal": "sha256:0c028d7b5cfb0cef",
+      "recommendation": "Reservation sha256:0c028d7b5cfb0cef is Shared-scope and averaged 45.0% utilisation, while sibling subscription sha256:b9e41fceb6ed778d shows $120.0 of on-demand resource spend over the same window. Verify the sibling's on-demand SKUs are compatible with this reservation's family and region (Azure auto-applies on a best-fit basis), then consider widening the reservation's applied scope so the sibling's workload absorbs the unused capacity.",
+      "recommended_sku": null,
+      "rule_id": "AZ.COMMITMENT_UNDER_COVERED",
+      "severity": "medium",
+      "surface": "azure"
+    },
+    {
+      "confidence": "high",
+      "current_sku": "Standard_D4s_v5",
+      "estimated_monthly_savings_usd": null,
+      "evidence": {
+        "monthly_cost_usd": 500.0,
+        "reservation_name": "RI-VM-D4s-EastUS",
+        "scope_kind": "Shared",
+        "sibling_on_demand_spend_usd": 180.0,
+        "sibling_sub": "sha256:7486e7e20d41fb2c",
+        "sku": "Standard_D4s_v5",
+        "utilization_pct": 45.0
+      },
+      "evidence_ref": null,
+      "principal": "sha256:0c028d7b5cfb0cef",
+      "recommendation": "Reservation sha256:0c028d7b5cfb0cef is Shared-scope and averaged 45.0% utilisation, while sibling subscription sha256:7486e7e20d41fb2c shows $180.0 of on-demand resource spend over the same window. Verify the sibling's on-demand SKUs are compatible with this reservation's family and region (Azure auto-applies on a best-fit basis), then consider widening the reservation's applied scope so the sibling's workload absorbs the unused capacity.",
+      "recommended_sku": null,
+      "rule_id": "AZ.COMMITMENT_UNDER_COVERED",
+      "severity": "medium",
+      "surface": "azure"
+    },
+    {
+      "confidence": "high",
+      "current_sku": "Standard_D4s_v5",
+      "estimated_monthly_savings_usd": null,
+      "evidence": {
+        "monthly_cost_usd": 500.0,
+        "reservation_name": "RI-VM-D4s-EastUS",
+        "scope_kind": "Shared",
+        "sibling_on_demand_spend_usd": 200.0,
+        "sibling_sub": "sha256:dd744e7f50d89f7f",
+        "sku": "Standard_D4s_v5",
+        "utilization_pct": 45.0
+      },
+      "evidence_ref": null,
+      "principal": "sha256:0c028d7b5cfb0cef",
+      "recommendation": "Reservation sha256:0c028d7b5cfb0cef is Shared-scope and averaged 45.0% utilisation, while sibling subscription sha256:dd744e7f50d89f7f shows $200.0 of on-demand resource spend over the same window. Verify the sibling's on-demand SKUs are compatible with this reservation's family and region (Azure auto-applies on a best-fit basis), then consider widening the reservation's applied scope so the sibling's workload absorbs the unused capacity.",
+      "recommended_sku": null,
+      "rule_id": "AZ.COMMITMENT_UNDER_COVERED",
+      "severity": "medium",
+      "surface": "azure"
+    },
+    {
+      "confidence": "high",
+      "current_sku": "Standard_D4s_v3",
+      "estimated_monthly_savings_usd": null,
+      "evidence": {
+        "env_tag": "prod",
+        "location": "westus",
+        "subscription_id": "11111111",
+        "subscription_offer": "Dev/Test"
+      },
+      "evidence_ref": null,
+      "principal": "sha256:dd552a8468b582dd",
+      "recommendation": "Resource sha256:dd552a8468b582dd is tagged env=prod but lives in subscription 11111111 (Dev/Test). Move the workload to a subscription with the matching offer to avoid mispricing or compliance risk.",
+      "recommended_sku": null,
+      "rule_id": "AZ.DEV_TEST_SUB_MISMATCH",
+      "severity": "medium",
+      "surface": "azure"
+    },
+    {
+      "confidence": "high",
+      "current_sku": "Standard_D4s_v5",
+      "estimated_monthly_savings_usd": 140.0,
+      "evidence": {
+        "avg_cpu_pct": 2.0,
+        "avg_net_kbps": 8.0,
+        "location": "eastus",
+        "window_days": 14
+      },
+      "evidence_ref": null,
+      "principal": "sha256:aae8469ec3362fca",
+      "recommendation": "Virtual machine sha256:aae8469ec3362fca has averaged 2.0% CPU and 8.0 KB/s network over 14 days. Stop or deallocate the VM, or right-size to a smaller SKU.",
+      "recommended_sku": null,
+      "rule_id": "AZ.IDLE_VM_14D",
+      "severity": "high",
+      "surface": "azure"
+    },
+    {
+      "confidence": "high",
+      "current_sku": null,
+      "estimated_monthly_savings_usd": 384.0,
+      "evidence": {
+        "commitment_tier_gb": null,
+        "daily_gb": 120.0,
+        "est_savings_pct": 32.0,
+        "recommended_tier": "100gb_per_day_commitment",
+        "workspace_name": "law-main"
+      },
+      "evidence_ref": null,
+      "principal": "sha256:78d27f318cca56c3",
+      "recommendation": "Workspace sha256:78d27f318cca56c3 ingested 120.0 GB/day on average. Move to commitment tier 100gb_per_day_commitment for ~32.0% list-price reduction.",
+      "recommended_sku": null,
+      "rule_id": "AZ.LOG_ANALYTICS_OVERINGEST",
+      "severity": "medium",
+      "surface": "azure"
+    },
+    {
+      "confidence": "high",
+      "current_sku": "Standard_D8s_v5",
+      "estimated_monthly_savings_usd": null,
+      "evidence": {
+        "location": "eastus",
+        "p95_cpu_pct": 25.0,
+        "p95_mem_pct": 30.0
+      },
+      "evidence_ref": null,
+      "principal": "sha256:22e77224862f2120",
+      "recommendation": "sha256:22e77224862f2120 (Standard_D8s_v5) shows P95 CPU 25.0% and P95 memory 30.0%. Resize to Standard_D4s_v5 in the same family.",
+      "recommended_sku": "Standard_D4s_v5",
+      "rule_id": "AZ.OVERSIZED_VM",
+      "severity": "medium",
+      "surface": "azure"
+    },
+    {
+      "confidence": "high",
+      "current_sku": "Standard",
+      "estimated_monthly_savings_usd": 3.65,
+      "evidence": {
+        "associated": false,
+        "location": "eastus"
+      },
+      "evidence_ref": null,
+      "principal": "sha256:663f944ad18991e7",
+      "recommendation": "Public IP sha256:663f944ad18991e7 is unattached and accruing reservation charges. Release it.",
+      "recommended_sku": null,
+      "rule_id": "AZ.PUBLIC_IP_UNATTACHED",
+      "severity": "low",
+      "surface": "azure"
+    },
+    {
+      "confidence": "high",
+      "current_sku": "GP_Gen5_8",
+      "estimated_monthly_savings_usd": 500.0,
+      "evidence": {
+        "monthly_cost_usd": 800.0,
+        "non_owner_monthly_usd": 500.0,
+        "owner_subscription_ids": [
+          "sha256:205b94d8905a9032"
+        ],
+        "reservation_name": "RI-SQL-WestUS",
+        "scope": "single",
+        "sibling_subscription_ids": [
+          "sha256:7486e7e20d41fb2c",
+          "sha256:b9e41fceb6ed778d",
+          "sha256:dd744e7f50d89f7f"
+        ],
+        "sku": "GP_Gen5_8",
+        "utilization_pct": 92.0
+      },
+      "evidence_ref": null,
+      "principal": "sha256:e8c77c617cd5ec45",
+      "recommendation": "Reservation sha256:e8c77c617cd5ec45 is scoped to sha256:205b94d8905a9032 while subscriptions sha256:7486e7e20d41fb2c, sha256:b9e41fceb6ed778d, sha256:dd744e7f50d89f7f carry $500.0/mo of on-demand spend on potentially compatible workloads. Consider widening the reservation's applied scope (Single → Shared or Management Group) so the sibling workloads can absorb unused reserved capacity, or verify the narrow scope is intentional (e.g., chargeback isolation).",
+      "recommended_sku": null,
+      "rule_id": "AZ.RESERVATION_SCOPE_MISMATCH",
+      "severity": "medium",
+      "surface": "azure"
+    },
+    {
+      "confidence": "high",
+      "current_sku": "Standard_D4s_v5",
+      "estimated_monthly_savings_usd": null,
+      "evidence": {
+        "monthly_cost_usd": 500.0,
+        "reservation_name": "RI-VM-D4s-EastUS",
+        "scope": "shared",
+        "sku": "Standard_D4s_v5",
+        "utilization_pct": 45.0
+      },
+      "evidence_ref": null,
+      "principal": "sha256:0c028d7b5cfb0cef",
+      "recommendation": "Reservation sha256:0c028d7b5cfb0cef averaged 45.0% utilization over 30 days. Exchange or shrink the commitment at next renewal.",
+      "recommended_sku": null,
+      "rule_id": "AZ.RESERVATION_UNDERUTILIZED",
+      "severity": "high",
+      "surface": "azure"
+    },
+    {
+      "confidence": "high",
+      "current_sku": null,
+      "estimated_monthly_savings_usd": 180.5,
+      "evidence": {
+        "arm_sku_name": "Microsoft.Compute/virtualMachines/Standard_D4s_v5",
+        "benefit_kind": "SavingsPlan",
+        "cost_without_benefit_usd": 1450.0,
+        "lookback_period": "Last30Days",
+        "net_savings_usd": 180.5,
+        "recommended_hourly_commit_usd": 1.85,
+        "scope_kind": "Single",
+        "term": "P1Y",
+        "wastage_usd": 12.4
+      },
+      "evidence_ref": null,
+      "principal": "sha256:0b776800ebb56925",
+      "recommendation": "Scope sha256:0b776800ebb56925 shows uncovered on-demand spend of $1450.0 over Last30Days. Azure's Benefit Recommendations API projects $180.5 in savings if you verify the workload is steady-state and not the trailing edge of a one-off project, then consider a P1Y Savings Plan commitment with an hourly commit of $1.85.",
+      "recommended_sku": null,
+      "rule_id": "AZ.SAVINGS_PLAN_ELIGIBLE_SPEND",
+      "severity": "medium",
+      "surface": "azure"
+    },
+    {
+      "confidence": "high",
+      "current_sku": "Premium_LRS_512",
+      "estimated_monthly_savings_usd": 42.0,
+      "evidence": {
+        "attached": false,
+        "days_inactive": 30,
+        "location": "eastus"
+      },
+      "evidence_ref": null,
+      "principal": "sha256:9e1ae78edb207307",
+      "recommendation": "Disk sha256:9e1ae78edb207307 (? GB, Premium_LRS_512) has been unattached since 30 days ago. Delete or snapshot-and-delete.",
+      "recommended_sku": null,
+      "rule_id": "AZ.UNATTACHED_DISK",
+      "severity": "medium",
+      "surface": "azure"
+    }
+  ],
+  "run": {
+    "generated_at": "1970-01-01T00:00:00+00:00",
+    "input": "<redacted>/samples",
+    "mode": "read-only",
+    "pii_redaction": true,
+    "salt_mode": "tenant_stable",
+    "schema_version": "1.0",
+    "tool": "finops-assess",
+    "version": "0.1.0"
+  },
+  "summary": {
+    "assignments_evaluated": 13,
+    "azure_resources_evaluated": 10,
+    "persona_distribution": {
+      "developer": 1,
+      "frontline_worker": 1,
+      "guest": 1,
+      "information_worker": 4,
+      "power_user_secure": 2,
+      "service_account": 2
+    },
+    "principals_evaluated": 11,
+    "rule_counts": {
+      "AZ.AHB_ELIGIBLE": 1,
+      "AZ.COMMITMENT_RENEWAL_REVIEW": 0,
+      "AZ.COMMITMENT_UNDER_COVERED": 3,
+      "AZ.DEV_TEST_SUB_MISMATCH": 1,
+      "AZ.IDLE_VM_14D": 1,
+      "AZ.LOG_ANALYTICS_OVERINGEST": 1,
+      "AZ.OVERSIZED_VM": 1,
+      "AZ.PUBLIC_IP_UNATTACHED": 1,
+      "AZ.RESERVATION_SCOPE_MISMATCH": 1,
+      "AZ.RESERVATION_UNDERUTILIZED": 1,
+      "AZ.SAVINGS_PLAN_ELIGIBLE_SPEND": 1,
+      "AZ.UNATTACHED_DISK": 1
+    },
+    "salt_mode": "tenant_stable"
+  }
+}

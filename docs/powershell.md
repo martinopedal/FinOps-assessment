@@ -43,7 +43,7 @@ Import-Module ./powershell/FinOpsAssess/FinOpsAssess.psd1 -Force
 | `info`                   | `Get-FinOpsInfo`             | ✅ implemented                     |
 | `validate`               | `Test-FinOpsConfiguration`   | 🟡 structural + version-lock only; schema validation in Phase 1 |
 | `collect`                | `Invoke-FinOpsCollection`    | ⛔ not started (Phase 6)           |
-| `run`                    | `Invoke-FinOpsAssessment`    | 🟡 report envelope + JSON reporter + **8 M365 rules** + CSV reporter (Phase 2); **4 GitHub rules + 4 ADO rules** (Phase 4); Azure findings deferred to Phase 3 |
+| `run`                    | `Invoke-FinOpsAssessment`    | 🟡 report envelope + JSON reporter + **8 M365 rules** + CSV reporter (Phase 2); **12 Azure rules** (Phase 3); **4 GitHub rules + 4 ADO rules** (Phase 4); all four rule surfaces now run natively |
 | `demo`                   | `Invoke-FinOpsDemo`          | ⛔ not started (Phase 1)           |
 | `triage`                 | `Export-FinOpsTriage`        | ⛔ not started (Phase 5)           |
 | `catalog refresh`        | `Update-FinOpsCatalog`       | ⛔ not started (Phase 6)           |
@@ -393,8 +393,10 @@ DevOps findings**. Both registries are auto-discovered by the existing
 > `demo-report-ado.canonical.json` / `demo-report-ado.csv` under
 > `tests/fixtures/ps_conformance/`. The CSV compare uses the combined
 > report output filtered to the surface prefix, preserving natural
-> emission order as a drift check. The 12 `AZ.*` rules remain in
-> `summary.rules_skipped_no_impl`; Azure parity is deferred to Phase 3.
+> emission order as a drift check. The 12 `AZ.*` rules are now
+> implemented natively (Phase 3) and enforced by
+> `demo-report-azure.canonical.json` / `demo-report-azure.csv`; no rule
+> ids remain in `summary.rules_skipped_no_impl`.
 
 ## Conformance & CI
 

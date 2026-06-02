@@ -55,6 +55,8 @@ tests/fixtures/ps_conformance/demo-report-m365.csv text eol=lf
 # without an LF pin a Windows clone rewrites to CRLF and the byte-compare fails.
 tests/fixtures/ps_conformance/demo-report-github.csv text eol=lf
 tests/fixtures/ps_conformance/demo-report-ado.csv text eol=lf
+# Cross-engine conformance golden fixture (PowerShell Phase 3: Azure).
+tests/fixtures/ps_conformance/demo-report-azure.csv text eol=lf
 
 # Repo-wide line-ending policy (issue #81) — pin LF endings for all
 # source code, data, and doc files to eliminate spurious whitespace
