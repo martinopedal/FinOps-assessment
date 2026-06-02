@@ -4,11 +4,15 @@ BeforeAll {
     $script:ModuleManifest = Join-Path $PSScriptRoot '..' 'FinOpsAssess' 'FinOpsAssess.psd1'
     $script:RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..' '..')).Path
     $script:DemoDir = Join-Path $script:RepoRoot 'src' 'finops_assess' 'demo'
+    $script:SamplesDir = Join-Path $script:RepoRoot 'samples'
     $script:PersonaGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-personas.json'
     $script:StructuralGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-report-structural.canonical.json'
     $script:M365Golden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-report-m365.canonical.json'
     $script:M365CsvGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-report-m365.csv'
+    $script:AzureGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-report-azure.canonical.json'
+    $script:AzureCsvGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-report-azure.csv'
     $script:FixedSalt = 'conformance-fixed-salt-v1'
+    $script:FixedNow = '2025-06-01'
     $script:Canonicaliser = Join-Path $script:RepoRoot 'scripts' 'canonicalize_report.py'
     $script:ReportSchema = Join-Path $script:RepoRoot 'src' 'finops_assess' 'schemas' 'report.schema.json'
 
@@ -203,19 +207,16 @@ Describe 'JSON report contract (layer-4 schema + layer-5 canonical equality)' {
         }
     }
 
-    It 'reports only Azure rules as skipped (M365, GitHub, ADO rules are implemented)' {
+    It 'reports no rules as skipped (M365, Azure, GitHub, ADO rules are all implemented)' {
         $report = $script:RawReport | ConvertFrom-Json
         $skipped = @($report.summary.rules_skipped_no_impl)
-        # M365 (8), GitHub (4), and ADO (4) rules now run natively; only the
-        # 12 AZ.* rules are skipped in Phase 4.
-        $skipped.Count | Should -Be 12
-        ($skipped | Where-Object { $_ -like 'M365.*' }) | Should -BeNullOrEmpty
-        ($skipped | Where-Object { $_ -like 'GH.*' }) | Should -BeNullOrEmpty
-        ($skipped | Where-Object { $_ -like 'ADO.*' }) | Should -BeNullOrEmpty
+        # All four surfaces now run natively: M365 (8), Azure (12), GitHub (4),
+        # and ADO (4). No rule ids are skipped for want of an implementation.
+        $skipped.Count | Should -Be 0
         @($report.findings).Count | Should -BeGreaterThan 0
         $report.summary.total_findings | Should -Be (@($report.findings).Count)
-        ($report.findings | Where-Object { $_.surface -notin @('m365', 'github', 'ado') }) |
-            Should -BeNullOrEmpty -Because 'only M365, GitHub, and ADO rules are ported in Phase 4'
+        ($report.findings | Where-Object { $_.surface -notin @('m365', 'azure', 'github', 'ado') }) |
+            Should -BeNullOrEmpty -Because 'all four surfaces are ported to the native engine'
     }
 }
 
@@ -273,5 +274,82 @@ Describe 'M365 rule-slice conformance (layer-5 findings + CSV)' {
         $expected = [System.IO.File]::ReadAllBytes($script:M365CsvGolden)
         [System.Linq.Enumerable]::SequenceEqual($actual, $expected) |
             Should -BeTrue -Because 'PS CSV writer must match the Python csv_reporter bytes'
+    }
+}
+
+Describe 'Azure rule-slice conformance (layer-5 findings + CSV)' {
+
+    BeforeAll {
+        $script:AzureOutFile = Join-Path ([System.IO.Path]::GetTempPath()) ("ps-azure-{0}.json" -f ([guid]::NewGuid()))
+        $script:AzureCsvFile = Join-Path ([System.IO.Path]::GetTempPath()) ("ps-azure-{0}.csv" -f ([guid]::NewGuid()))
+        $prevEpoch = $env:SOURCE_DATE_EPOCH
+        $prevNow = $env:FINOPS_NOW_OVERRIDE
+        try {
+            $env:SOURCE_DATE_EPOCH = '0'
+            $env:FINOPS_NOW_OVERRIDE = $script:FixedNow
+            Invoke-FinOpsAssessment -InputDirectory $script:SamplesDir -OutputPath $script:AzureOutFile `
+                -PiiSalt $script:FixedSalt -WarningAction SilentlyContinue | Out-Null
+            Invoke-FinOpsAssessment -InputDirectory $script:SamplesDir -OutputPath $script:AzureCsvFile `
+                -Format csv -PiiSalt $script:FixedSalt -WarningAction SilentlyContinue | Out-Null
+        } finally {
+            if ($null -eq $prevEpoch) { Remove-Item Env:SOURCE_DATE_EPOCH -ErrorAction SilentlyContinue }
+            else { $env:SOURCE_DATE_EPOCH = $prevEpoch }
+            if ($null -eq $prevNow) { Remove-Item Env:FINOPS_NOW_OVERRIDE -ErrorAction SilentlyContinue }
+            else { $env:FINOPS_NOW_OVERRIDE = $prevNow }
+        }
+    }
+
+    AfterAll {
+        Remove-Item -LiteralPath $script:AzureOutFile -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $script:AzureCsvFile -ErrorAction SilentlyContinue
+    }
+
+    It 'ships both committed Azure goldens' {
+        Test-Path -LiteralPath $script:AzureGolden | Should -BeTrue
+        Test-Path -LiteralPath $script:AzureCsvGolden | Should -BeTrue
+    }
+
+    It 'canonical Azure projection byte-equals the Python findings golden' {
+        $canon = Join-Path ([System.IO.Path]::GetTempPath()) ("ps-azure-{0}.canonical.json" -f ([guid]::NewGuid()))
+        try {
+            & python $script:Canonicaliser --profile report-azure-v1 --input $script:AzureOutFile --output $canon
+            $LASTEXITCODE | Should -Be 0 -Because 'the shared canonicaliser must succeed'
+            $actual = [System.IO.File]::ReadAllBytes($canon)
+            $expected = [System.IO.File]::ReadAllBytes($script:AzureGolden)
+            [System.Linq.Enumerable]::SequenceEqual($actual, $expected) |
+                Should -BeTrue -Because 'PS Azure findings must match the committed Python golden'
+        } finally {
+            Remove-Item -LiteralPath $canon -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'flat CSV byte-equals the Python csv_reporter golden' {
+        # The combined runtime CSV contains M365/Azure/GitHub/ADO rows. Filter
+        # to the Azure slice before byte-comparing against the Azure-only golden,
+        # mirroring the M365 slice check. This doubles as an emission-order drift
+        # check the sorted canonical JSON compare deliberately cannot catch.
+        $raw = [System.IO.File]::ReadAllText($script:AzureCsvFile, [System.Text.Encoding]::UTF8)
+        $lines = $raw -split "`n"
+        $header = $lines[0]
+        $azureLines = @($lines | Where-Object { $_ -match '^AZ\.' })
+        $azureCsv = ($header, ($azureLines -join "`n") -join "`n") + "`n"
+        $actual = [System.Text.Encoding]::UTF8.GetBytes($azureCsv)
+        $expected = [System.IO.File]::ReadAllBytes($script:AzureCsvGolden)
+        [System.Linq.Enumerable]::SequenceEqual($actual, $expected) |
+            Should -BeTrue -Because 'PS CSV writer must match the Python csv_reporter bytes'
+    }
+
+    It 'Azure findings count matches expected' {
+        $report = Get-Content -LiteralPath $script:AzureOutFile -Raw -Encoding utf8 | ConvertFrom-Json
+        $azureFindings = @($report.findings | Where-Object { $_.rule_id -like 'AZ.*' })
+        $azureFindings.Count | Should -Be 13 -Because 'samples should produce 13 Azure findings'
+    }
+
+    It 'Azure rules produce azure surface' {
+        $report = Get-Content -LiteralPath $script:AzureOutFile -Raw -Encoding utf8 | ConvertFrom-Json
+        $azureFindings = @($report.findings | Where-Object { $_.rule_id -like 'AZ.*' })
+        foreach ($finding in $azureFindings) {
+            $finding.surface | Should -Be 'azure'
+        }
     }
 }

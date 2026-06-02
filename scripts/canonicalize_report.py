@@ -88,7 +88,13 @@ from typing import Any
 #: Python report and an empty PowerShell report project identically.
 FINDINGS_MASK = "<array:masked>"
 
-PROFILES = ("report-structural-v1", "report-m365-v1", "report-github-v1", "report-ado-v1")
+PROFILES = (
+    "report-structural-v1",
+    "report-m365-v1",
+    "report-github-v1",
+    "report-ado-v1",
+    "report-azure-v1",
+)
 
 #: The eight M365 rule ids the PowerShell engine implements in Phase 2.
 #: Used by ``report-m365-v1`` to assert the slice is fully exercised.
@@ -124,6 +130,25 @@ _ADO_RULE_IDS = frozenset(
         "ADO.STAKEHOLDER_ELIGIBLE",
         "ADO.PARALLEL_JOBS_OVER_PROVISIONED",
         "ADO.TEST_PLANS_UNUSED",
+    }
+)
+
+#: The twelve Azure rule ids the PowerShell engine implements in Phase 3.
+#: Used by ``report-azure-v1`` to assert the slice is fully exercised.
+_AZURE_RULE_IDS = frozenset(
+    {
+        "AZ.IDLE_VM_14D",
+        "AZ.UNATTACHED_DISK",
+        "AZ.PUBLIC_IP_UNATTACHED",
+        "AZ.OVERSIZED_VM",
+        "AZ.RESERVATION_UNDERUTILIZED",
+        "AZ.LOG_ANALYTICS_OVERINGEST",
+        "AZ.DEV_TEST_SUB_MISMATCH",
+        "AZ.COMMITMENT_UNDER_COVERED",
+        "AZ.SAVINGS_PLAN_ELIGIBLE_SPEND",
+        "AZ.COMMITMENT_RENEWAL_REVIEW",
+        "AZ.RESERVATION_SCOPE_MISMATCH",
+        "AZ.AHB_ELIGIBLE",
     }
 )
 
@@ -358,6 +383,16 @@ def _project_ado(report: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _project_azure(report: dict[str, Any]) -> dict[str, Any]:
+    """Return the ``report-azure-v1`` projection of ``report``."""
+    return _project_surface(
+        report,
+        prefix="AZ.",
+        surface="azure",
+        rule_ids=_AZURE_RULE_IDS,
+    )
+
+
 def canonicalize(report: dict[str, Any], profile: str) -> str:
     """Return the canonical string for ``report`` under ``profile``.
 
@@ -372,6 +407,8 @@ def canonicalize(report: dict[str, Any], profile: str) -> str:
         projected = _project_github(report)
     elif profile == "report-ado-v1":
         projected = _project_ado(report)
+    elif profile == "report-azure-v1":
+        projected = _project_azure(report)
     else:
         raise ValueError(f"unknown canonicaliser profile: {profile!r}")
 
