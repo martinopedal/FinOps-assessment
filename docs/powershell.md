@@ -535,7 +535,7 @@ Pester via `[System.IO.File]::ReadAllBytes`.
 
 Phase 6a shipped the shared live-collector base and the public dispatcher
 `Invoke-FinOpsLiveCollection`. Phase 6b ships Graph, Phase 6c ships ARM,
-and Phase 6d now ships GitHub; Azure DevOps remains staged in 6e.
+Phase 6d ships GitHub, and Phase 6e completes Azure DevOps.
 
 ```powershell
 Invoke-FinOpsLiveCollection -Surface Graph -OutputPath ./live
@@ -548,7 +548,7 @@ Invoke-FinOpsLiveCollection -Surface Graph -OutputPath ./live
 | Graph | `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, and one of `AZURE_FEDERATED_TOKEN_FILE` or `AZURE_CLIENT_SECRET` | Uses `Get-FinOpsAccessToken -Scope graph` |
 | ARM | `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, one of `AZURE_FEDERATED_TOKEN_FILE` or `AZURE_CLIENT_SECRET`, and `FINOPS_ACCEPT_ARM_RBAC_RISK=1` | Requires `-AcceptArmRbacRisk` + env two-key consent |
 | GitHub | `GITHUB_TOKEN` (or pass `-Token`) | Classic PAT scopes are certifiable from `X-OAuth-Scopes`; fine-grained PATs are operator-attested with `-AllowUnknownScopes` |
-| Azure DevOps | `AZURE_DEVOPS_TOKEN` or `AZURE_DEVOPS_PAT` (or pass `-Token`/`-Pat`) | Bearer or PAT paths both flow through the guard |
+| Azure DevOps | `AZURE_DEVOPS_PAT` or `AZURE_DEVOPS_TOKEN` (or pass `-Pat`/`-Token`) | PAT is preferred when both exist; PAT scopes are operator-attested with `-AllowUnknownScopes`; bearer `vso.*` scopes are certifiable from token claims |
 
 ### Graph (Microsoft 365)
 
@@ -569,8 +569,8 @@ Invoke-FinOpsLiveCollection -Surface Graph -OutputPath ./live
   `AuditLog.Read.All` (required for `signInActivity`).
 
 `Get-FinOpsInfo` now reports per-surface posture truthfully:
-Graph + ARM + GitHub enforcement are live (`ScopeGuard.Enforced = 'partial'`,
-`RuntimeScopeGuardEnforced = $true`) while Azure DevOps stays unshipped.
+all four surfaces enforce at runtime (`ScopeGuard.Enforced = 'all-surfaces'`,
+`RuntimeScopeGuardEnforced = $true`).
 
 ### Azure Resource Manager (ARM)
 
@@ -620,6 +620,35 @@ and `azure_benefit_recommendations.csv`.
   - `GET /enterprises/{ent}/copilot/billing/seats` (paged via `Link rel="next"`)
   - `GET /orgs/{org}/settings/billing/advanced-security` (404→null)
   - `GET /orgs/{org}/settings/billing/actions` (404→null)
+
+### Azure DevOps
+
+`Invoke-FinOpsLiveCollection -Surface Ado` writes:
+`ado_seats.csv` and `ado_orgs.csv`.
+
+- **Required environment/auth inputs:** `AZURE_DEVOPS_PAT` or
+  `AZURE_DEVOPS_TOKEN`, or pass `-Pat` / `-Token` as `SecureString`.
+- **Auth precedence:** PAT is preferred when both PAT and bearer are provided.
+- **Read-only posture by auth path:**
+  - **Bearer path (`AZURE_DEVOPS_TOKEN` / `-Token`)**: token claims are
+    certifiable; required scopes are read-only `vso.*` scopes such as
+    `vso.work`, `vso.code`, `vso.build`, `vso.project`.
+    Write/admin families (`*_write`, `*_manage`, `*_execute`, `*_publish`,
+    `*_full`) are refused.
+  - **PAT path (`AZURE_DEVOPS_PAT` / `-Pat`)**: PAT scopes are not
+    introspectable from the token itself, so default is fail-closed.
+    Proceed only with explicit operator attestation via
+    `-AllowUnknownScopes`.
+- **Endpoints called:**
+  - `GET https://vsaex.dev.azure.com/{org}/_apis/userentitlements?api-version=7.1&top=100&select=Projects,Extensions` (paged by continuation token)
+  - `GET https://dev.azure.com/{org}/_apis/distributedtask/resourcelimits?api-version=7.1`
+  - `GET https://dev.azure.com/{org}/_apis/projects?api-version=7.1&$top=200` (paged)
+  - `GET https://dev.azure.com/{org}/{projectId}/_apis/build/builds?...` for P95 concurrency
+
+### Phase 6 complete
+
+Phase 6 live-collector parity is complete. All four surfaces now enforce
+`Assert-FinOpsReadOnlyScope` at the credential boundary.
 
 ### SecureString posture (honest note)
 

@@ -405,8 +405,10 @@ ARM collector (`Get-FinOpsArmCollector` + dispatcher Arm arm with two-key
 operator-attested consent), and Phase 6d now ships the GitHub collector
 (`Get-FinOpsGitHubCollector` + dispatcher GitHub arm using `X-OAuth-Scopes`
 probe classification for classic PATs and fail-closed fine-grained PAT
-handling unless `-AllowUnknownScopes` is operator-attested). Remaining
-per-surface collector work is Phase 6e (Azure DevOps).
+handling unless `-AllowUnknownScopes` is operator-attested). Phase 6e ships
+the Azure DevOps collector (`Get-FinOpsAdoCollector` + dispatcher Ado arm with
+PAT/Bearer auth paths and guard enforcement), completing Phase 6 parity across
+all four live-collector surfaces.
 
 ---
 

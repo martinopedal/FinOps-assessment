@@ -7,15 +7,13 @@ function Get-FinOpsInfo {
         The PowerShell equivalent of the Python ``finops-assess info``
         subcommand. Performs no cloud calls itself. The read-only scope
         guard (Assert-FinOpsReadOnlyScope / Test-FinOpsReadOnlyScope) is
-        enforced at the credential boundary by live collectors as they
-        ship per surface (Graph + ARM + GitHub in Phase 6b/6c/6d; ADO in
-        Phase 6e). The structured ``ScopeGuard`` field reports per-surface
-        coverage and enforcement honestly via the ``EnforcedBySurface``
-        sub-map, the tri-state ``Enforced`` ('partial' until all four
-        surfaces ship), and a ``PostureStatement`` that is rewritten each
-        PR to truthfully describe what is enforced and what is not yet
-        shipped. ``RuntimeScopeGuardEnforced`` is ``$true`` from Phase 6b
-        onward (once any surface enforces). The Azure Resource Manager
+        enforced at the credential boundary by live collectors for all
+        four surfaces (Graph, ARM, GitHub, and Azure DevOps). The
+        structured ``ScopeGuard`` field reports per-surface coverage and
+        enforcement honestly via the ``EnforcedBySurface`` sub-map and
+        ``Enforced='all-surfaces'`` once all collector paths are guarded.
+        ``RuntimeScopeGuardEnforced`` remains ``$true``. The Azure Resource
+        Manager
         limitation (RBAC-side; cannot be proven from token claims) is
         called out explicitly in the same map.
 
@@ -40,13 +38,13 @@ function Get-FinOpsInfo {
 
     $scopeGuard = [pscustomobject]@{
         Available     = $true
-        Enforced      = 'partial'
+        Enforced      = 'all-surfaces'
         DefaultPolicy = 'fail-closed-on-write-or-unknown'
         EnforcedBySurface = [pscustomobject]@{
             Graph                = $true
             AzureResourceManager = $true
             GitHub               = $true
-            AzureDevOps          = $false
+            AzureDevOps          = $true
         }
         Coverage      = [pscustomobject]@{
             GraphDelegated       = 'claims:scp'
@@ -71,6 +69,6 @@ function Get-FinOpsInfo {
             $scopeGuard.EnforcedBySurface.AzureDevOps
         ) -contains $true
         ScopeGuard                 = $scopeGuard
-        PostureStatement           = 'Read-only by design. Live collectors enforce Assert-FinOpsReadOnlyScope at the credential boundary for: Graph, AzureResourceManager, GitHub. Not yet shipped/enforced: AzureDevOps. ARM read-only is operator-attested via two-key consent (-AcceptArmRbacRisk + FINOPS_ACCEPT_ARM_RBAC_RISK=1); RBAC cannot be proven from token claims. GitHub fine-grained PATs are operator-attested when -AllowUnknownScopes is used; classic PATs are certifiable via X-OAuth-Scopes. Do not treat as security-complete until all four surfaces ship.'
+        PostureStatement           = 'Read-only by design. Live collectors enforce Assert-FinOpsReadOnlyScope at the credential boundary for all four surfaces: Graph, AzureResourceManager, GitHub, AzureDevOps. ARM read-only is operator-attested via two-key consent (-AcceptArmRbacRisk + FINOPS_ACCEPT_ARM_RBAC_RISK=1); RBAC cannot be proven from token claims. GitHub fine-grained PATs and ADO PATs are operator-attested when -AllowUnknownScopes is used; classic GitHub PATs and ADO bearer tokens are certifiable from claims/headers. Phase 6 live-collector parity is complete.'
     }
 }

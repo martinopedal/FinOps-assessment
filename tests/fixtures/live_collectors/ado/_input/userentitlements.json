@@ -1,0 +1,66 @@
+{
+  "page_1": {
+    "members": [
+      {
+        "user": {
+          "mailAddress": "alice@contoso.test",
+          "displayName": "Alice"
+        },
+        "accessLevel": {
+          "accessLevelName": "Advanced",
+          "lastAccessedDate": "2025-05-30T00:00:00Z"
+        },
+        "extensions": [],
+        "projectEntitlements": [
+          {
+            "projectPermissions": {
+              "hasRepoAccess": false,
+              "hasBuildAccess": false
+            }
+          }
+        ]
+      }
+    ],
+    "continuationToken": "page-2"
+  },
+  "page_2": {
+    "members": [
+      {
+        "user": {
+          "mailAddress": "bob@contoso.test",
+          "displayName": "Bob"
+        },
+        "accessLevel": {
+          "accessLevelName": "Stakeholder",
+          "lastAccessedDate": "2025-05-01T00:00:00Z"
+        },
+        "extensions": [],
+        "projectEntitlements": [
+          {
+            "projectPermissions": {
+              "hasRepoAccess": true,
+              "hasBuildAccess": false
+            }
+          }
+        ]
+      },
+      {
+        "user": {
+          "mailAddress": "carol@contoso.test",
+          "displayName": "Carol"
+        },
+        "accessLevel": {
+          "accessLevelName": "Express",
+          "lastAccessedDate": "2025-05-20T00:00:00Z"
+        },
+        "extensions": [
+          {
+            "id": "ms.vss-test-web.testplans"
+          }
+        ],
+        "projectEntitlements": []
+      }
+    ],
+    "continuationToken": ""
+  }
+}

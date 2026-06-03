@@ -9,6 +9,17 @@ release.
 
 ### Added
 
+- **PowerShell Azure DevOps live collector parity (Phase 6e).**
+  Added `Get-FinOpsAdoCollector` and wired
+  `Invoke-FinOpsLiveCollection -Surface Ado` to emit `ado_seats.csv` and
+  `ado_orgs.csv` with normalized parity against Python fixtures. The ADO
+  dispatcher now supports PAT-Basic (`Authorization: Basic base64(":"+pat)`)
+  and bearer token auth paths, enforces `Assert-FinOpsReadOnlyScope` at the
+  credential boundary for both, and preserves Python-equivalent P95 concurrency
+  semantics (`[int][Math]::Floor` index behavior). **Phase 6 live-collector
+  parity is COMPLETE** — all four surfaces now enforce the read-only scope
+  guard.
+
 - **PowerShell GitHub live collector parity (Phase 6d).**
   Added `Get-FinOpsGitHubCollector` and wired
   `Invoke-FinOpsLiveCollection -Surface GitHub` to emit
