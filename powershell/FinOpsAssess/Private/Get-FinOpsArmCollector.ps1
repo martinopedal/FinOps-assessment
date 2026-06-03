@@ -78,7 +78,7 @@ function Get-FinOpsArmCollector {
         param([Parameter()] [double[]] $Values)
         if (-not $Values -or $Values.Count -eq 0) { return $null }
         $sorted = @($Values | Sort-Object)
-        $idx = [int]($sorted.Count * 0.95)
+        $idx = [int][Math]::Floor($sorted.Count * 0.95) # Python int() truncates toward zero; [int] would banker's-round. Use Math::Floor.
         return $sorted[[Math]::Min($idx, $sorted.Count - 1)]
     }
 
@@ -590,4 +590,3 @@ function Get-FinOpsArmCollector {
         }
     }
 }
-

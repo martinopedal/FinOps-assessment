@@ -270,6 +270,61 @@ Describe 'Get-FinOpsArmCollector' {
         }
     }
 
+    It 'matches Python int() p95 index semantics for 25 samples' {
+        InModuleScope FinOpsAssess -Parameters @{ OutDir = $script:OutDir } {
+            param($OutDir)
+            $auth = [pscustomobject]@{ AccessToken = (New-TestSecureString -Value 'token'); Source = 'caller-bearer' }
+            $vmId = '/subscriptions/sub-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm-1'
+            Mock Invoke-FinOpsRestRequest {
+                param($Uri)
+                if ($Uri -like '*subscriptions?api-version=*') { return @([pscustomobject]@{ subscriptionId = 'sub-1'; state = 'Enabled' }) }
+                if ($Uri -like '*virtualMachines?api-version=*') {
+                    return @([pscustomobject]@{
+                            id = $vmId
+                            location = 'eastus'
+                            sku = [pscustomobject]@{ name = 'Standard_D2s_v5' }
+                            properties = [pscustomobject]@{
+                                hardwareProfile = [pscustomobject]@{ vmSize = 'Standard_D2s_v5' }
+                                instanceView = [pscustomobject]@{ statuses = @() }
+                                timeCreated = '2024-01-01T00:00:00Z'
+                            }
+                        })
+                }
+                if ($Uri -like '*disks?api-version=*') { return @() }
+                if ($Uri -like '*publicIPAddresses?api-version=*') { return @() }
+                if ($Uri -like '*workspaces?api-version=*') { return @() }
+                if ($Uri -like '*providers/Microsoft.Capacity/reservations*') { return @() }
+                if ($Uri -like '*benefitRecommendations?api-version=*') { return @() }
+                if ($Uri -like '*providers/microsoft.insights/metrics*') {
+                    $cpuData = @(1..25 | ForEach-Object { [pscustomobject]@{ average = [double]$_ } })
+                    $zeroData = @(1..25 | ForEach-Object { [pscustomobject]@{ average = 0.0 } })
+                    return [pscustomobject]@{
+                        value = @(
+                            [pscustomobject]@{
+                                name = [pscustomobject]@{ value = 'Percentage CPU' }
+                                timeseries = @([pscustomobject]@{ data = $cpuData })
+                            },
+                            [pscustomobject]@{
+                                name = [pscustomobject]@{ value = 'Network In Total' }
+                                timeseries = @([pscustomobject]@{ data = $zeroData })
+                            },
+                            [pscustomobject]@{
+                                name = [pscustomobject]@{ value = 'Network Out Total' }
+                                timeseries = @([pscustomobject]@{ data = $zeroData })
+                            }
+                        )
+                    }
+                }
+                throw "unexpected uri: $Uri"
+            }
+            Mock Invoke-RestMethod { [pscustomobject]@{ Items = @() } }
+
+            Get-FinOpsArmCollector -OutputPath $OutDir -Auth $auth | Out-Null
+            $resourcesCsv = Get-Content -LiteralPath (Join-Path $OutDir 'azure_resources.csv') -Raw -Encoding utf8
+            $resourcesCsv | Should -Match 'virtualMachine,Standard_D2s_v5,eastus,13,24,,0'
+        }
+    }
+
     It 'matches Python ARM fixtures at normalized dataset level with recorded inputs' {
         InModuleScope FinOpsAssess -Parameters @{ OutDir = $script:OutDir; InputDir = $script:ArmInputDir; FixtureDir = $script:ArmFixtureDir } {
             param($OutDir, $InputDir, $FixtureDir)
