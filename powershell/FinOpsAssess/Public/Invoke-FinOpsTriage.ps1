@@ -16,6 +16,12 @@ function Invoke-FinOpsTriage {
 
     .PARAMETER Format
         Artefact format to write: ``json``, ``csv``, or ``both``.
+
+    .EXAMPLE
+        Invoke-FinOpsTriage -InputReport ./report.json -OutputDirectory ./triage -Format both
+
+        Reads report.json and writes deterministic advisory triage artefacts:
+        ./triage/triage.json and ./triage/triage.csv.
     #>
     [CmdletBinding()]
     [OutputType([System.Collections.Specialized.OrderedDictionary])]

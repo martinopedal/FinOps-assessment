@@ -92,6 +92,11 @@ tests/fixtures/live_collectors/**/*.json text eol=lf
 *.yaml text eol=lf
 *.yml text eol=lf
 *.md text eol=lf
+# Auto-generated PlatyPS cmdlet reference (Phase 7c). Byte-compared by
+# scripts/generate_ps_cmdlet_docs.ps1 -Check in CI; a Windows checkout with
+# core.autocrlf=true would otherwise rewrite these to CRLF and fail the
+# drift gate Windows-only.
+docs/cmdlets/*.md text eol=lf
 *.j2 text eol=lf
 
 # PowerShell engine (powershell/**). Pin LF so the Pester version-lock /

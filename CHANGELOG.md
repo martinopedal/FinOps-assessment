@@ -9,6 +9,14 @@ release.
 
 ### Added
 
+- **PowerShell cmdlet reference docs + drift gate (Phase 7c).**
+  Added AVM-style auto-generated PowerShell cmdlet reference under
+  `docs/cmdlets/` (Microsoft.PowerShell.PlatyPS v1.0.1), with a fail-closed
+  help-completeness pre-flight, a CI drift gate folded into
+  `lint-and-test-powershell`, and expanded comment-based help for
+  `Export-FinOpsPlaybook`, `Invoke-FinOpsLiveCollection`, and
+  `Export-FinOpsFocusAligned`. MAML bundling deferred.
+
 - **PowerShell Gallery release workflow (Phase 7b).**
   Added tag-triggered `.github/workflows/ps-release.yml` for `ps-v*` tags:
   validate → environment-gated publish → 15-minute propagation-aware smoke test

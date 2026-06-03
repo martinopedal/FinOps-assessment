@@ -81,7 +81,96 @@ function Invoke-FinOpsLiveCollectionWorker {
 function Invoke-FinOpsLiveCollection {
     <#
     .SYNOPSIS
-        Collects live data for one surface (Phase 6a scaffold).
+        Collects live, read-only data for one Microsoft-ecosystem surface and
+        writes normalized CSVs to disk.
+
+    .DESCRIPTION
+        Runs the read-only live collector for exactly one of four surfaces:
+        Microsoft 365 (Graph), Azure (ARM), GitHub, or Azure DevOps (Ado).
+        The cmdlet acquires an access token for the selected surface, then
+        enforces the read-only posture by calling Assert-FinOpsReadOnlyScope
+        BEFORE any data is read - if the credential carries a write or admin
+        scope the run is refused.
+
+        Azure (ARM) collection is gated behind an explicit two-key consent
+        because ARM read-only cannot be proven from token claims (RBAC is not
+        introspectable): the caller must pass -AcceptArmRbacRisk AND set the
+        environment variable FINOPS_ACCEPT_ARM_RBAC_RISK=1, otherwise the run
+        is refused. GitHub accepts bearer tokens only (-Token or GITHUB_TOKEN;
+        a -Pat is rejected). Azure DevOps accepts -Pat/-Token or the
+        AZURE_DEVOPS_PAT/AZURE_DEVOPS_TOKEN environment variables and requires
+        -AdoOrg. The collected rows are written as CSV files under -OutputPath;
+        nothing in the audited systems is mutated.
+
+    .PARAMETER Surface
+        The surface to collect: Graph, Arm, GitHub, or Ado.
+
+    .PARAMETER OutputPath
+        Directory where the collector writes its normalized CSV files.
+
+    .PARAMETER TenantId
+        Optional Entra tenant ID for Graph/ARM token acquisition.
+
+    .PARAMETER SubscriptionId
+        One or more Azure subscription IDs to scope ARM collection.
+
+    .PARAMETER GitHubEnterprise
+        Optional GitHub Enterprise slug to scope GitHub collection.
+
+    .PARAMETER GitHubOrg
+        One or more GitHub organization logins to scope GitHub collection.
+
+    .PARAMETER AdoOrg
+        Azure DevOps organization name (required for the Ado surface).
+
+    .PARAMETER Token
+        Bearer access token (SecureString) for Graph/ARM/GitHub.
+
+    .PARAMETER Pat
+        Personal access token (SecureString) for Azure DevOps.
+
+    .PARAMETER SkipMetrics
+        Skip optional metric collection (ARM).
+
+    .PARAMETER AcceptArmRbacRisk
+        Operator attestation half of the ARM two-key read-only consent.
+
+    .PARAMETER AllowUnknownScopes
+        Permit tokens whose scopes cannot be classified (advisory).
+
+    .PARAMETER PageLimit
+        Maximum number of pages to fetch per collection (default 500).
+
+    .OUTPUTS
+        System.Management.Automation.PSCustomObject with properties
+        ``Surface``, ``OutputPath``, ``FilesWritten`` (string[] of CSV files
+        written), and ``RowCounts`` (ordered map of file -> row count).
+
+    .EXAMPLE
+        Invoke-FinOpsLiveCollection -Surface Graph -OutputPath ./out -TenantId $tid
+
+        Collects Microsoft 365 licensing/identity data via Microsoft Graph
+        after the read-only scope guard passes.
+
+    .EXAMPLE
+        $env:FINOPS_ACCEPT_ARM_RBAC_RISK = '1'
+        Invoke-FinOpsLiveCollection -Surface Arm -OutputPath ./out `
+            -SubscriptionId $sub -AcceptArmRbacRisk
+
+        Collects Azure (ARM) data. Both consent keys are supplied, so the
+        ARM read-only attestation gate is satisfied.
+
+    .EXAMPLE
+        Invoke-FinOpsLiveCollection -Surface GitHub -OutputPath ./out -GitHubOrg contoso
+
+        Collects GitHub seat/usage data using GITHUB_TOKEN (bearer). The token
+        is probed for scopes and rejected if it carries write access.
+
+    .EXAMPLE
+        Invoke-FinOpsLiveCollection -Surface Ado -OutputPath ./out -AdoOrg contoso
+
+        Collects Azure DevOps data for the 'contoso' organization using
+        AZURE_DEVOPS_PAT / AZURE_DEVOPS_TOKEN.
     #>
     [CmdletBinding()]
     [OutputType([pscustomobject])]

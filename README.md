@@ -117,6 +117,11 @@ A **native PowerShell module** (`FinOpsAssess`) is available for operators who p
 PowerShell end-to-end. See [`docs/powershell.md`](docs/powershell.md) for cmdlet reference,
 parity matrix, and conformance details.
 
+## Cmdlet reference
+
+Per-cmdlet PowerShell reference documentation is generated from comment-based help.
+See [docs/cmdlets/README.md](docs/cmdlets/README.md) for the index and links.
+
 ## Install via PowerShell Gallery
 
 ```powershell
