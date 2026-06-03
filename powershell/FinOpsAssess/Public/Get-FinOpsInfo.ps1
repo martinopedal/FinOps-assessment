@@ -8,8 +8,8 @@ function Get-FinOpsInfo {
         subcommand. Performs no cloud calls itself. The read-only scope
         guard (Assert-FinOpsReadOnlyScope / Test-FinOpsReadOnlyScope) is
         enforced at the credential boundary by live collectors as they
-        ship per surface (Graph in Phase 6b; ARM/GitHub/ADO in Phase
-        6c/6d/6e). The structured ``ScopeGuard`` field reports per-surface
+        ship per surface (Graph + ARM in Phase 6b/6c; GitHub/ADO in
+        Phase 6d/6e). The structured ``ScopeGuard`` field reports per-surface
         coverage and enforcement honestly via the ``EnforcedBySurface``
         sub-map, the tri-state ``Enforced`` ('partial' until all four
         surfaces ship), and a ``PostureStatement`` that is rewritten each
@@ -44,7 +44,7 @@ function Get-FinOpsInfo {
         DefaultPolicy = 'fail-closed-on-write-or-unknown'
         EnforcedBySurface = [pscustomobject]@{
             Graph                = $true
-            AzureResourceManager = $false
+            AzureResourceManager = $true
             GitHub               = $false
             AzureDevOps          = $false
         }
@@ -54,7 +54,7 @@ function Get-FinOpsInfo {
             AzureDevOps          = 'claims:scp'
             GitHubClassicScopes  = 'scopes:X-OAuth-Scopes'
             GitHubFineGrainedPat = 'unsupported:fail-closed'
-            AzureResourceManager = 'insufficient:token-claims; RBAC introspection required (Phase 6)'
+            AzureResourceManager = 'operator-attested via two-key consent; RBAC introspection deferred'
         }
     }
 
@@ -71,6 +71,7 @@ function Get-FinOpsInfo {
             $scopeGuard.EnforcedBySurface.AzureDevOps
         ) -contains $true
         ScopeGuard                 = $scopeGuard
-        PostureStatement           = 'Read-only by design. Live collectors enforce Assert-FinOpsReadOnlyScope at the credential boundary for: Graph. Not yet shipped/enforced: AzureResourceManager, GitHub, AzureDevOps. ARM read-only is operator-attested (RBAC cannot be proven from token claims) and refused fail-closed without explicit two-key consent. Do not treat as security-complete until all four surfaces ship.'
+        PostureStatement           = 'Read-only by design. Live collectors enforce Assert-FinOpsReadOnlyScope at the credential boundary for: Graph, AzureResourceManager. Not yet shipped/enforced: GitHub, AzureDevOps. ARM read-only is operator-attested via two-key consent (-AcceptArmRbacRisk + FINOPS_ACCEPT_ARM_RBAC_RISK=1); RBAC cannot be proven from token claims. Do not treat as security-complete until all four surfaces ship.'
     }
 }
+

@@ -1,0 +1,30 @@
+{
+  "value": [
+    {
+      "name": {
+        "value": "Network In Total"
+      },
+      "timeseries": [
+        {
+          "data": [
+            { "average": 3600 },
+            { "average": 7200 }
+          ]
+        }
+      ]
+    },
+    {
+      "name": {
+        "value": "Network Out Total"
+      },
+      "timeseries": [
+        {
+          "data": [
+            { "average": 3600 },
+            { "average": 7200 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -400,8 +400,10 @@ is source-agnostic.
 Phase 6a (`Get-FinOpsAccessToken`, `Invoke-FinOpsRestRequest` GET-only,
 `Write-FinOpsCollectorCsv`, `Get-FinOpsNow`, `Invoke-FinOpsLiveCollection`
 dispatcher + scope-guard call-site). Phase 6b shipped the Graph collector
-(`Get-FinOpsGraphCollector` + dispatcher Graph arm). Remaining per-surface
-collectors follow in Phases 6c–6e.
+(`Get-FinOpsGraphCollector` + dispatcher Graph arm), and Phase 6c ships the
+ARM collector (`Get-FinOpsArmCollector` + dispatcher Arm arm with two-key
+operator-attested consent). Remaining per-surface collectors follow in
+Phases 6d–6e.
 
 ---
 

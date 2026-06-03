@@ -1,0 +1,12 @@
+{
+  "value": [
+    {
+      "id": "/subscriptions/sub-1/resourceGroups/rg/providers/Microsoft.Network/publicIPAddresses/pip1",
+      "location": "eastus",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {}
+    }
+  ]
+}

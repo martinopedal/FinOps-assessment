@@ -1,0 +1,22 @@
+{
+  "value": [
+    {
+      "id": "/subscriptions/sub-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm1",
+      "location": "eastus",
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_D4s_v5"
+        },
+        "storageProfile": {
+          "osDisk": {
+            "osType": "Linux"
+          }
+        },
+        "licenseType": "None"
+      },
+      "tags": {
+        "env": "prod"
+      }
+    }
+  ]
+}

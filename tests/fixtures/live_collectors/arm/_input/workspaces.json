@@ -1,0 +1,14 @@
+{
+  "value": [
+    {
+      "id": "/subscriptions/sub-1/resourceGroups/rg/providers/Microsoft.OperationalInsights/workspaces/ws1",
+      "name": "ws1",
+      "location": "eastus",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        }
+      }
+    }
+  ]
+}

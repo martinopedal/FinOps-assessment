@@ -1,0 +1,10 @@
+{
+  "Items": [
+    {
+      "serviceName": "Azure Monitor",
+      "armRegionName": "eastus",
+      "skuName": "PerGB2018",
+      "retailPrice": 2.76
+    }
+  ]
+}

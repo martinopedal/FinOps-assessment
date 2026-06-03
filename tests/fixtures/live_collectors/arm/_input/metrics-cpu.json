@@ -1,0 +1,19 @@
+{
+  "value": [
+    {
+      "name": {
+        "value": "Percentage CPU"
+      },
+      "timeseries": [
+        {
+          "data": [
+            { "average": 10 },
+            { "average": 20 },
+            { "average": 30 },
+            { "average": 40 }
+          ]
+        }
+      ]
+    }
+  ]
+}

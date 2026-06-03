@@ -1,0 +1,2 @@
+reservation_id,reservation_name,sku,scope,utilization_pct,monthly_cost_usd,expiry_date,auto_renew,applied_scope_subscription_ids
+/providers/Microsoft.Capacity/reservations/res-1,res-one,Standard_D4s_v5,Single,80.0,,2026-01-01,false,/subscriptions/sub-1

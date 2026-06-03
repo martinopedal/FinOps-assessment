@@ -1,0 +1,4 @@
+resource_id,resource_type,sku,location,avg_cpu_pct,p95_cpu_pct,p95_mem_pct,avg_net_kbps,days_inactive,attached,associated,monthly_cost_usd,recommended_sku,subscription_id,subscription_offer,env_tag,os_type,license_type
+/subscriptions/sub-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm1,virtualMachine,Standard_D4s_v5,eastus,25.0,40.0,,0.0,,,,,,sub-1,,prod,Linux,None
+/subscriptions/sub-1/resourceGroups/rg/providers/Microsoft.Compute/disks/disk1,managedDisk,Premium_LRS,eastus,,,,,517,false,,,,sub-1,,,,
+/subscriptions/sub-1/resourceGroups/rg/providers/Microsoft.Network/publicIPAddresses/pip1,publicIp,Standard,eastus,,,,,,,false,,,sub-1,,,,

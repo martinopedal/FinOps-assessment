@@ -1,0 +1,15 @@
+{
+  "value": [
+    {
+      "id": "/subscriptions/sub-1/resourceGroups/rg/providers/Microsoft.Compute/disks/disk1",
+      "location": "eastus",
+      "sku": {
+        "name": "Premium_LRS"
+      },
+      "properties": {
+        "diskState": "Unattached",
+        "timeCreated": "2024-01-01T00:00:00Z"
+      }
+    }
+  ]
+}

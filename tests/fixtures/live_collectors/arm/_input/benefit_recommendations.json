@@ -1,0 +1,21 @@
+{
+  "value": [
+    {
+      "id": "/subscriptions/sub-1/providers/Microsoft.CostManagement/benefitRecommendations/br-1",
+      "kind": "SavingsPlan",
+      "properties": {
+        "scope": "Single",
+        "subscriptionId": "sub-1",
+        "term": "P1Y",
+        "lookBackPeriod": "Last30Days",
+        "armSkuName": "Standard_D4s_v5",
+        "recommendationDetails": {
+          "costWithoutBenefit": 200,
+          "recommendedQuantity": 0.5,
+          "netSavings": 20,
+          "wastage": 2
+        }
+      }
+    }
+  ]
+}

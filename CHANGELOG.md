@@ -9,6 +9,16 @@ release.
 
 ### Added
 
+- **PowerShell ARM live collector parity (Phase 6c).**
+  Added `Get-FinOpsArmCollector` and wired
+  `Invoke-FinOpsLiveCollection -Surface Arm` to emit
+  `azure_resources.csv`, `azure_reservations.csv`,
+  `azure_log_workspaces.csv`, and `azure_benefit_recommendations.csv`
+  with normalized parity against Python fixtures. ARM now uses the
+  explicit two-key consent model (`-AcceptArmRbacRisk` +
+  `FINOPS_ACCEPT_ARM_RBAC_RISK=1`) with operator-attested read-only
+  posture and per-surface posture flip (`EnforcedBySurface.AzureResourceManager = $true`).
+
 - **PowerShell Graph live collector parity (Phase 6b).**
   Added `Get-FinOpsGraphCollector` and wired
   `Invoke-FinOpsLiveCollection -Surface Graph` to emit
