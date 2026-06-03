@@ -534,8 +534,8 @@ Pester via `[System.IO.File]::ReadAllBytes`.
 ## Live mode (Phase 6)
 
 Phase 6a shipped the shared live-collector base and the public dispatcher
-`Invoke-FinOpsLiveCollection`. Phase 6b now ships the Graph collector;
-ARM/GitHub/Azure DevOps collectors remain staged in 6c–6e.
+`Invoke-FinOpsLiveCollection`. Phase 6b now ships the Graph collector and
+Phase 6c adds the ARM collector; GitHub/Azure DevOps remain staged in 6d–6e.
 
 ```powershell
 Invoke-FinOpsLiveCollection -Surface Graph -OutputPath ./live
@@ -546,7 +546,7 @@ Invoke-FinOpsLiveCollection -Surface Graph -OutputPath ./live
 | Surface | Required env (default path) | Notes |
 |---|---|---|
 | Graph | `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, and one of `AZURE_FEDERATED_TOKEN_FILE` or `AZURE_CLIENT_SECRET` | Uses `Get-FinOpsAccessToken -Scope graph` |
-| ARM | `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, and one of `AZURE_FEDERATED_TOKEN_FILE` or `AZURE_CLIENT_SECRET` | Uses `Get-FinOpsAccessToken -Scope arm` |
+| ARM | `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, one of `AZURE_FEDERATED_TOKEN_FILE` or `AZURE_CLIENT_SECRET`, and `FINOPS_ACCEPT_ARM_RBAC_RISK=1` | Requires `-AcceptArmRbacRisk` + env two-key consent |
 | GitHub | `GITHUB_TOKEN` (or pass `-Token`/`-Pat`) | Classic scopes are validated by the read-only guard |
 | Azure DevOps | `AZURE_DEVOPS_TOKEN` or `AZURE_DEVOPS_PAT` (or pass `-Token`/`-Pat`) | Bearer or PAT paths both flow through the guard |
 
@@ -569,8 +569,37 @@ Invoke-FinOpsLiveCollection -Surface Graph -OutputPath ./live
   `AuditLog.Read.All` (required for `signInActivity`).
 
 `Get-FinOpsInfo` now reports per-surface posture truthfully:
-Graph enforcement is live (`ScopeGuard.Enforced = 'partial'`,
-`RuntimeScopeGuardEnforced = $true`) while ARM/GitHub/ADO stay unshipped.
+Graph + ARM enforcement are live (`ScopeGuard.Enforced = 'partial'`,
+`RuntimeScopeGuardEnforced = $true`) while GitHub/ADO stay unshipped.
+
+### Azure Resource Manager (ARM)
+
+`Invoke-FinOpsLiveCollection -Surface Arm` writes:
+`azure_resources.csv`, `azure_reservations.csv`, `azure_log_workspaces.csv`,
+and `azure_benefit_recommendations.csv`.
+
+- **Required environment/auth inputs:** `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`,
+  and one of `AZURE_FEDERATED_TOKEN_FILE` (OIDC/workload identity) or
+  `AZURE_CLIENT_SECRET` (service principal secret).
+- **Required read-only role:** Azure built-in **Reader** role is sufficient.
+- **Two-key consent model (operator attestation):**
+  - switch: `-AcceptArmRbacRisk`
+  - env: `FINOPS_ACCEPT_ARM_RBAC_RISK=1`
+  - both are required; otherwise the dispatcher refuses to run.
+- **Why attested:** ARM read/write capability is RBAC-side and cannot be
+  proven from token claims alone; RBAC introspection is deferred.
+- **Endpoints called:**
+  - `GET https://management.azure.com/subscriptions?...`
+  - `GET .../virtualMachines?...`
+  - `GET .../disks?...`
+  - `GET .../publicIPAddresses?...`
+  - `GET .../providers/Microsoft.Capacity/reservations?...`
+  - `GET .../providers/Microsoft.CostManagement/benefitRecommendations?...`
+  - `GET .../providers/Microsoft.OperationalInsights/workspaces?...`
+  - `GET .../usages?...`
+  - `GET .../providers/microsoft.insights/metrics?...` (unless `-SkipMetrics`)
+  - `GET https://prices.azure.com/api/retail/prices?...` (**anonymous**, no
+    `Authorization` header; public read-only pricing metadata).
 
 ### SecureString posture (honest note)
 

@@ -1,0 +1,2 @@
+recommendation_id,scope,scope_kind,term,lookback_period,arm_sku_name,cost_without_benefit_usd,recommended_hourly_commit_usd,net_savings_usd,wastage_usd,benefit_kind
+/subscriptions/sub-1/providers/Microsoft.CostManagement/benefitRecommendations/br-1,/subscriptions/sub-1,Single,P1Y,Last30Days,Standard_D4s_v5,200,0.5,20,2,SavingsPlan

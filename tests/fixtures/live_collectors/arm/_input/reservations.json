@@ -1,0 +1,28 @@
+{
+  "value": [
+    {
+      "id": "/providers/Microsoft.Capacity/reservations/res-1",
+      "sku": {
+        "name": "Standard_D4s_v5"
+      },
+      "properties": {
+        "displayProvisioningState": "Succeeded",
+        "displayName": "res-one",
+        "appliedScopeType": "Single",
+        "utilization": {
+          "aggregates": [
+            {
+              "grain": "30days",
+              "value": 79.995
+            }
+          ]
+        },
+        "renew": false,
+        "expiryDate": "2026-01-01",
+        "appliedScopes": [
+          "/subscriptions/sub-1"
+        ]
+      }
+    }
+  ]
+}

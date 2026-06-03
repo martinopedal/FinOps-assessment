@@ -1,0 +1,2 @@
+workspace_id,workspace_name,daily_gb,commitment_tier_gb,recommended_tier,est_savings_pct,monthly_cost_usd
+/subscriptions/sub-1/resourceGroups/rg/providers/Microsoft.OperationalInsights/workspaces/ws1,ws1,120.0,,200gb_per_day_commitment,15.0,

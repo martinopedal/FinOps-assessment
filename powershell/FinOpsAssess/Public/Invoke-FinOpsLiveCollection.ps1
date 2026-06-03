@@ -41,6 +41,17 @@ function Invoke-FinOpsLiveCollectionWorker {
             }
             return Get-FinOpsGraphCollector @collectorArgs
         }
+        'Arm' {
+            $collectorArgs = @{
+                OutputPath         = $OutputPath
+                Auth               = $Auth
+                SubscriptionId     = $SubscriptionId
+                SkipMetrics        = $SkipMetrics
+                PageLimit          = $PageLimit
+                AcceptArmRbacRisk  = $AcceptArmRbacRisk
+            }
+            return Get-FinOpsArmCollector @collectorArgs
+        }
         default {
             $null = $Auth, $OutputPath, $TenantId, $SubscriptionId, $GitHubEnterprise, $GitHubOrg, $AdoOrg, $SkipMetrics, $AcceptArmRbacRisk, $PageLimit
             throw [System.NotImplementedException]::new("$Surface collector lands in Phase 6x")
@@ -97,6 +108,15 @@ function Invoke-FinOpsLiveCollection {
     if ($PSBoundParameters.ContainsKey('Token')) { $tokenArgs['Token'] = $Token }
     if ($PSBoundParameters.ContainsKey('Pat')) { $tokenArgs['Pat'] = $Pat }
 
+    $armConsentMessage = 'ARM live collection requires explicit two-key consent: pass -AcceptArmRbacRisk AND set FINOPS_ACCEPT_ARM_RBAC_RISK=1. ARM read-only is operator-attested because RBAC cannot be proven from token claims.'
+    if ($Surface -ceq 'Arm') {
+        $envConsent = [string]$env:FINOPS_ACCEPT_ARM_RBAC_RISK
+        $hasEnvConsent = $envConsent -ceq '1'
+        if (-not ($AcceptArmRbacRisk -and $hasEnvConsent)) {
+            throw $armConsentMessage
+        }
+    }
+
     if (-not $tokenArgs.ContainsKey('Token') -and -not $tokenArgs.ContainsKey('Pat')) {
         if ($Surface -ceq 'Graph') { $tokenArgs['Scope'] = 'graph' }
         elseif ($Surface -ceq 'Arm') { $tokenArgs['Scope'] = 'arm' }
@@ -120,6 +140,12 @@ function Invoke-FinOpsLiveCollection {
         try {
             $plainToken = [System.Net.NetworkCredential]::new('', $auth.AccessToken).Password
             $guardArgs['AccessToken'] = $plainToken
+            if ($Surface -ceq 'Arm') {
+                $guardArgs['AllowUnknownScopes'] = $true
+                $consentMessage = 'ARM read-only is OPERATOR-ATTESTED. RBAC introspection deferred. Consent: -AcceptArmRbacRisk + FINOPS_ACCEPT_ARM_RBAC_RISK=1'
+                Write-Warning $consentMessage
+                Write-Information $consentMessage -InformationAction Continue
+            }
             Assert-FinOpsReadOnlyScope @guardArgs
         } finally {
             $plainToken = $null
@@ -146,3 +172,4 @@ function Invoke-FinOpsLiveCollection {
         RowCounts   = if ($workerResult.RowCounts) { $workerResult.RowCounts } else { [ordered]@{} }
     }
 }
+

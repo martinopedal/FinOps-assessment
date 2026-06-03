@@ -1,0 +1,18 @@
+{
+  "value": [
+    {
+      "name": {
+        "value": "Available Memory Bytes"
+      },
+      "timeseries": [
+        {
+          "data": [
+            { "average": 100 },
+            { "average": 90 },
+            { "average": 80 }
+          ]
+        }
+      ]
+    }
+  ]
+}
