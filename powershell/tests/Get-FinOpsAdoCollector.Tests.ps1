@@ -175,31 +175,37 @@ Describe 'Get-FinOpsAdoCollector + ADO dispatcher guard' {
         InModuleScope FinOpsAssess {
             $auth = [pscustomobject]@{ AccessToken = (New-TestSecureString -Value 'token'); Source = 'caller-bearer' }
             $script:uris = [System.Collections.Generic.List[string]]::new()
+            $script:pageCalls = 0
+            $initialUri = 'https://vsaex.dev.azure.com/contoso/_apis/userentitlements?api-version=7.1&top=100&select=Projects,Extensions'
+            $expectedPage2Uri = 'https://vsaex.dev.azure.com/contoso/_apis/userentitlements?api-version=7.1&top=100&select=Projects,Extensions&continuationToken=header-2'
             Mock Invoke-RestMethod {
                 param($Method, $Uri, $Headers, $ResponseHeadersVariable, $ErrorAction)
                 $null = $Method, $Headers, $ResponseHeadersVariable, $ErrorAction
+                $script:pageCalls++
                 $script:uris.Add([string]$Uri) | Out-Null
-                if ($Uri -like '*continuationToken=header-2*') {
+                if ($script:pageCalls -eq 1) {
+                    $null = $ResponseHeadersVariable
+                    foreach ($scope in 1..6) {
+                        Set-Variable -Name 'responseHeaders' -Value @{ 'X-MS-ContinuationToken' = 'header-2' } -Scope $scope -ErrorAction SilentlyContinue
+                    }
                     return [pscustomobject]@{
-                        members = @([pscustomobject]@{ user = [pscustomobject]@{ mailAddress = 'header-two@contoso.test' } })
-                        'x-ms-continuationtoken' = ''
+                        members = @([pscustomobject]@{ user = [pscustomobject]@{ mailAddress = 'header-one@contoso.test' } })
                     }
                 }
                 return [pscustomobject]@{
-                    members = @([pscustomobject]@{ user = [pscustomobject]@{ mailAddress = 'header-one@contoso.test' } })
-                    'x-ms-continuationtoken' = 'header-2'
+                    members = @([pscustomobject]@{ user = [pscustomobject]@{ mailAddress = 'header-two@contoso.test' } })
                 }
             }
 
-            $rows = @(
-                Invoke-FinOpsRestRequest `
-                    -Uri 'https://vsaex.dev.azure.com/contoso/_apis/userentitlements?api-version=7.1&top=100&select=Projects,Extensions' `
-                    -Auth $auth `
-                    -Paging AdoContinuation `
-                    -ValueProperty 'members' `
-                    -MaxPages 10
-            )
-            $rows.Count | Should -BeGreaterThan 0
+            $rows = Invoke-FinOpsRestRequest `
+                -Uri $initialUri `
+                -Auth $auth `
+                -Paging AdoContinuation `
+                -ValueProperty 'members' `
+                -MaxPages 10
+            $script:pageCalls | Should -Be 2
+            @($script:uris | Where-Object { $_ -eq $expectedPage2Uri }).Count | Should -Be 1
+            @($rows).Count | Should -Be 2
         }
     }
 
