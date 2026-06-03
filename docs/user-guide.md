@@ -172,6 +172,16 @@ write scopes, or de-redact principals. The current implementation records the
 available helper mode (`sdk`, `cli`, or `unavailable`) while still emitting the
 stable local JSON/CSV artefact. Analysts remain responsible for verification.
 
+PowerShell parity (Phase 5a):
+
+```powershell
+Import-Module ./powershell/FinOpsAssess/FinOpsAssess.psd1 -Force
+Invoke-FinOpsTriage -InputReport .\demo-report\demo-report.json -OutputDirectory .\triage -Format both
+```
+
+This cmdlet is the native equivalent of `finops-assess triage` and writes
+`triage.json` + `triage.csv` with the same advisory schema.
+
 ### Using triage artefacts with FinOps Hubs
 
 The triage JSON/CSV files are intentionally file-based, so teams that already

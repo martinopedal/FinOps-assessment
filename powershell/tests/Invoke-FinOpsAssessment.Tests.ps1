@@ -11,6 +11,8 @@ BeforeAll {
     $script:M365CsvGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-report-m365.csv'
     $script:AzureGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-report-azure.canonical.json'
     $script:AzureCsvGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-report-azure.csv'
+    $script:TriageJsonGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-triage.json'
+    $script:TriageCsvGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-triage.csv'
     $script:FixedSalt = 'conformance-fixed-salt-v1'
     $script:FixedNow = '2025-06-01'
     $script:Canonicaliser = Join-Path $script:RepoRoot 'scripts' 'canonicalize_report.py'
@@ -351,5 +353,90 @@ Describe 'Azure rule-slice conformance (layer-5 findings + CSV)' {
         foreach ($finding in $azureFindings) {
             $finding.surface | Should -Be 'azure'
         }
+    }
+}
+
+Describe 'Triage canonical JSON helper parity' {
+
+    It 'renders known canonical JSON vectors' {
+        InModuleScope FinOpsAssess {
+            $value = [ordered]@{
+                b = "x`ny"
+                a = [ordered]@{
+                    z = 2
+                    y = @('A', ([string] [char] 0x00C6))
+                }
+            }
+            $actual = ConvertTo-FinOpsCanonicalJson -InputObject $value
+            $expected = '{"a":{"y":["A","\u00c6"],"z":2},"b":"x\ny"}'
+            $actual | Should -BeExactly $expected
+        }
+    }
+
+    It 'matches Python _finding_ref on a representative finding' {
+        InModuleScope FinOpsAssess {
+            $finding = [ordered]@{
+                rule_id                        = 'AZ.IDLE_VM_14D'
+                surface                        = 'azure'
+                principal                      = '/subscriptions/000/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm01'
+                current_sku                    = 'Standard_D8s_v5'
+                recommended_sku                = 'Standard_D4s_v5'
+                estimated_monthly_savings_usd  = 120.0
+                evidence                       = [ordered]@{ cpu_p95 = 2.75; memory_p95 = 18.0 }
+            }
+            $psRef = Get-FinOpsTriageFindingRef -Finding $finding
+            $json = ConvertTo-Json $finding -Depth 32 -Compress
+            $pyRef = (& python -c "import json,sys; from finops_assess.triage import _finding_ref; print(_finding_ref(json.loads(sys.argv[1])))" $json).Trim()
+            $psRef | Should -BeExactly $pyRef
+        }
+    }
+}
+
+Describe 'Triage conformance (json + csv byte-equal)' {
+
+    BeforeAll {
+        $script:TriageOutDir = Join-Path ([System.IO.Path]::GetTempPath()) ("ps-triage-{0}" -f ([guid]::NewGuid()))
+        $script:TriageSourceReport = Join-Path $script:TriageOutDir 'demo-report.json'
+        $script:TriageJsonOut = Join-Path $script:TriageOutDir 'triage.json'
+        $script:TriageCsvOut = Join-Path $script:TriageOutDir 'triage.csv'
+        $prevEpoch = $env:SOURCE_DATE_EPOCH
+        $prevNow = $env:FINOPS_NOW_OVERRIDE
+        try {
+            $env:SOURCE_DATE_EPOCH = '0'
+            $env:FINOPS_NOW_OVERRIDE = $script:FixedNow
+            Invoke-FinOpsAssessment -InputDirectory $script:SamplesDir -OutputPath $script:TriageSourceReport `
+                -PiiSalt $script:FixedSalt -Format json -WarningAction SilentlyContinue | Out-Null
+            Invoke-FinOpsTriage -InputReport $script:TriageSourceReport -OutputDirectory $script:TriageOutDir `
+                -Format both | Out-Null
+        } finally {
+            if ($null -eq $prevEpoch) { Remove-Item Env:SOURCE_DATE_EPOCH -ErrorAction SilentlyContinue }
+            else { $env:SOURCE_DATE_EPOCH = $prevEpoch }
+            if ($null -eq $prevNow) { Remove-Item Env:FINOPS_NOW_OVERRIDE -ErrorAction SilentlyContinue }
+            else { $env:FINOPS_NOW_OVERRIDE = $prevNow }
+        }
+    }
+
+    AfterAll {
+        Remove-Item -LiteralPath $script:TriageSourceReport -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $script:TriageOutDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    It 'ships triage golden fixtures' {
+        Test-Path -LiteralPath $script:TriageJsonGolden | Should -BeTrue
+        Test-Path -LiteralPath $script:TriageCsvGolden | Should -BeTrue
+    }
+
+    It 'triage json bytes equal the Python golden' {
+        $actual = [System.IO.File]::ReadAllBytes($script:TriageJsonOut)
+        $expected = [System.IO.File]::ReadAllBytes($script:TriageJsonGolden)
+        [System.Linq.Enumerable]::SequenceEqual($actual, $expected) |
+            Should -BeTrue -Because 'PS triage JSON must byte-match Python triage_reporter output'
+    }
+
+    It 'triage csv bytes equal the Python golden' {
+        $actual = [System.IO.File]::ReadAllBytes($script:TriageCsvOut)
+        $expected = [System.IO.File]::ReadAllBytes($script:TriageCsvGolden)
+        [System.Linq.Enumerable]::SequenceEqual($actual, $expected) |
+            Should -BeTrue -Because 'PS triage CSV must byte-match Python triage_reporter output'
     }
 }
