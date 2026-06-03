@@ -399,8 +399,9 @@ is source-agnostic.
 **Phase-6 status:** PowerShell live-collector base scaffolding shipped in
 Phase 6a (`Get-FinOpsAccessToken`, `Invoke-FinOpsRestRequest` GET-only,
 `Write-FinOpsCollectorCsv`, `Get-FinOpsNow`, `Invoke-FinOpsLiveCollection`
-dispatcher + scope-guard call-site). Per-surface collectors follow in
-Phases 6b–6e.
+dispatcher + scope-guard call-site). Phase 6b shipped the Graph collector
+(`Get-FinOpsGraphCollector` + dispatcher Graph arm). Remaining per-surface
+collectors follow in Phases 6c–6e.
 
 ---
 

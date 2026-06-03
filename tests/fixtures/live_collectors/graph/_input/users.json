@@ -1,0 +1,46 @@
+{
+  "value": [
+    {
+      "userPrincipalName": "alice@contoso.test",
+      "displayName": "Alice",
+      "userType": "Member",
+      "accountEnabled": true,
+      "jobTitle": "Engineer",
+      "department": "Engineering",
+      "assignedLicenses": [
+        {
+          "skuId": "6fd2c87f-b296-42f0-b197-1e91e994b900"
+        }
+      ],
+      "signInActivity": {
+        "lastSignInDateTime": "2025-05-30T00:00:00Z"
+      }
+    },
+    {
+      "userPrincipalName": "bob.guest@contoso.test",
+      "displayName": "Bob Guest",
+      "userType": "Guest",
+      "accountEnabled": false,
+      "jobTitle": "",
+      "department": "",
+      "assignedLicenses": [],
+      "signInActivity": {
+        "lastSignInDateTime": "2025-03-01T00:00:00Z"
+      }
+    },
+    {
+      "userPrincipalName": "svc-app@contoso.test",
+      "displayName": "Svc App",
+      "userType": "UnknownType",
+      "accountEnabled": true,
+      "jobTitle": "Automation",
+      "department": "Platform",
+      "assignedLicenses": [
+        {
+          "skuId": "f30db892-07e9-47e9-837c-80727f46fd3d"
+        }
+      ],
+      "signInActivity": {}
+    }
+  ]
+}

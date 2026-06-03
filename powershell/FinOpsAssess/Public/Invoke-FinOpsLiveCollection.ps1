@@ -12,6 +12,9 @@ function Invoke-FinOpsLiveCollectionWorker {
         [string] $OutputPath,
 
         [Parameter()]
+        [string] $TenantId,
+
+        [Parameter()]
         [string[]] $SubscriptionId,
 
         [Parameter()]
@@ -28,8 +31,21 @@ function Invoke-FinOpsLiveCollectionWorker {
         [int] $PageLimit
     )
 
-    $null = $Auth, $OutputPath, $SubscriptionId, $GitHubEnterprise, $GitHubOrg, $AdoOrg, $SkipMetrics, $AcceptArmRbacRisk, $PageLimit
-    throw [System.NotImplementedException]::new("$Surface collector lands in Phase 6x")
+    switch ($Surface) {
+        'Graph' {
+            $collectorArgs = @{
+                OutputPath = $OutputPath
+                Auth       = $Auth
+                TenantId   = $TenantId
+                PageLimit  = $PageLimit
+            }
+            return Get-FinOpsGraphCollector @collectorArgs
+        }
+        default {
+            $null = $Auth, $OutputPath, $TenantId, $SubscriptionId, $GitHubEnterprise, $GitHubOrg, $AdoOrg, $SkipMetrics, $AcceptArmRbacRisk, $PageLimit
+            throw [System.NotImplementedException]::new("$Surface collector lands in Phase 6x")
+        }
+    }
 }
 
 function Invoke-FinOpsLiveCollection {
@@ -110,22 +126,23 @@ function Invoke-FinOpsLiveCollection {
         }
     }
 
-    [void](Invoke-FinOpsLiveCollectionWorker `
-            -Surface $Surface `
-            -Auth $auth `
-            -OutputPath $OutputPath `
-            -SubscriptionId $SubscriptionId `
-            -GitHubEnterprise $GitHubEnterprise `
-            -GitHubOrg $GitHubOrg `
-            -AdoOrg $AdoOrg `
-            -SkipMetrics:$SkipMetrics `
-            -AcceptArmRbacRisk:$AcceptArmRbacRisk `
-            -PageLimit $PageLimit)
+    $workerResult = Invoke-FinOpsLiveCollectionWorker `
+        -Surface $Surface `
+        -Auth $auth `
+        -OutputPath $OutputPath `
+        -TenantId $TenantId `
+        -SubscriptionId $SubscriptionId `
+        -GitHubEnterprise $GitHubEnterprise `
+        -GitHubOrg $GitHubOrg `
+        -AdoOrg $AdoOrg `
+        -SkipMetrics:$SkipMetrics `
+        -AcceptArmRbacRisk:$AcceptArmRbacRisk `
+        -PageLimit $PageLimit
 
     return [pscustomobject]@{
         Surface     = $Surface
         OutputPath  = $OutputPath
-        FilesWritten = @()
-        RowCounts   = [ordered]@{}
+        FilesWritten = @($workerResult.FilesWritten)
+        RowCounts   = if ($workerResult.RowCounts) { $workerResult.RowCounts } else { [ordered]@{} }
     }
 }

@@ -31,16 +31,22 @@ Describe 'Get-FinOpsInfo' {
         $script:info.ModuleVersion | Should -Be $manifest.ModuleVersion
     }
 
-    It 'advertises a read-only posture with the scope guard available but not yet enforced' {
+    It 'advertises a read-only posture with Graph enforcement and partial rollout' {
         $script:info.ReadOnly | Should -BeTrue
-        $script:info.RuntimeScopeGuardEnforced | Should -BeFalse
-        $script:info.PostureStatement | Should -Match 'enforcement at the credential boundary'
+        $script:info.RuntimeScopeGuardEnforced | Should -BeTrue
+        $script:info.PostureStatement | Should -Match 'Live collectors enforce'
+        $script:info.PostureStatement | Should -Match 'Graph'
+        $script:info.PostureStatement | Should -Not -Match 'no cloud calls, collectors, or mutation paths ship in this phase'
     }
 
-    It 'reports structured scope-guard coverage including the honest ARM limitation' {
+    It 'reports structured scope-guard coverage and per-surface enforcement' {
         $script:info.ScopeGuard.Available | Should -BeTrue
-        $script:info.ScopeGuard.Enforced | Should -BeFalse
+        $script:info.ScopeGuard.Enforced | Should -Be 'partial'
         $script:info.ScopeGuard.DefaultPolicy | Should -Be 'fail-closed-on-write-or-unknown'
+        $script:info.ScopeGuard.EnforcedBySurface.Graph | Should -BeTrue
+        $script:info.ScopeGuard.EnforcedBySurface.AzureResourceManager | Should -BeFalse
+        $script:info.ScopeGuard.EnforcedBySurface.GitHub | Should -BeFalse
+        $script:info.ScopeGuard.EnforcedBySurface.AzureDevOps | Should -BeFalse
         $script:info.ScopeGuard.Coverage.AzureResourceManager | Should -Match 'insufficient:token-claims'
     }
 

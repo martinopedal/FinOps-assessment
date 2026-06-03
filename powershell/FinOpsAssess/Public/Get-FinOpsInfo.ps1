@@ -5,13 +5,19 @@ function Get-FinOpsInfo {
 
     .DESCRIPTION
         The PowerShell equivalent of the Python ``finops-assess info``
-        subcommand. Performs no cloud calls. The read-only scope guard
-        (Assert-FinOpsReadOnlyScope / Test-FinOpsReadOnlyScope) IS
-        implemented and unit-tested, but ``RuntimeScopeGuardEnforced`` is
-        reported as ``$false`` because no credential-bearing code path ships
-        yet (the live collectors land in Phase 6) for the guard to be
-        enforced at. The structured ``ScopeGuard`` field reports per-surface
-        coverage honestly, including the Azure Resource Manager limitation.
+        subcommand. Performs no cloud calls itself. The read-only scope
+        guard (Assert-FinOpsReadOnlyScope / Test-FinOpsReadOnlyScope) is
+        enforced at the credential boundary by live collectors as they
+        ship per surface (Graph in Phase 6b; ARM/GitHub/ADO in Phase
+        6c/6d/6e). The structured ``ScopeGuard`` field reports per-surface
+        coverage and enforcement honestly via the ``EnforcedBySurface``
+        sub-map, the tri-state ``Enforced`` ('partial' until all four
+        surfaces ship), and a ``PostureStatement`` that is rewritten each
+        PR to truthfully describe what is enforced and what is not yet
+        shipped. ``RuntimeScopeGuardEnforced`` is ``$true`` from Phase 6b
+        onward (once any surface enforces). The Azure Resource Manager
+        limitation (RBAC-side; cannot be proven from token claims) is
+        called out explicitly in the same map.
 
     .OUTPUTS
         [pscustomobject] with module/version/posture fields.
@@ -34,8 +40,14 @@ function Get-FinOpsInfo {
 
     $scopeGuard = [pscustomobject]@{
         Available     = $true
-        Enforced      = $false  # no live credential path exists yet (Phase 6)
+        Enforced      = 'partial'
         DefaultPolicy = 'fail-closed-on-write-or-unknown'
+        EnforcedBySurface = [pscustomobject]@{
+            Graph                = $true
+            AzureResourceManager = $false
+            GitHub               = $false
+            AzureDevOps          = $false
+        }
         Coverage      = [pscustomobject]@{
             GraphDelegated       = 'claims:scp'
             GraphAppOnly         = 'claims:roles'
@@ -52,8 +64,13 @@ function Get-FinOpsInfo {
         SupportedPowerShellVersion = $manifest.PowerShellVersion
         Surfaces                   = @('Microsoft 365', 'Azure', 'GitHub', 'Azure DevOps')
         ReadOnly                   = $true
-        RuntimeScopeGuardEnforced  = $false
+        RuntimeScopeGuardEnforced  = @(
+            $scopeGuard.EnforcedBySurface.Graph,
+            $scopeGuard.EnforcedBySurface.AzureResourceManager,
+            $scopeGuard.EnforcedBySurface.GitHub,
+            $scopeGuard.EnforcedBySurface.AzureDevOps
+        ) -contains $true
         ScopeGuard                 = $scopeGuard
-        PostureStatement           = 'Read-only by design: no cloud calls, collectors, or mutation paths ship in this phase. The read-only scope guard is implemented and unit-tested (Assert-FinOpsReadOnlyScope), but enforcement at the credential boundary lands with the Phase-6 collectors; until then RuntimeScopeGuardEnforced is $false. ARM read-only cannot be proven from token claims (RBAC-side) and is refused fail-closed. Do not treat this module as security-complete.'
+        PostureStatement           = 'Read-only by design. Live collectors enforce Assert-FinOpsReadOnlyScope at the credential boundary for: Graph. Not yet shipped/enforced: AzureResourceManager, GitHub, AzureDevOps. ARM read-only is operator-attested (RBAC cannot be proven from token claims) and refused fail-closed without explicit two-key consent. Do not treat as security-complete until all four surfaces ship.'
     }
 }

@@ -1,0 +1,9 @@
+principal,signal,last_activity_days
+alice@contoso.test,exchange,0
+alice@contoso.test,sharepoint,0
+alice@contoso.test,teams,2
+alice@contoso.test,copilot,0
+bob.guest@contoso.test,exchange,92
+bob.guest@contoso.test,sharepoint,92
+bob.guest@contoso.test,teams,92
+bob.guest@contoso.test,copilot,61

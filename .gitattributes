@@ -70,6 +70,15 @@ tests/fixtures/ps_conformance/demo-playbook.jsonl.manifest.json text eol=lf
 tests/fixtures/ps_conformance/demo-practice-review.html text eol=lf
 # Cross-engine conformance golden fixture (PowerShell Phase 5c: full HTML report).
 tests/fixtures/ps_conformance/demo-report.html text eol=lf
+# PowerShell Phase 6b live-collector golden fixtures (Graph). These CSVs +
+# their _input/* source files are byte-compared against the Python
+# generator output in tests/test_ps_live_collector_fixtures.py. Without
+# an LF pin a Windows clone (core.autocrlf=true on the hosted runner)
+# rewrites the CSVs to CRLF and the byte-compare fails Windows-only.
+# Subsequent Phase 6c/6d/6e collectors will add arm/, github/, ado/
+# subtrees under the same parent — the recursive glob below covers them.
+tests/fixtures/live_collectors/**/*.csv text eol=lf
+tests/fixtures/live_collectors/**/*.json text eol=lf
 
 # Repo-wide line-ending policy (issue #81) — pin LF endings for all
 # source code, data, and doc files to eliminate spurious whitespace

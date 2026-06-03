@@ -1,0 +1,4 @@
+principal,display_name,user_type,account_enabled,job_title,department,mailbox_size_gb,last_sign_in_days
+alice@contoso.test,Alice,member,true,Engineer,Engineering,1.0,2
+bob.guest@contoso.test,Bob Guest,guest,false,,,2.0,92
+svc-app@contoso.test,Svc App,service,true,Automation,Platform,,

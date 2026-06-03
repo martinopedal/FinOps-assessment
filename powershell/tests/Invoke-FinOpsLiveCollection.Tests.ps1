@@ -18,10 +18,10 @@ AfterAll {
 }
 
 Describe 'Invoke-FinOpsLiveCollection' {
-    It 'throws NotImplementedException for each surface after guard passes' {
+    It 'throws NotImplementedException for Arm, GitHub, and Ado after guard passes' {
         $jwt = 'eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJhdWQiOiJodHRwczovL2dyYXBoLm1pY3Jvc29mdC5jb20iLCJzY3AiOiJVc2VyLlJlYWQuQWxsIn0.sig'
         $secure = New-TestSecureString -Value $jwt
-        foreach ($surface in @('Graph', 'Arm', 'GitHub', 'Ado')) {
+        foreach ($surface in @('Arm', 'GitHub', 'Ado')) {
             { Invoke-FinOpsLiveCollection -Surface $surface -OutputPath 'out' -Token $secure -AllowUnknownScopes } |
                 Should -Throw -ExceptionType ([System.NotImplementedException])
         }
@@ -83,6 +83,33 @@ Describe 'Invoke-FinOpsLiveCollection' {
 
             { Invoke-FinOpsLiveCollection -Surface Arm -OutputPath 'out' -AllowUnknownScopes } | Should -Throw
             [object]::ReferenceEquals($auth, $script:captured) | Should -BeTrue
+        }
+    }
+
+    It 'dispatches Graph to Get-FinOpsGraphCollector and surfaces worker summary' {
+        InModuleScope FinOpsAssess {
+            $auth = [pscustomobject]@{
+                AccessToken = (New-TestSecureString -Value 'token')
+                Source      = 'scope'
+            }
+
+            Mock Get-FinOpsAccessToken { $auth }
+            Mock Assert-FinOpsReadOnlyScope {}
+            Mock Get-FinOpsGraphCollector {
+                [pscustomobject]@{
+                    FilesWritten = @('users.csv', 'license_assignments.csv', 'usage.csv')
+                    RowCounts    = [ordered]@{
+                        users               = 1
+                        license_assignments = 2
+                        usage               = 3
+                    }
+                }
+            }
+
+            $result = Invoke-FinOpsLiveCollection -Surface Graph -OutputPath 'out'
+            $result.FilesWritten | Should -Be @('users.csv', 'license_assignments.csv', 'usage.csv')
+            $result.RowCounts.users | Should -Be 1
+            Assert-MockCalled Get-FinOpsGraphCollector -Times 1 -Exactly
         }
     }
 }
