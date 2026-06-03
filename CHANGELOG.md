@@ -7,6 +7,17 @@ release.
 
 ## Unreleased
 
+### Added
+
+- **PowerShell Gallery release workflow (Phase 7b).**
+  Added tag-triggered `.github/workflows/ps-release.yml` for `ps-v*` tags:
+  validate → environment-gated publish → 15-minute propagation-aware smoke test
+  → GitHub release announce. Publishing uses `Publish-PSResource` with
+  `PSGALLERY_API_KEY` sourced only from the `psgallery` GitHub Environment.
+  The workflow enforces tag-vs-manifest matching plus CHANGELOG readiness via
+  shared `scripts/Test-ReleaseReadiness.ps1` functions exercised directly by
+  Pester tests.
+
 ## [0.1.0] — 2026-06-03
 
 ### Added

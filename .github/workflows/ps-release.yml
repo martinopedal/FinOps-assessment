@@ -1,0 +1,220 @@
+name: PSGallery Release
+# Tag-triggered only; intentionally excluded from ci.yml required-checks summary.
+
+on:
+  push:
+    tags:
+      - 'ps-v*'
+
+concurrency:
+  group: ps-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout tagged commit
+        # actions/checkout v4.3.1
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+      - name: Verify readiness file exists
+        shell: pwsh
+        run: |
+          if ($PSVersionTable.PSVersion -notlike '7.4.*') {
+            throw "Expected PowerShell 7.4.x, got $($PSVersionTable.PSVersion)."
+          }
+          if (-not (Test-Path -LiteralPath 'powershell/tests/FinOpsAssess.PSGalleryReadiness.Tests.ps1')) {
+            throw 'Phase 7a readiness file missing. Cannot validate release.'
+          }
+      - name: Verify release-readiness functions load
+        shell: pwsh
+        run: |
+          . ./scripts/Test-ReleaseReadiness.ps1
+      - name: Validate tag vs manifest
+        shell: pwsh
+        run: |
+          . ./scripts/Test-ReleaseReadiness.ps1
+          Test-ReleaseTagMatchesManifest -TagName '${{ github.ref_name }}' -ManifestPath './powershell/FinOpsAssess/FinOpsAssess.psd1'
+      - name: Validate CHANGELOG section
+        shell: pwsh
+        run: |
+          . ./scripts/Test-ReleaseReadiness.ps1
+          $version = Test-ReleaseTagVersion -TagName '${{ github.ref_name }}'
+          Test-ReleaseChangelogSection -ChangelogPath './CHANGELOG.md' -Version $version
+      - name: Validate module manifest
+        shell: pwsh
+        run: Test-ModuleManifest -Path './powershell/FinOpsAssess/FinOpsAssess.psd1'
+      - name: Run Pester suite
+        shell: pwsh
+        run: Invoke-Pester -Path powershell/tests -Output Detailed -CI
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          $issues = Invoke-ScriptAnalyzer -Path powershell -Recurse -Settings powershell/PSScriptAnalyzerSettings.psd1 -Severity Error,Warning
+          if ($issues) {
+            $issues
+            throw 'PSScriptAnalyzer failures detected.'
+          }
+      - name: Run Python validation gates
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev,live]
+          ruff check .
+          ruff format --check .
+          python -m pytest -q
+          finops-assess validate
+          python scripts/generate_ps_data_projection.py --check
+          python scripts/generate_ps_focus_fixtures.py --check
+          python scripts/generate_ps_playbook_fixtures.py --check
+          python scripts/generate_ps_live_collector_fixtures.py --check
+
+  publish:
+    needs: validate
+    runs-on: ubuntu-24.04
+    environment: psgallery
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout tagged commit
+        # actions/checkout v4.3.1
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - name: Publish to PSGallery
+        shell: pwsh
+        env:
+          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+        run: |
+          if ($PSVersionTable.PSVersion -notlike '7.4.*') {
+            throw "Expected PowerShell 7.4.x, got $($PSVersionTable.PSVersion)."
+          }
+          $ErrorActionPreference = 'Stop'
+          $WarningPreference     = 'SilentlyContinue'
+          $VerbosePreference     = 'SilentlyContinue'
+          $DebugPreference       = 'SilentlyContinue'
+          $InformationPreference = 'SilentlyContinue'
+          $ProgressPreference    = 'SilentlyContinue'
+          try {
+            Publish-PSResource -Path ./powershell/FinOpsAssess -Repository PSGallery -ApiKey $env:PSGALLERY_API_KEY -Confirm:$false
+          } catch {
+            $probe = Find-PSResource -Name FinOpsAssess -Repository PSGallery -Version 0.1.0 -ErrorAction SilentlyContinue
+            if ($null -ne $probe) {
+              Write-Error 'Publish-PSResource failed; package version appears discoverable.'
+            } else {
+              Write-Error 'Publish-PSResource failed; package version not discoverable.'
+            }
+            exit 1
+          }
+
+  smoke-test:
+    needs: publish
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Wait for PSGallery propagation and install
+        shell: pwsh
+        run: |
+          if ($PSVersionTable.PSVersion -notlike '7.4.*') {
+            throw "Expected PowerShell 7.4.x, got $($PSVersionTable.PSVersion)."
+          }
+          $version = '${{ github.ref_name }}' -replace '^ps-v', ''
+          $maxAttempts = 15
+          $delaySeconds = 60
+          $installed = $false
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            try {
+              if ($version -match '-') {
+                Install-PSResource FinOpsAssess -Version $version -Repository PSGallery -Prerelease -TrustRepository -Reinstall -ErrorAction Stop
+              } else {
+                Install-PSResource FinOpsAssess -Version $version -Repository PSGallery -TrustRepository -Reinstall -ErrorAction Stop
+              }
+              $installed = $true
+              break
+            } catch {
+              if ($attempt -lt $maxAttempts) {
+                Start-Sleep -Seconds $delaySeconds
+              }
+            }
+          }
+
+          if (-not $installed) {
+            throw "FinOpsAssess $version did not become installable within $($maxAttempts * $delaySeconds) seconds."
+          }
+      - name: Verify module basics
+        shell: pwsh
+        run: |
+          Import-Module FinOpsAssess -Force
+          $info = Get-FinOpsInfo
+          if ($info.ScopeGuard.Enforced -ne 'all-surfaces') {
+            throw "Expected ScopeGuard.Enforced='all-surfaces', got '$($info.ScopeGuard.Enforced)'."
+          }
+
+          $expectedSurfaces = @('Graph', 'AzureResourceManager', 'GitHub', 'AzureDevOps')
+          foreach ($surface in $expectedSurfaces) {
+            if (-not $info.ScopeGuard.EnforcedBySurface.$surface) {
+              throw "Expected EnforcedBySurface.$surface=`$true."
+            }
+          }
+
+          $commandCount = (Get-Command -Module FinOpsAssess | Select-Object -ExpandProperty Name).Count
+          if ($commandCount -ne 9) {
+            throw "Expected 9 exported cmdlets, got $commandCount."
+          }
+
+  announce:
+    needs: smoke-test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout tagged commit
+        # actions/checkout v4.3.1
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - name: Extract CHANGELOG section
+        id: changelog
+        shell: pwsh
+        run: |
+          if ($PSVersionTable.PSVersion -notlike '7.4.*') {
+            throw "Expected PowerShell 7.4.x, got $($PSVersionTable.PSVersion)."
+          }
+          $version = '${{ github.ref_name }}' -replace '^ps-v', ''
+          $content = Get-Content -LiteralPath './CHANGELOG.md' -Raw -Encoding UTF8
+          $escapedVersion = [regex]::Escape($version)
+          $pattern = "(?ms)^##\s+\[$escapedVersion\]\s*[—-]\s*.+?\r?\n(?<body>.*?)(?=^##\s|\z)"
+          $match = [regex]::Match($content, $pattern)
+          if (-not $match.Success) {
+            throw "Unable to find CHANGELOG section for version $version."
+          }
+
+          $notes = $match.Groups['body'].Value.Trim()
+          if ([string]::IsNullOrWhiteSpace($notes)) {
+            $notes = "- No notes provided."
+          }
+
+          Add-Content -Path $env:GITHUB_OUTPUT -Value 'notes<<EOF'
+          Add-Content -Path $env:GITHUB_OUTPUT -Value $notes
+          Add-Content -Path $env:GITHUB_OUTPUT -Value 'EOF'
+      - name: Create GitHub release
+        # actions/github-script v7.1.0
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
+        env:
+          CHANGELOG_NOTES: ${{ steps.changelog.outputs.notes }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tag = context.ref.replace('refs/tags/', '');
+            const version = tag.replace(/^ps-v/, '');
+            const prerelease = version.includes('-');
+            await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tag,
+              target_commitish: context.sha,
+              name: `FinOpsAssess ${version} (PowerShell)`,
+              body: process.env.CHANGELOG_NOTES,
+              prerelease
+            });
