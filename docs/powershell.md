@@ -49,6 +49,43 @@ For full operator guidance, see the install section in [`README.md`](../README.m
 Import-Module ./powershell/FinOpsAssess/FinOpsAssess.psd1 -Force
 ```
 
+## Releasing to PowerShell Gallery (operator runbook)
+
+### One-time GitHub setup
+
+1. Create a GitHub Environment named `psgallery`.
+2. Add environment secret `PSGALLERY_API_KEY` (PowerShell Gallery NuGet key scoped to `FinOpsAssess` push only, with expiry).
+3. Set required reviewers to `martinopedal` for the `psgallery` environment.
+4. Set the environment deployment tag restriction to `ps-v*`.
+5. Configure GitHub repository tag protection for `ps-v*` so only admins can create/push release tags.
+6. Keep environment wait timer at `0` (approval is the gate).
+
+### Release ritual
+
+1. Ensure `powershell/FinOpsAssess/FinOpsAssess.psd1` `ModuleVersion` and Python `__version__` remain lockstep.
+2. Add release notes in `CHANGELOG.md` under the target version heading; keep `## Unreleased` empty/stub.
+3. Merge to `main`.
+4. Create and push the release tag:
+   ```powershell
+   git tag -a ps-v0.1.0 -m "FinOpsAssess PowerShell Gallery release 0.1.0"
+   git push origin ps-v0.1.0
+   ```
+5. Approve the `psgallery` environment prompt in GitHub Actions.
+
+### API key rotation
+
+1. Generate a new PowerShell Gallery API key scoped for `FinOpsAssess` publishing.
+2. Update `PSGALLERY_API_KEY` in the `psgallery` GitHub Environment.
+3. Revoke the old key in PowerShell Gallery.
+
+### Failure recovery
+
+- `publish` failure probe: run `Find-PSResource FinOpsAssess -Repository PSGallery -Version 0.1.0`.
+- If the version landed despite a publish failure: re-run `smoke-test` and `announce` from the GitHub UI.
+- If it did not land: bump version, update changelog/version metadata, create a new `ps-v*` tag, and release again.
+  PSGallery does not allow republishing the same version.
+- If `smoke-test` times out on first release, wait for PSGallery propagation and re-run the job from GitHub UI.
+
 ## Cmdlet parity matrix
 
 | Python subcommand        | PowerShell cmdlet            | Phase 0 status                    |

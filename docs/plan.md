@@ -199,10 +199,12 @@ stage-4 reverses it.
 The shipped milestone history has moved to [`CHANGELOG.md`](../CHANGELOG.md).
 Future delivery tracking lives in GitHub issues with a `squad:*` label.
 
-Phase 7 status: **7a (PowerShell module manifest hygiene + PSGallery readiness test) is shipped**.
-Phase 7b (tag-triggered release workflow) is tracked as a separate PR. The first PSGallery version
-remains `0.1.0` because the PowerShell manifest `ModuleVersion` is lockstep-tested against Python
-`__version__`.
+Phase 7 status: **complete (7a + 7b shipped)**.
+The tag-triggered PowerShell Gallery release workflow (`.github/workflows/ps-release.yml`)
+is now in place for `ps-v*` tags with validate → environment-gated publish → smoke-test → announce.
+The first PSGallery version remains `0.1.0` because the PowerShell manifest `ModuleVersion` is
+lockstep-tested against Python `__version__`. Operator setup and recovery steps live in
+[`docs/powershell.md`](powershell.md) under the PSGallery runbook.
 
 ---
 
