@@ -42,7 +42,8 @@ function Invoke-FinOpsTriage {
     $inputReportPath = (Resolve-Path -LiteralPath $InputReport).Path
     $outputDirectoryPath = (Resolve-Path -LiteralPath $OutputDirectory).Path
 
-    $source = Get-Content -LiteralPath $inputReportPath -Raw -Encoding utf8 | ConvertFrom-Json -DateKind String
+    $rawReport = Get-Content -LiteralPath $inputReportPath -Raw -Encoding utf8
+    $source = ConvertFrom-FinOpsReportJson -Json $rawReport
     $triage = Build-FinOpsTriage -Report $source -SourcePath $inputReportPath -CopilotHelper 'disabled'
 
     if ($Format -in @('json', 'both')) {

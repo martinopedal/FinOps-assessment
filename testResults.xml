@@ -1,0 +1,217 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<test-results xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="nunit_schema_2.5.xsd" name="Pester" total="92" errors="0" failures="0" not-run="0" inconclusive="0" ignored="0" skipped="0" invalid="0" date="2026-06-03" time="15:45:04">
+  <environment cwd="C:\git\FinOps-assessment-triage" clr-version="10.0.8" nunit-version="2.5.8.0" machine-name="DESKTOP-ILS5UVV" user-domain="REDMOND" platform="Microsoft Windows 11 Enterprise|C:\WINDOWS|\Device\Harddisk0\Partition3" os-version="10.0.26200" user="martinopedal" />
+  <culture-info current-culture="nb-NO" current-uiculture="nb-NO" />
+  <test-suite type="TestFixture" name="Pester" executed="True" result="Success" success="True" time="19.3601" asserts="0" description="Pester">
+    <results>
+      <test-suite type="TestFixture" name="C:\git\FinOps-assessment-triage\powershell\tests\FinOpsAssess.Tests.ps1" executed="True" result="Success" success="True" time="5.6993" asserts="0" description="C:\git\FinOps-assessment-triage\powershell\tests\FinOpsAssess.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="FinOpsAssess module surface" executed="True" result="Success" success="True" time="0.4686" asserts="0" description="FinOpsAssess module surface">
+            <results>
+              <test-case description="exports exactly the expected public functions" name="FinOpsAssess module surface.exports exactly the expected public functions" time="0.3143" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="declares PowerShell 7.2+ as the minimum supported version" name="FinOpsAssess module surface.declares PowerShell 7.2+ as the minimum supported version" time="0.0239" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Get-FinOpsInfo" executed="True" result="Success" success="True" time="0.6423" asserts="0" description="Get-FinOpsInfo">
+            <results>
+              <test-case description="reports a module version that matches the manifest" name="Get-FinOpsInfo.reports a module version that matches the manifest" time="0.0197" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="advertises a read-only posture with the scope guard available but not yet enforced" name="Get-FinOpsInfo.advertises a read-only posture with the scope guard available but not yet enforced" time="0.023" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="reports structured scope-guard coverage including the honest ARM limitation" name="Get-FinOpsInfo.reports structured scope-guard coverage including the honest ARM limitation" time="0.0237" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="lists the four in-scope surfaces" name="Get-FinOpsInfo.lists the four in-scope surfaces" time="0.0279" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Version lock between the PowerShell module and the Python package" executed="True" result="Success" success="True" time="0.6841" asserts="0" description="Version lock between the PowerShell module and the Python package">
+            <results>
+              <test-case description="manifest ModuleVersion equals the Python __version__" name="Version lock between the PowerShell module and the Python package.manifest ModuleVersion equals the Python __version__" time="0.0224" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Test-FinOpsConfiguration" executed="True" result="Success" success="True" time="0.8027" asserts="0" description="Test-FinOpsConfiguration">
+            <results>
+              <test-case description="returns a successful structured result inside the repo tree" name="Test-FinOpsConfiguration.returns a successful structured result inside the repo tree" time="0.1049" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Read-only tripwire: no mutation-shaped code in the module" executed="True" result="Success" success="True" time="1.0295" asserts="0" description="Read-only tripwire: no mutation-shaped code in the module">
+            <results>
+              <test-case description="contains no forbidden patterns in module source" name="Read-only tripwire: no mutation-shaped code in the module.contains no forbidden patterns in module source" time="0.1369" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="counter-tripwire: the ONLY file carrying the .ReadWrite. literal is the policy file" name="Read-only tripwire: no mutation-shaped code in the module.counter-tripwire: the ONLY file carrying the .ReadWrite. literal is the policy file" time="0.0644" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Read-only scope guard: write/admin scopes are refused" executed="True" result="Success" success="True" time="1.5236" asserts="0" description="Read-only scope guard: write/admin scopes are refused">
+            <results>
+              <test-case description="refuses a Graph delegated write scope (scp)" name="Read-only scope guard: write/admin scopes are refused.refuses a Graph delegated write scope (scp)" time="0.1389" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="refuses a Graph application write role (roles)" name="Read-only scope guard: write/admin scopes are refused.refuses a Graph application write role (roles)" time="0.0439" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="refuses a mixed read+write token (write wins)" name="Read-only scope guard: write/admin scopes are refused.refuses a mixed read+write token (write wins)" time="0.0213" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="refuses .AccessAsUser.All (write capability without the word Write)" name="Read-only scope guard: write/admin scopes are refused.refuses .AccessAsUser.All (write capability without the word Write)" time="0.0191" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="refuses Mail.Send (mutation that does not say Write)" name="Read-only scope guard: write/admin scopes are refused.refuses Mail.Send (mutation that does not say Write)" time="0.023" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="refuses full_access_as_app (Exchange full mailbox)" name="Read-only scope guard: write/admin scopes are refused.refuses full_access_as_app (Exchange full mailbox)" time="0.0249" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="refuses an Azure DevOps write scope" name="Read-only scope guard: write/admin scopes are refused.refuses an Azure DevOps write scope" time="0.0221" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="refuses GitHub classic write/admin scopes" name="Read-only scope guard: write/admin scopes are refused.refuses GitHub classic write/admin scopes" time="0.0884" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="refuses GitHub public_repo (read/write on public repos)" name="Read-only scope guard: write/admin scopes are refused.refuses GitHub public_repo (read/write on public repos)" time="0.037" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="refuses GitHub repo:status (read/write on commit statuses)" name="Read-only scope guard: write/admin scopes are refused.refuses GitHub repo:status (read/write on commit statuses)" time="0.0407" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Read-only scope guard: read-only credentials pass" executed="True" result="Success" success="True" time="1.7014" asserts="0" description="Read-only scope guard: read-only credentials pass">
+            <results>
+              <test-case description="passes a Graph read-only delegated token" name="Read-only scope guard: read-only credentials pass.passes a Graph read-only delegated token" time="0.0268" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="passes a Graph read-only application token" name="Read-only scope guard: read-only credentials pass.passes a Graph read-only application token" time="0.0286" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="passes GitHub read-only scopes" name="Read-only scope guard: read-only credentials pass.passes GitHub read-only scopes" time="0.0418" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="passes an Azure DevOps read scope" name="Read-only scope guard: read-only credentials pass.passes an Azure DevOps read scope" time="0.0217" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="classifies the surface from the audience claim" name="Read-only scope guard: read-only credentials pass.classifies the surface from the audience claim" time="0.026" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Read-only scope guard: fail-closed on unknown / insufficient claims" executed="True" result="Success" success="True" time="1.9903" asserts="0" description="Read-only scope guard: fail-closed on unknown / insufficient claims">
+            <results>
+              <test-case description="refuses an ARM token (read-only not provable from claims)" name="Read-only scope guard: fail-closed on unknown / insufficient claims.refuses an ARM token (read-only not provable from claims)" time="0.025" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="refuses an unrecognised scope by default (fail-closed)" name="Read-only scope guard: fail-closed on unknown / insufficient claims.refuses an unrecognised scope by default (fail-closed)" time="0.0635" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="refuses an empty granted-scope list (e.g. fine-grained PAT)" name="Read-only scope guard: fail-closed on unknown / insufficient claims.refuses an empty granted-scope list (e.g. fine-grained PAT)" time="0.0374" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="refuses a token-shaped string passed as a scope" name="Read-only scope guard: fail-closed on unknown / insufficient claims.refuses a token-shaped string passed as a scope" time="0.0387" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="-AllowUnknownScopes downgrades unknown to a warning but still passes" name="Read-only scope guard: fail-closed on unknown / insufficient claims.-AllowUnknownScopes downgrades unknown to a warning but still passes" time="0.0375" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="-AllowUnknownScopes does NOT rescue a write scope" name="Read-only scope guard: fail-closed on unknown / insufficient claims.-AllowUnknownScopes does NOT rescue a write scope" time="0.0405" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="rejects a malformed (non-JWT) token" name="Read-only scope guard: fail-closed on unknown / insufficient claims.rejects a malformed (non-JWT) token" time="0.0311" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\git\FinOps-assessment-triage\powershell\tests\Get-FinOpsDataProjection.Tests.ps1" executed="True" result="Success" success="True" time="0.8971" asserts="0" description="C:\git\FinOps-assessment-triage\powershell\tests\Get-FinOpsDataProjection.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="Get-FinOpsDataProjection" executed="True" result="Success" success="True" time="0.3917" asserts="0" description="Get-FinOpsDataProjection">
+            <results>
+              <test-case description="ships the three projection files alongside the module" name="Get-FinOpsDataProjection.ships the three projection files alongside the module" time="0.0212" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="loads via the real module path and returns the three collections" name="Get-FinOpsDataProjection.loads via the real module path and returns the three collections" time="0.0995" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="returns each collection as an array even via single-item assignment" name="Get-FinOpsDataProjection.returns each collection as an array even via single-item assignment" time="0.071" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="loads the expected number of catalogue, persona, and rule entries" name="Get-FinOpsDataProjection.loads the expected number of catalogue, persona, and rule entries" time="0.0505" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="preserves entry shape including resolved defaults" name="Get-FinOpsDataProjection.preserves entry shape including resolved defaults" time="0.0438" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="round-trips non-ASCII (UTF-8) text without corruption" name="Get-FinOpsDataProjection.round-trips non-ASCII (UTF-8) text without corruption" time="0.0502" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="throws a clear error when a projection file is missing" name="Get-FinOpsDataProjection.throws a clear error when a projection file is missing" time="0.0427" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Test-FinOpsConfiguration includes the data projection check" executed="True" result="Success" success="True" time="0.4713" asserts="0" description="Test-FinOpsConfiguration includes the data projection check">
+            <results>
+              <test-case description="reports a passing data-projection check" name="Test-FinOpsConfiguration includes the data projection check.reports a passing data-projection check" time="0.0554" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\git\FinOps-assessment-triage\powershell\tests\Get-FinOpsNormalizedDataset.Tests.ps1" executed="True" result="Success" success="True" time="2.2957" asserts="0" description="C:\git\FinOps-assessment-triage\powershell\tests\Get-FinOpsNormalizedDataset.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="Get-FinOpsNormalizedDataset over the demo tenant" executed="True" result="Success" success="True" time="0.4865" asserts="0" description="Get-FinOpsNormalizedDataset over the demo tenant">
+            <results>
+              <test-case description="produces every NormalizedDataset field" name="Get-FinOpsNormalizedDataset over the demo tenant.produces every NormalizedDataset field" time="0.0225" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="reads the expected record counts" name="Get-FinOpsNormalizedDataset over the demo tenant.reads the expected record counts" time="0.0238" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="emits non-CSV-backed fields as empty lists" name="Get-FinOpsNormalizedDataset over the demo tenant.emits non-CSV-backed fields as empty lists" time="0.017" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="coerces scalar types and nulls correctly" name="Get-FinOpsNormalizedDataset over the demo tenant.coerces scalar types and nulls correctly" time="0.0664" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="reads overrides.yaml as a flat key/value map" name="Get-FinOpsNormalizedDataset over the demo tenant.reads overrides.yaml as a flat key/value map" time="0.0217" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Layer-2 conformance: PowerShell normalised dataset matches the Python golden" executed="True" result="Success" success="True" time="0.7872" asserts="0" description="Layer-2 conformance: PowerShell normalised dataset matches the Python golden">
+            <results>
+              <test-case description="ships the committed golden fixture" name="Layer-2 conformance: PowerShell normalised dataset matches the Python golden.ships the committed golden fixture" time="0.0152" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="deep-equals the Python-generated normalised demo dataset" name="Layer-2 conformance: PowerShell normalised dataset matches the Python golden.deep-equals the Python-generated normalised demo dataset" time="0.2727" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Get-FinOpsNormalizedDataset strict-column contract" executed="True" result="Success" success="True" time="1.725" asserts="0" description="Get-FinOpsNormalizedDataset strict-column contract">
+            <results>
+              <test-case description="rejects an unknown CSV column" name="Get-FinOpsNormalizedDataset strict-column contract.rejects an unknown CSV column" time="0.0766" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="rejects a row with a non-empty cell beyond the header" name="Get-FinOpsNormalizedDataset strict-column contract.rejects a row with a non-empty cell beyond the header" time="0.0652" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="rejects an unparseable boolean" name="Get-FinOpsNormalizedDataset strict-column contract.rejects an unparseable boolean" time="0.0638" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="rejects a value outside the enum (literal)" name="Get-FinOpsNormalizedDataset strict-column contract.rejects a value outside the enum (literal)" time="0.0693" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="rejects a mis-cased literal (pydantic Literal is case-sensitive)" name="Get-FinOpsNormalizedDataset strict-column contract.rejects a mis-cased literal (pydantic Literal is case-sensitive)" time="0.0647" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="enforces numeric lower bounds (ge)" name="Get-FinOpsNormalizedDataset strict-column contract.enforces numeric lower bounds (ge)" time="0.0659" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="rejects a missing required value" name="Get-FinOpsNormalizedDataset strict-column contract.rejects a missing required value" time="0.0637" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="allows fewer cells than the header (treated as empty)" name="Get-FinOpsNormalizedDataset strict-column contract.allows fewer cells than the header (treated as empty)" time="0.0648" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Read-FinOpsOverrides mini-parser" executed="True" result="Success" success="True" time="1.8515" asserts="0" description="Read-FinOpsOverrides mini-parser">
+            <results>
+              <test-case description="rejects nested / non-flat YAML" name="Read-FinOpsOverrides mini-parser.rejects nested / non-flat YAML" time="0.0646" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\git\FinOps-assessment-triage\powershell\tests\Invoke-FinOpsAssessment.Tests.ps1" executed="True" result="Success" success="True" time="8.5816" asserts="0" description="C:\git\FinOps-assessment-triage\powershell\tests\Invoke-FinOpsAssessment.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="Get-FinOpsPersonaAssignment over the demo tenant (layer-2 conformance)" executed="True" result="Success" success="True" time="0.3513" asserts="0" description="Get-FinOpsPersonaAssignment over the demo tenant (layer-2 conformance)">
+            <results>
+              <test-case description="ships the committed persona golden fixture" name="Get-FinOpsPersonaAssignment over the demo tenant (layer-2 conformance).ships the committed persona golden fixture" time="0.0199" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="deep-equals the Python persona-assignment oracle" name="Get-FinOpsPersonaAssignment over the demo tenant (layer-2 conformance).deep-equals the Python persona-assignment oracle" time="0.2844" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="exercises the override, title, and fallback signal paths" name="Get-FinOpsPersonaAssignment over the demo tenant (layer-2 conformance).exercises the override, title, and fallback signal paths" time="0.0345" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Get-FinOpsPersonaAssignment regex + fallback parity" executed="True" result="Success" success="True" time="0.4563" asserts="0" description="Get-FinOpsPersonaAssignment regex + fallback parity">
+            <results>
+              <test-case description="uses case-sensitive matching so a non-(?i) pattern does not over-match" name="Get-FinOpsPersonaAssignment regex + fallback parity.uses case-sensitive matching so a non-(?i) pattern does not over-match" time="0.0305" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="honours an inline (?i) flag like Python does" name="Get-FinOpsPersonaAssignment regex + fallback parity.honours an inline (?i) flag like Python does" time="0.0288" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="treats svc- prefixed principals as service accounts when no stronger signal exists" name="Get-FinOpsPersonaAssignment regex + fallback parity.treats svc- prefixed principals as service accounts when no stronger signal exists" time="0.033" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Build-FinOpsReport + report determinism" executed="True" result="Success" success="True" time="0.966" asserts="0" description="Build-FinOpsReport + report determinism">
+            <results>
+              <test-case description="renders the SOURCE_DATE_EPOCH=0 timestamp identically to Python" name="Build-FinOpsReport + report determinism.renders the SOURCE_DATE_EPOCH=0 timestamp identically to Python" time="0.0453" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="falls back to wall-clock UTC for a malformed epoch (no throw)" name="Build-FinOpsReport + report determinism.falls back to wall-clock UTC for a malformed epoch (no throw)" time="0.036" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="redacts the input path to its leaf when redaction is on" name="Build-FinOpsReport + report determinism.redacts the input path to its leaf when redaction is on" time="0.0363" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="records salt_mode=tenant_stable only when a salt is pinned" name="Build-FinOpsReport + report determinism.records salt_mode=tenant_stable only when a salt is pinned" time="0.2034" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="marks summary.pii_redaction=disabled only when redaction is off" name="Build-FinOpsReport + report determinism.marks summary.pii_redaction=disabled only when redaction is off" time="0.1773" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="JSON report contract (layer-4 schema + layer-5 canonical equality)" executed="True" result="Success" success="True" time="2.209" asserts="0" description="JSON report contract (layer-4 schema + layer-5 canonical equality)">
+            <results>
+              <test-case description="emits LF-only newlines" name="JSON report contract (layer-4 schema + layer-5 canonical equality).emits LF-only newlines" time="0.0159" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="validates against the shared report JSON schema (layer 4)" name="JSON report contract (layer-4 schema + layer-5 canonical equality).validates against the shared report JSON schema (layer 4)" time="0.1033" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="canonical projection byte-equals the Python structural golden (layer 5)" name="JSON report contract (layer-4 schema + layer-5 canonical equality).canonical projection byte-equals the Python structural golden (layer 5)" time="0.5657" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="reports no rules as skipped (M365, Azure, GitHub, ADO rules are all implemented)" name="JSON report contract (layer-4 schema + layer-5 canonical equality).reports no rules as skipped (M365, Azure, GitHub, ADO rules are all implemented)" time="0.0371" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="M365 rule-slice conformance (layer-5 findings + CSV)" executed="True" result="Success" success="True" time="3.2706" asserts="0" description="M365 rule-slice conformance (layer-5 findings + CSV)">
+            <results>
+              <test-case description="ships both committed M365 goldens" name="M365 rule-slice conformance (layer-5 findings + CSV).ships both committed M365 goldens" time="0.0165" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="canonical M365 projection byte-equals the Python findings golden" name="M365 rule-slice conformance (layer-5 findings + CSV).canonical M365 projection byte-equals the Python findings golden" time="0.3181" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="flat CSV byte-equals the Python csv_reporter golden" name="M365 rule-slice conformance (layer-5 findings + CSV).flat CSV byte-equals the Python csv_reporter golden" time="0.0476" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Azure rule-slice conformance (layer-5 findings + CSV)" executed="True" result="Success" success="True" time="4.1763" asserts="0" description="Azure rule-slice conformance (layer-5 findings + CSV)">
+            <results>
+              <test-case description="ships both committed Azure goldens" name="Azure rule-slice conformance (layer-5 findings + CSV).ships both committed Azure goldens" time="0.0152" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="canonical Azure projection byte-equals the Python findings golden" name="Azure rule-slice conformance (layer-5 findings + CSV).canonical Azure projection byte-equals the Python findings golden" time="0.2278" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="flat CSV byte-equals the Python csv_reporter golden" name="Azure rule-slice conformance (layer-5 findings + CSV).flat CSV byte-equals the Python csv_reporter golden" time="0.0599" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Azure findings count matches expected" name="Azure rule-slice conformance (layer-5 findings + CSV).Azure findings count matches expected" time="0.0585" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="Azure rules produce azure surface" name="Azure rule-slice conformance (layer-5 findings + CSV).Azure rules produce azure surface" time="0.0232" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Triage canonical JSON helper parity" executed="True" result="Success" success="True" time="7.4406" asserts="0" description="Triage canonical JSON helper parity">
+            <results>
+              <test-case description="renders known canonical JSON vectors" name="Triage canonical JSON helper parity.renders known canonical JSON vectors" time="0.0344" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="matches Python _finding_ref on a representative finding" name="Triage canonical JSON helper parity.matches Python _finding_ref on a representative finding" time="3.2192" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="Triage conformance (json + csv byte-equal)" executed="True" result="Success" success="True" time="8.0343" asserts="0" description="Triage conformance (json + csv byte-equal)">
+            <results>
+              <test-case description="ships triage golden fixtures" name="Triage conformance (json + csv byte-equal).ships triage golden fixtures" time="0.0139" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="triage json bytes equal the Python golden" name="Triage conformance (json + csv byte-equal).triage json bytes equal the Python golden" time="0.0521" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="triage csv bytes equal the Python golden" name="Triage conformance (json + csv byte-equal).triage csv bytes equal the Python golden" time="0.0447" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\git\FinOps-assessment-triage\powershell\tests\Invoke-FinOpsGitHubAdoRules.Tests.ps1" executed="True" result="Success" success="True" time="1.8865" asserts="0" description="C:\git\FinOps-assessment-triage\powershell\tests\Invoke-FinOpsGitHubAdoRules.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="GitHub rule-slice conformance (layer-5 findings + CSV)" executed="True" result="Success" success="True" time="0.7376" asserts="0" description="GitHub rule-slice conformance (layer-5 findings + CSV)">
+            <results>
+              <test-case description="ships both committed GitHub goldens" name="GitHub rule-slice conformance (layer-5 findings + CSV).ships both committed GitHub goldens" time="0.0158" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="canonical GitHub projection byte-equals the Python findings golden" name="GitHub rule-slice conformance (layer-5 findings + CSV).canonical GitHub projection byte-equals the Python findings golden" time="0.2223" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="flat GitHub CSV byte-equals the Python csv_reporter golden" name="GitHub rule-slice conformance (layer-5 findings + CSV).flat GitHub CSV byte-equals the Python csv_reporter golden" time="0.0638" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="report contains all four GitHub rule_counts" name="GitHub rule-slice conformance (layer-5 findings + CSV).report contains all four GitHub rule_counts" time="0.0227" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+          <test-suite type="TestFixture" name="ADO rule-slice conformance (layer-5 findings + CSV)" executed="True" result="Success" success="True" time="1.4987" asserts="0" description="ADO rule-slice conformance (layer-5 findings + CSV)">
+            <results>
+              <test-case description="ships both committed ADO goldens" name="ADO rule-slice conformance (layer-5 findings + CSV).ships both committed ADO goldens" time="0.0171" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="canonical ADO projection byte-equals the Python findings golden" name="ADO rule-slice conformance (layer-5 findings + CSV).canonical ADO projection byte-equals the Python findings golden" time="0.2527" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="flat ADO CSV byte-equals the Python csv_reporter golden" name="ADO rule-slice conformance (layer-5 findings + CSV).flat ADO CSV byte-equals the Python csv_reporter golden" time="0.0606" asserts="0" success="True" result="Success" executed="True" />
+              <test-case description="report contains all four ADO rule_counts" name="ADO rule-slice conformance (layer-5 findings + CSV).report contains all four ADO rule_counts" time="0.017" asserts="0" success="True" result="Success" executed="True" />
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+    </results>
+  </test-suite>
+</test-results>
