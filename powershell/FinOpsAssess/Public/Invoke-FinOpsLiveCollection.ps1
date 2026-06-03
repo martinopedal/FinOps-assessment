@@ -62,6 +62,15 @@ function Invoke-FinOpsLiveCollectionWorker {
             }
             return Get-FinOpsGitHubCollector @collectorArgs
         }
+        'Ado' {
+            $collectorArgs = @{
+                OutputPath = $OutputPath
+                Auth       = $Auth
+                Org        = $AdoOrg
+                PageLimit  = $PageLimit
+            }
+            return Get-FinOpsAdoCollector @collectorArgs
+        }
         default {
             $null = $Auth, $OutputPath, $TenantId, $SubscriptionId, $GitHubEnterprise, $GitHubOrg, $AdoOrg, $SkipMetrics, $AcceptArmRbacRisk, $PageLimit
             throw [System.NotImplementedException]::new("$Surface collector lands in Phase 6x")
@@ -147,6 +156,24 @@ function Invoke-FinOpsLiveCollection {
                 throw 'GitHub live collection requires -Token or GITHUB_TOKEN.'
             }
             $tokenArgs['Token'] = ConvertTo-FinOpsSecureString -Value $githubToken
+        }
+    } elseif ($Surface -ceq 'Ado') {
+        if ($tokenArgs.ContainsKey('Pat')) {
+            if ($tokenArgs.ContainsKey('Token')) { $tokenArgs.Remove('Token') }
+        } elseif (-not $tokenArgs.ContainsKey('Token')) {
+            $adoPat = [string]$env:AZURE_DEVOPS_PAT
+            $adoToken = [string]$env:AZURE_DEVOPS_TOKEN
+            if (-not [string]::IsNullOrWhiteSpace($adoPat)) {
+                $tokenArgs['Pat'] = ConvertTo-FinOpsSecureString -Value $adoPat
+            } elseif (-not [string]::IsNullOrWhiteSpace($adoToken)) {
+                $tokenArgs['Token'] = ConvertTo-FinOpsSecureString -Value $adoToken
+            } else {
+                throw 'Azure DevOps live collection requires -Pat/-Token or AZURE_DEVOPS_PAT/AZURE_DEVOPS_TOKEN.'
+            }
+        }
+
+        if ([string]::IsNullOrWhiteSpace([string]$AdoOrg)) {
+            throw 'Azure DevOps live collection requires -AdoOrg.'
         }
     } elseif (-not $tokenArgs.ContainsKey('Token') -and -not $tokenArgs.ContainsKey('Pat')) {
         if ($Surface -ceq 'Graph') { $tokenArgs['Scope'] = 'graph' }
@@ -236,5 +263,3 @@ function Invoke-FinOpsLiveCollection {
         RowCounts   = if ($workerResult.RowCounts) { $workerResult.RowCounts } else { [ordered]@{} }
     }
 }
-
-

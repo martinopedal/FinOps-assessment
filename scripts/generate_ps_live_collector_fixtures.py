@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate PowerShell live-collector parity fixtures (graph + arm + github slices)."""
+"""Generate PowerShell live-collector parity fixtures (graph + arm + github + ado slices)."""
 
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from finops_assess.collectors.ado_collector import collect_ado  # noqa: E402
 from finops_assess.collectors.arm_collector import collect_arm  # noqa: E402
 from finops_assess.collectors.github_collector import collect_github  # noqa: E402
 from finops_assess.collectors.graph_collector import collect_graph  # noqa: E402
@@ -37,6 +38,9 @@ _ARM_INPUT_ROOT = _ARM_FIXTURE_ROOT / "_input"
 
 _GITHUB_FIXTURE_ROOT = _REPO_ROOT / "tests" / "fixtures" / "live_collectors" / "github"
 _GITHUB_INPUT_ROOT = _GITHUB_FIXTURE_ROOT / "_input"
+
+_ADO_FIXTURE_ROOT = _REPO_ROOT / "tests" / "fixtures" / "live_collectors" / "ado"
+_ADO_INPUT_ROOT = _ADO_FIXTURE_ROOT / "_input"
 
 
 class _FrozenDateTime(datetime.datetime):
@@ -127,6 +131,19 @@ def _read_github_inputs() -> dict[str, Any]:
         "actions_billing": json.loads(
             (_GITHUB_INPUT_ROOT / "actions_billing.json").read_text(encoding="utf-8")
         ),
+    }
+
+
+def _read_ado_inputs() -> dict[str, Any]:
+    return {
+        "userentitlements": json.loads(
+            (_ADO_INPUT_ROOT / "userentitlements.json").read_text(encoding="utf-8")
+        ),
+        "resourcelimits": json.loads(
+            (_ADO_INPUT_ROOT / "resourcelimits.json").read_text(encoding="utf-8")
+        ),
+        "projects": json.loads((_ADO_INPUT_ROOT / "projects.json").read_text(encoding="utf-8")),
+        "builds": json.loads((_ADO_INPUT_ROOT / "builds.json").read_text(encoding="utf-8")),
     }
 
 
@@ -285,6 +302,43 @@ def _regenerate_github(scratch_dir: Path) -> dict[Path, str]:
     }
 
 
+def _regenerate_ado(scratch_dir: Path) -> dict[Path, str]:
+    inputs = _read_ado_inputs()
+
+    def _side_effect(url: str, **kwargs: Any) -> MagicMock:
+        _ = kwargs
+        lower = url.lower()
+        if "vsaex.dev.azure.com" in lower and "userentitlements" in lower:
+            if "continuationtoken=page-2" in lower:
+                return _make_json_resp(inputs["userentitlements"]["page_2"])
+            return _make_json_resp(inputs["userentitlements"]["page_1"])
+        if "/_apis/distributedtask/resourcelimits" in lower:
+            return _make_json_resp(inputs["resourcelimits"])
+        if "/_apis/projects" in lower:
+            return _make_json_resp(inputs["projects"])
+        if "/_apis/build/builds" in lower:
+            project_id = lower.split("dev.azure.com/contoso/")[1].split("/")[0]
+            payload = (inputs["builds"] or {}).get(project_id, {"value": []})
+            return _make_json_resp(payload)
+        return _make_json_resp({"value": []})
+
+    with patch("requests.Session") as mock_session_cls:
+        session = MagicMock()
+        session.get.side_effect = _side_effect
+        mock_session_cls.return_value = session
+        collect_ado(
+            scratch_dir,
+            org="contoso",
+            pat="fixture-pat",
+            page_limit=200,
+        )
+
+    return {
+        _ADO_FIXTURE_ROOT / "ado_seats.csv": _lf(scratch_dir / "ado_seats.csv"),
+        _ADO_FIXTURE_ROOT / "ado_orgs.csv": _lf(scratch_dir / "ado_orgs.csv"),
+    }
+
+
 def regenerate() -> dict[Path, str]:
     previous_now = os.environ.get("FINOPS_NOW_OVERRIDE")
     os.environ["FINOPS_NOW_OVERRIDE"] = FIXED_NOW_OVERRIDE
@@ -293,6 +347,7 @@ def regenerate() -> dict[Path, str]:
     graph_scratch = _REPO_ROOT / "scripts" / "_live_collector_fixture_tmp_graph"
     arm_scratch = _REPO_ROOT / "scripts" / "_live_collector_fixture_tmp_arm"
     github_scratch = _REPO_ROOT / "scripts" / "_live_collector_fixture_tmp_github"
+    ado_scratch = _REPO_ROOT / "scripts" / "_live_collector_fixture_tmp_ado"
     try:
         monkeypatch.setattr(
             "finops_assess.collectors.graph_collector.datetime", _FrozenDateTime, raising=True
@@ -313,11 +368,13 @@ def regenerate() -> dict[Path, str]:
         graph_scratch.mkdir(parents=True, exist_ok=True)
         arm_scratch.mkdir(parents=True, exist_ok=True)
         github_scratch.mkdir(parents=True, exist_ok=True)
+        ado_scratch.mkdir(parents=True, exist_ok=True)
 
         expected: dict[Path, str] = {}
         expected.update(_regenerate_graph(graph_scratch))
         expected.update(_regenerate_arm(arm_scratch))
         expected.update(_regenerate_github(github_scratch))
+        expected.update(_regenerate_ado(ado_scratch))
         return expected
     finally:
         monkeypatch.undo()
@@ -344,6 +401,13 @@ def regenerate() -> dict[Path, str]:
                     "github_orgs.csv",
                 ),
             ),
+            (
+                ado_scratch,
+                (
+                    "ado_seats.csv",
+                    "ado_orgs.csv",
+                ),
+            ),
         ):
             for name in names:
                 p = scratch_dir / name
@@ -364,7 +428,7 @@ def _check() -> int:
             rel = path.relative_to(_REPO_ROOT)
             print(f"stale: {rel}; run python scripts/generate_ps_live_collector_fixtures.py")
         return 1
-    print("ok: live collector graph+arm+github fixtures are up-to-date")
+    print("ok: live collector graph+arm+github+ado fixtures are up-to-date")
     return 0
 
 
@@ -379,6 +443,7 @@ def main() -> int:
     _GRAPH_FIXTURE_ROOT.mkdir(parents=True, exist_ok=True)
     _ARM_FIXTURE_ROOT.mkdir(parents=True, exist_ok=True)
     _GITHUB_FIXTURE_ROOT.mkdir(parents=True, exist_ok=True)
+    _ADO_FIXTURE_ROOT.mkdir(parents=True, exist_ok=True)
     for path, content in regenerate().items():
         path.write_text(content, encoding="utf-8", newline="")
         print(f"wrote {path.relative_to(_REPO_ROOT)}")

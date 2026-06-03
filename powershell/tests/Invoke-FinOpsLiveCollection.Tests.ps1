@@ -18,11 +18,29 @@ AfterAll {
 }
 
 Describe 'Invoke-FinOpsLiveCollection' {
-    It 'throws NotImplementedException for Ado after guard passes' {
-        $jwt = 'eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJhdWQiOiJodHRwczovL2dyYXBoLm1pY3Jvc29mdC5jb20iLCJzY3AiOiJVc2VyLlJlYWQuQWxsIn0.sig'
-        $secure = New-TestSecureString -Value $jwt
-        { Invoke-FinOpsLiveCollection -Surface Ado -OutputPath 'out' -Token $secure -AllowUnknownScopes } |
-            Should -Throw -ExceptionType ([System.NotImplementedException])
+    It 'dispatches Ado to Get-FinOpsAdoCollector' {
+        InModuleScope FinOpsAssess {
+            $auth = [pscustomobject]@{
+                AccessToken = (New-TestSecureString -Value 'token')
+                Source      = 'caller-bearer'
+            }
+            Mock Get-FinOpsAccessToken { $auth }
+            Mock Assert-FinOpsReadOnlyScope {}
+            Mock Get-FinOpsAdoCollector {
+                [pscustomobject]@{
+                    FilesWritten = @('ado_seats.csv', 'ado_orgs.csv')
+                    RowCounts    = [ordered]@{
+                        ado_seats = 2
+                        ado_orgs  = 1
+                    }
+                }
+            }
+
+            $result = Invoke-FinOpsLiveCollection -Surface Ado -OutputPath 'out' -AdoOrg 'contoso' -Token (New-TestSecureString -Value 'token')
+            $result.FilesWritten | Should -Be @('ado_seats.csv', 'ado_orgs.csv')
+            $result.RowCounts.ado_seats | Should -Be 2
+            Assert-MockCalled Get-FinOpsAdoCollector -Times 1 -Exactly
+        }
     }
 
     It 'calls Get-FinOpsAccessToken then Assert-FinOpsReadOnlyScope before any API request' {

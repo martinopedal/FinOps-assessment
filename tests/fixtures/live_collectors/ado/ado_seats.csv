@@ -1,0 +1,4 @@
+principal,org,seat_type,sku_id,last_activity_days,only_stakeholder_activity,last_test_plan_days
+alice@contoso.test,contoso,basic,ADO.BASIC,2,true,
+bob@contoso.test,contoso,stakeholder,ADO.STAKEHOLDER,31,false,
+carol@contoso.test,contoso,basic_plus_test,ADO.BASIC_TEST,12,false,
