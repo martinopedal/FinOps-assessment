@@ -1,4 +1,4 @@
-"""Drift gate tests for PowerShell live collector fixtures (graph + arm slices)."""
+"""Drift gate tests for PowerShell live collector fixtures (graph + arm + github slices)."""
 
 from __future__ import annotations
 
@@ -13,6 +13,8 @@ _GRAPH_FIXTURE_DIR = _REPO_ROOT / "tests" / "fixtures" / "live_collectors" / "gr
 _GRAPH_INPUT_DIR = _GRAPH_FIXTURE_DIR / "_input"
 _ARM_FIXTURE_DIR = _REPO_ROOT / "tests" / "fixtures" / "live_collectors" / "arm"
 _ARM_INPUT_DIR = _ARM_FIXTURE_DIR / "_input"
+_GITHUB_FIXTURE_DIR = _REPO_ROOT / "tests" / "fixtures" / "live_collectors" / "github"
+_GITHUB_INPUT_DIR = _GITHUB_FIXTURE_DIR / "_input"
 
 
 def _load_generator() -> object:
@@ -34,6 +36,8 @@ def test_live_collector_fixtures_are_committed() -> None:
     assert (_ARM_FIXTURE_DIR / "azure_reservations.csv").is_file()
     assert (_ARM_FIXTURE_DIR / "azure_log_workspaces.csv").is_file()
     assert (_ARM_FIXTURE_DIR / "azure_benefit_recommendations.csv").is_file()
+    assert (_GITHUB_FIXTURE_DIR / "github_seats.csv").is_file()
+    assert (_GITHUB_FIXTURE_DIR / "github_orgs.csv").is_file()
 
 
 def test_live_collector_fixtures_match_regenerated_bytes() -> None:
@@ -57,6 +61,17 @@ def test_live_collector_input_json_is_valid() -> None:
     assert isinstance(subscriptions_payload, dict)
     assert "value" in subscriptions_payload
 
+    consumed_payload = json.loads(
+        (_GITHUB_INPUT_DIR / "consumed_licenses.json").read_text(encoding="utf-8")
+    )
+    assert isinstance(consumed_payload, list)
+
+    copilot_payload = json.loads(
+        (_GITHUB_INPUT_DIR / "copilot_seats.json").read_text(encoding="utf-8")
+    )
+    assert isinstance(copilot_payload, dict)
+    assert "seats" in copilot_payload
+
 
 def test_live_collector_fixtures_use_lf_only() -> None:
     fixtures = (
@@ -67,6 +82,8 @@ def test_live_collector_fixtures_use_lf_only() -> None:
         _ARM_FIXTURE_DIR / "azure_reservations.csv",
         _ARM_FIXTURE_DIR / "azure_log_workspaces.csv",
         _ARM_FIXTURE_DIR / "azure_benefit_recommendations.csv",
+        _GITHUB_FIXTURE_DIR / "github_seats.csv",
+        _GITHUB_FIXTURE_DIR / "github_orgs.csv",
     )
     for fixture in fixtures:
         assert b"\r\n" not in fixture.read_bytes()

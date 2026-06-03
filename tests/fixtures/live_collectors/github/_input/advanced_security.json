@@ -1,0 +1,14 @@
+{
+  "contoso": {
+    "total_advanced_security_committers": 5,
+    "repos": [
+      {
+        "advanced_security_committers_breakdown": [
+          {
+            "results_count": 3
+          }
+        ]
+      }
+    ]
+  }
+}

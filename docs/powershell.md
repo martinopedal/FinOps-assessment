@@ -534,8 +534,8 @@ Pester via `[System.IO.File]::ReadAllBytes`.
 ## Live mode (Phase 6)
 
 Phase 6a shipped the shared live-collector base and the public dispatcher
-`Invoke-FinOpsLiveCollection`. Phase 6b now ships the Graph collector and
-Phase 6c adds the ARM collector; GitHub/Azure DevOps remain staged in 6d–6e.
+`Invoke-FinOpsLiveCollection`. Phase 6b ships Graph, Phase 6c ships ARM,
+and Phase 6d now ships GitHub; Azure DevOps remains staged in 6e.
 
 ```powershell
 Invoke-FinOpsLiveCollection -Surface Graph -OutputPath ./live
@@ -547,7 +547,7 @@ Invoke-FinOpsLiveCollection -Surface Graph -OutputPath ./live
 |---|---|---|
 | Graph | `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, and one of `AZURE_FEDERATED_TOKEN_FILE` or `AZURE_CLIENT_SECRET` | Uses `Get-FinOpsAccessToken -Scope graph` |
 | ARM | `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, one of `AZURE_FEDERATED_TOKEN_FILE` or `AZURE_CLIENT_SECRET`, and `FINOPS_ACCEPT_ARM_RBAC_RISK=1` | Requires `-AcceptArmRbacRisk` + env two-key consent |
-| GitHub | `GITHUB_TOKEN` (or pass `-Token`/`-Pat`) | Classic scopes are validated by the read-only guard |
+| GitHub | `GITHUB_TOKEN` (or pass `-Token`) | Classic PAT scopes are certifiable from `X-OAuth-Scopes`; fine-grained PATs are operator-attested with `-AllowUnknownScopes` |
 | Azure DevOps | `AZURE_DEVOPS_TOKEN` or `AZURE_DEVOPS_PAT` (or pass `-Token`/`-Pat`) | Bearer or PAT paths both flow through the guard |
 
 ### Graph (Microsoft 365)
@@ -569,8 +569,8 @@ Invoke-FinOpsLiveCollection -Surface Graph -OutputPath ./live
   `AuditLog.Read.All` (required for `signInActivity`).
 
 `Get-FinOpsInfo` now reports per-surface posture truthfully:
-Graph + ARM enforcement are live (`ScopeGuard.Enforced = 'partial'`,
-`RuntimeScopeGuardEnforced = $true`) while GitHub/ADO stay unshipped.
+Graph + ARM + GitHub enforcement are live (`ScopeGuard.Enforced = 'partial'`,
+`RuntimeScopeGuardEnforced = $true`) while Azure DevOps stays unshipped.
 
 ### Azure Resource Manager (ARM)
 
@@ -600,6 +600,26 @@ and `azure_benefit_recommendations.csv`.
   - `GET .../providers/microsoft.insights/metrics?...` (unless `-SkipMetrics`)
   - `GET https://prices.azure.com/api/retail/prices?...` (**anonymous**, no
     `Authorization` header; public read-only pricing metadata).
+
+### GitHub
+
+`Invoke-FinOpsLiveCollection -Surface GitHub` writes:
+`github_seats.csv` and `github_orgs.csv`.
+
+- **Required environment/auth inputs:** `GITHUB_TOKEN` or `-Token <SecureString>`.
+- **Required read-only classic PAT scopes:** `read:enterprise`, `read:org`,
+  `read:packages`.
+- **Classic vs fine-grained posture:**
+  - classic PATs expose `X-OAuth-Scopes` and are certifiable by
+    `Assert-FinOpsReadOnlyScope -Scope`.
+  - fine-grained PATs expose no scope header; default is fail-closed.
+    Use `-AllowUnknownScopes` only as explicit operator attestation.
+- **Endpoints called:**
+  - `GET https://api.github.com/` (scope probe; reads `X-OAuth-Scopes`)
+  - `GET /enterprises/{ent}/consumed-licenses` (paged via `Link rel="next"`)
+  - `GET /enterprises/{ent}/copilot/billing/seats` (paged via `Link rel="next"`)
+  - `GET /orgs/{org}/settings/billing/advanced-security` (404→null)
+  - `GET /orgs/{org}/settings/billing/actions` (404→null)
 
 ### SecureString posture (honest note)
 

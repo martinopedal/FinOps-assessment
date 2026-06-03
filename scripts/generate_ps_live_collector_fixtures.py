@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate PowerShell live-collector parity fixtures (graph + arm slices)."""
+"""Generate PowerShell live-collector parity fixtures (graph + arm + github slices)."""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from finops_assess.collectors.arm_collector import collect_arm  # noqa: E402
+from finops_assess.collectors.github_collector import collect_github  # noqa: E402
 from finops_assess.collectors.graph_collector import collect_graph  # noqa: E402
 
 FIXED_NOW = datetime.datetime(2025, 6, 1, tzinfo=datetime.UTC)
@@ -33,6 +34,9 @@ _GRAPH_COPILOT_CSV = _GRAPH_INPUT_ROOT / "copilot_usage.csv"
 
 _ARM_FIXTURE_ROOT = _REPO_ROOT / "tests" / "fixtures" / "live_collectors" / "arm"
 _ARM_INPUT_ROOT = _ARM_FIXTURE_ROOT / "_input"
+
+_GITHUB_FIXTURE_ROOT = _REPO_ROOT / "tests" / "fixtures" / "live_collectors" / "github"
+_GITHUB_INPUT_ROOT = _GITHUB_FIXTURE_ROOT / "_input"
 
 
 class _FrozenDateTime(datetime.datetime):
@@ -107,6 +111,23 @@ def _read_arm_inputs() -> dict[str, Any]:
     for name in names:
         payload[name] = json.loads((_ARM_INPUT_ROOT / f"{name}.json").read_text(encoding="utf-8"))
     return payload
+
+
+def _read_github_inputs() -> dict[str, Any]:
+    return {
+        "consumed_licenses": json.loads(
+            (_GITHUB_INPUT_ROOT / "consumed_licenses.json").read_text(encoding="utf-8")
+        ),
+        "copilot_seats": json.loads(
+            (_GITHUB_INPUT_ROOT / "copilot_seats.json").read_text(encoding="utf-8")
+        ),
+        "advanced_security": json.loads(
+            (_GITHUB_INPUT_ROOT / "advanced_security.json").read_text(encoding="utf-8")
+        ),
+        "actions_billing": json.loads(
+            (_GITHUB_INPUT_ROOT / "actions_billing.json").read_text(encoding="utf-8")
+        ),
+    }
 
 
 def _assert_patches_active() -> None:
@@ -223,6 +244,47 @@ def _regenerate_arm(scratch_dir: Path) -> dict[Path, str]:
     }
 
 
+def _regenerate_github(scratch_dir: Path) -> dict[Path, str]:
+    inputs = _read_github_inputs()
+
+    def _side_effect(url: str, **kwargs: Any) -> MagicMock:
+        _ = kwargs
+        lower = url.lower()
+        if "consumed-licenses" in lower:
+            return _make_json_resp(inputs["consumed_licenses"])
+        if "copilot/billing/seats" in lower:
+            return _make_json_resp(inputs["copilot_seats"])
+        if "/settings/billing/advanced-security" in lower:
+            org = lower.split("/orgs/")[1].split("/")[0]
+            payload = (inputs["advanced_security"] or {}).get(org)
+            if payload is None:
+                return _make_json_resp({}, status=404)
+            return _make_json_resp(payload)
+        if "/settings/billing/actions" in lower:
+            org = lower.split("/orgs/")[1].split("/")[0]
+            payload = (inputs["actions_billing"] or {}).get(org)
+            if payload is None:
+                return _make_json_resp({}, status=404)
+            return _make_json_resp(payload)
+        return _make_json_resp([])
+
+    with patch("requests.Session") as mock_session_cls:
+        session = MagicMock()
+        session.get.side_effect = _side_effect
+        mock_session_cls.return_value = session
+        collect_github(
+            scratch_dir,
+            enterprise="contoso",
+            orgs=["contoso"],
+            token="fixture-token",
+        )
+
+    return {
+        _GITHUB_FIXTURE_ROOT / "github_seats.csv": _lf(scratch_dir / "github_seats.csv"),
+        _GITHUB_FIXTURE_ROOT / "github_orgs.csv": _lf(scratch_dir / "github_orgs.csv"),
+    }
+
+
 def regenerate() -> dict[Path, str]:
     previous_now = os.environ.get("FINOPS_NOW_OVERRIDE")
     os.environ["FINOPS_NOW_OVERRIDE"] = FIXED_NOW_OVERRIDE
@@ -230,6 +292,7 @@ def regenerate() -> dict[Path, str]:
     monkeypatch = MonkeyPatch()
     graph_scratch = _REPO_ROOT / "scripts" / "_live_collector_fixture_tmp_graph"
     arm_scratch = _REPO_ROOT / "scripts" / "_live_collector_fixture_tmp_arm"
+    github_scratch = _REPO_ROOT / "scripts" / "_live_collector_fixture_tmp_github"
     try:
         monkeypatch.setattr(
             "finops_assess.collectors.graph_collector.datetime", _FrozenDateTime, raising=True
@@ -249,10 +312,12 @@ def regenerate() -> dict[Path, str]:
 
         graph_scratch.mkdir(parents=True, exist_ok=True)
         arm_scratch.mkdir(parents=True, exist_ok=True)
+        github_scratch.mkdir(parents=True, exist_ok=True)
 
         expected: dict[Path, str] = {}
         expected.update(_regenerate_graph(graph_scratch))
         expected.update(_regenerate_arm(arm_scratch))
+        expected.update(_regenerate_github(github_scratch))
         return expected
     finally:
         monkeypatch.undo()
@@ -270,6 +335,13 @@ def regenerate() -> dict[Path, str]:
                     "azure_reservations.csv",
                     "azure_log_workspaces.csv",
                     "azure_benefit_recommendations.csv",
+                ),
+            ),
+            (
+                github_scratch,
+                (
+                    "github_seats.csv",
+                    "github_orgs.csv",
                 ),
             ),
         ):
@@ -292,7 +364,7 @@ def _check() -> int:
             rel = path.relative_to(_REPO_ROOT)
             print(f"stale: {rel}; run python scripts/generate_ps_live_collector_fixtures.py")
         return 1
-    print("ok: live collector graph+arm fixtures are up-to-date")
+    print("ok: live collector graph+arm+github fixtures are up-to-date")
     return 0
 
 
@@ -306,6 +378,7 @@ def main() -> int:
 
     _GRAPH_FIXTURE_ROOT.mkdir(parents=True, exist_ok=True)
     _ARM_FIXTURE_ROOT.mkdir(parents=True, exist_ok=True)
+    _GITHUB_FIXTURE_ROOT.mkdir(parents=True, exist_ok=True)
     for path, content in regenerate().items():
         path.write_text(content, encoding="utf-8", newline="")
         print(f"wrote {path.relative_to(_REPO_ROOT)}")

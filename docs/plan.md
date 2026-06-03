@@ -390,7 +390,7 @@ GitHub, ADO) from v0.6.0 (#71). Use `--surface azure` for v0.5.0 Azure-only beha
 | Entra ID / M365 | Microsoft Graph v1.0 (`users`, `subscribedSkus`, `reports/*`, `auditLogs/signIns`) | Workload-identity OIDC; app registration with `*.Read.All` |
 | Azure resources | ARM (`Microsoft.Compute`, `Microsoft.Network`, `Microsoft.Storage`, etc.) | Same federated credential, `Reader` role |
 | Azure cost | Cost Management `query` API + Retail Prices API (anon) | Same |
-| GitHub | REST `/enterprises/{ent}/consumed-licenses`, `/enterprises/{ent}/copilot/billing/seats`, `/orgs/{org}/audit-log` | GitHub App with read-only Enterprise + Org perms |
+| GitHub | REST `/enterprises/{ent}/consumed-licenses`, `/enterprises/{ent}/copilot/billing/seats`, `/orgs/{org}/settings/billing/advanced-security`, `/orgs/{org}/settings/billing/actions` | GitHub App / token with read-only Enterprise + Org billing perms |
 | Azure DevOps | `vsaex` user-entitlements, `_apis/userentitlements`, `pipelines` usage | PAT (read) or Entra-backed service principal |
 
 All collectors emit the same normalized record shape so the rule engine
@@ -400,10 +400,13 @@ is source-agnostic.
 Phase 6a (`Get-FinOpsAccessToken`, `Invoke-FinOpsRestRequest` GET-only,
 `Write-FinOpsCollectorCsv`, `Get-FinOpsNow`, `Invoke-FinOpsLiveCollection`
 dispatcher + scope-guard call-site). Phase 6b shipped the Graph collector
-(`Get-FinOpsGraphCollector` + dispatcher Graph arm), and Phase 6c ships the
+(`Get-FinOpsGraphCollector` + dispatcher Graph arm), Phase 6c shipped the
 ARM collector (`Get-FinOpsArmCollector` + dispatcher Arm arm with two-key
-operator-attested consent). Remaining per-surface collectors follow in
-Phases 6d–6e.
+operator-attested consent), and Phase 6d now ships the GitHub collector
+(`Get-FinOpsGitHubCollector` + dispatcher GitHub arm using `X-OAuth-Scopes`
+probe classification for classic PATs and fail-closed fine-grained PAT
+handling unless `-AllowUnknownScopes` is operator-attested). Remaining
+per-surface collector work is Phase 6e (Azure DevOps).
 
 ---
 
