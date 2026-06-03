@@ -9,6 +9,18 @@ release.
 
 ### Added
 
+- **PowerShell GitHub live collector parity (Phase 6d).**
+  Added `Get-FinOpsGitHubCollector` and wired
+  `Invoke-FinOpsLiveCollection -Surface GitHub` to emit
+  `github_seats.csv` and `github_orgs.csv` with normalized parity against
+  Python fixtures. The GitHub dispatcher now probes
+  `X-OAuth-Scopes` and enforces `Assert-FinOpsReadOnlyScope -Scope`
+  for classic PATs, while fine-grained PATs remain fail-closed by
+  default and require explicit operator attestation via
+  `-AllowUnknownScopes`. `Get-FinOpsInfo` flips
+  `EnforcedBySurface.GitHub = $true` while overall enforcement stays
+  partial until Azure DevOps ships.
+
 - **PowerShell ARM live collector parity (Phase 6c).**
   Added `Get-FinOpsArmCollector` and wired
   `Invoke-FinOpsLiveCollection -Surface Arm` to emit

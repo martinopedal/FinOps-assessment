@@ -1,0 +1,3 @@
+principal,org,seat_type,sku_id,last_activity_days,copilot_acceptances_30d
+alice,contoso,enterprise,GH.ENTERPRISE,882,
+alice,contoso,copilot_business,GH.COPILOT_BUSINESS,882,0

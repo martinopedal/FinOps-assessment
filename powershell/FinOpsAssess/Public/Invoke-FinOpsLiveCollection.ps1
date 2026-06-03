@@ -52,6 +52,16 @@ function Invoke-FinOpsLiveCollectionWorker {
             }
             return Get-FinOpsArmCollector @collectorArgs
         }
+        'GitHub' {
+            $collectorArgs = @{
+                OutputPath = $OutputPath
+                Auth       = $Auth
+                Enterprise = $GitHubEnterprise
+                Org        = $GitHubOrg
+                PageLimit  = $PageLimit
+            }
+            return Get-FinOpsGitHubCollector @collectorArgs
+        }
         default {
             $null = $Auth, $OutputPath, $TenantId, $SubscriptionId, $GitHubEnterprise, $GitHubOrg, $AdoOrg, $SkipMetrics, $AcceptArmRbacRisk, $PageLimit
             throw [System.NotImplementedException]::new("$Surface collector lands in Phase 6x")
@@ -103,6 +113,16 @@ function Invoke-FinOpsLiveCollection {
         [int] $PageLimit = 500
     )
 
+    function ConvertTo-FinOpsSecureString {
+        param([Parameter(Mandatory)] [AllowEmptyString()] [string] $Value)
+        $secure = [System.Security.SecureString]::new()
+        foreach ($char in $Value.ToCharArray()) {
+            $secure.AppendChar($char)
+        }
+        $secure.MakeReadOnly()
+        return $secure
+    }
+
     $tokenArgs = @{}
     if ($PSBoundParameters.ContainsKey('TenantId')) { $tokenArgs['TenantId'] = $TenantId }
     if ($PSBoundParameters.ContainsKey('Token')) { $tokenArgs['Token'] = $Token }
@@ -117,12 +137,21 @@ function Invoke-FinOpsLiveCollection {
         }
     }
 
-    if (-not $tokenArgs.ContainsKey('Token') -and -not $tokenArgs.ContainsKey('Pat')) {
+    if ($Surface -ceq 'GitHub') {
+        if ($tokenArgs.ContainsKey('Pat')) {
+            throw 'GitHub live collection accepts bearer tokens only. Use -Token (SecureString) or set GITHUB_TOKEN.'
+        }
+        if (-not $tokenArgs.ContainsKey('Token')) {
+            $githubToken = [string]$env:GITHUB_TOKEN
+            if ([string]::IsNullOrWhiteSpace($githubToken)) {
+                throw 'GitHub live collection requires -Token or GITHUB_TOKEN.'
+            }
+            $tokenArgs['Token'] = ConvertTo-FinOpsSecureString -Value $githubToken
+        }
+    } elseif (-not $tokenArgs.ContainsKey('Token') -and -not $tokenArgs.ContainsKey('Pat')) {
         if ($Surface -ceq 'Graph') { $tokenArgs['Scope'] = 'graph' }
         elseif ($Surface -ceq 'Arm') { $tokenArgs['Scope'] = 'arm' }
-        else {
-            throw "Surface $Surface requires -Token or -Pat in Phase 6a."
-        }
+        else { throw "Surface $Surface requires -Token or -Pat in Phase 6a." }
     }
 
     $auth = Get-FinOpsAccessToken @tokenArgs
@@ -130,7 +159,42 @@ function Invoke-FinOpsLiveCollection {
     $guardArgs = @{}
     if ($AllowUnknownScopes) { $guardArgs['AllowUnknownScopes'] = $true }
 
-    if ([string]$auth.Source -ceq 'caller-pat') {
+    if ($Surface -ceq 'GitHub') {
+        $plainToken = $null
+        try {
+            $plainToken = [System.Net.NetworkCredential]::new('', $auth.AccessToken).Password
+            $probeHeaders = @{
+                Accept                 = 'application/vnd.github+json'
+                'X-GitHub-Api-Version' = '2022-11-28'
+                Authorization          = "Bearer $plainToken"
+            }
+            $response = Invoke-WebRequest -Method Get -Uri 'https://api.github.com/' -Headers $probeHeaders -ErrorAction Stop
+            $probeResponseHeaders = if ($response -and $response.PSObject.Properties.Name -contains 'Headers') {
+                $response.Headers
+            } else {
+                $null
+            }
+            $scopeHeader = $null
+            if ($probeResponseHeaders -is [System.Collections.IDictionary]) {
+                if ($probeResponseHeaders.Contains('X-OAuth-Scopes')) { $scopeHeader = [string]$probeResponseHeaders['X-OAuth-Scopes'] }
+                elseif ($probeResponseHeaders.Contains('x-oauth-scopes')) { $scopeHeader = [string]$probeResponseHeaders['x-oauth-scopes'] }
+            }
+            $scopes = @()
+            if (-not [string]::IsNullOrWhiteSpace($scopeHeader)) {
+                $scopes = @(
+                    $scopeHeader -split ',' |
+                    ForEach-Object { [string]$_ } |
+                    ForEach-Object { $_.Trim() } |
+                    Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+                )
+            }
+            $guardArgs['Scope'] = $scopes
+            $guardArgs['Surface'] = 'GitHub'
+            Assert-FinOpsReadOnlyScope @guardArgs
+        } finally {
+            $plainToken = $null
+        }
+    } elseif ([string]$auth.Source -ceq 'caller-pat') {
         $guardSurface = if ($Surface -ceq 'Ado') { 'AzureDevOps' } else { 'GitHub' }
         $guardArgs['Scope'] = @()
         $guardArgs['Surface'] = $guardSurface
@@ -172,4 +236,5 @@ function Invoke-FinOpsLiveCollection {
         RowCounts   = if ($workerResult.RowCounts) { $workerResult.RowCounts } else { [ordered]@{} }
     }
 }
+
 

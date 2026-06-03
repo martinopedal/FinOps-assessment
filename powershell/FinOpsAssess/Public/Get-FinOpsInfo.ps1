@@ -8,8 +8,8 @@ function Get-FinOpsInfo {
         subcommand. Performs no cloud calls itself. The read-only scope
         guard (Assert-FinOpsReadOnlyScope / Test-FinOpsReadOnlyScope) is
         enforced at the credential boundary by live collectors as they
-        ship per surface (Graph + ARM in Phase 6b/6c; GitHub/ADO in
-        Phase 6d/6e). The structured ``ScopeGuard`` field reports per-surface
+        ship per surface (Graph + ARM + GitHub in Phase 6b/6c/6d; ADO in
+        Phase 6e). The structured ``ScopeGuard`` field reports per-surface
         coverage and enforcement honestly via the ``EnforcedBySurface``
         sub-map, the tri-state ``Enforced`` ('partial' until all four
         surfaces ship), and a ``PostureStatement`` that is rewritten each
@@ -45,7 +45,7 @@ function Get-FinOpsInfo {
         EnforcedBySurface = [pscustomobject]@{
             Graph                = $true
             AzureResourceManager = $true
-            GitHub               = $false
+            GitHub               = $true
             AzureDevOps          = $false
         }
         Coverage      = [pscustomobject]@{
@@ -71,7 +71,6 @@ function Get-FinOpsInfo {
             $scopeGuard.EnforcedBySurface.AzureDevOps
         ) -contains $true
         ScopeGuard                 = $scopeGuard
-        PostureStatement           = 'Read-only by design. Live collectors enforce Assert-FinOpsReadOnlyScope at the credential boundary for: Graph, AzureResourceManager. Not yet shipped/enforced: GitHub, AzureDevOps. ARM read-only is operator-attested via two-key consent (-AcceptArmRbacRisk + FINOPS_ACCEPT_ARM_RBAC_RISK=1); RBAC cannot be proven from token claims. Do not treat as security-complete until all four surfaces ship.'
+        PostureStatement           = 'Read-only by design. Live collectors enforce Assert-FinOpsReadOnlyScope at the credential boundary for: Graph, AzureResourceManager, GitHub. Not yet shipped/enforced: AzureDevOps. ARM read-only is operator-attested via two-key consent (-AcceptArmRbacRisk + FINOPS_ACCEPT_ARM_RBAC_RISK=1); RBAC cannot be proven from token claims. GitHub fine-grained PATs are operator-attested when -AllowUnknownScopes is used; classic PATs are certifiable via X-OAuth-Scopes. Do not treat as security-complete until all four surfaces ship.'
     }
 }
-

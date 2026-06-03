@@ -18,13 +18,11 @@ AfterAll {
 }
 
 Describe 'Invoke-FinOpsLiveCollection' {
-    It 'throws NotImplementedException for GitHub and Ado after guard passes' {
+    It 'throws NotImplementedException for Ado after guard passes' {
         $jwt = 'eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJhdWQiOiJodHRwczovL2dyYXBoLm1pY3Jvc29mdC5jb20iLCJzY3AiOiJVc2VyLlJlYWQuQWxsIn0.sig'
         $secure = New-TestSecureString -Value $jwt
-        foreach ($surface in @('GitHub', 'Ado')) {
-            { Invoke-FinOpsLiveCollection -Surface $surface -OutputPath 'out' -Token $secure -AllowUnknownScopes } |
-                Should -Throw -ExceptionType ([System.NotImplementedException])
-        }
+        { Invoke-FinOpsLiveCollection -Surface Ado -OutputPath 'out' -Token $secure -AllowUnknownScopes } |
+            Should -Throw -ExceptionType ([System.NotImplementedException])
     }
 
     It 'calls Get-FinOpsAccessToken then Assert-FinOpsReadOnlyScope before any API request' {
