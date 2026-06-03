@@ -144,6 +144,10 @@ jobs:
           $config.Output.Verbosity = 'Detailed'
           Invoke-Pester -Configuration $config
 
+      - name: Cmdlet docs drift check (PlatyPS)
+        shell: pwsh
+        run: ./scripts/generate_ps_cmdlet_docs.ps1 -Check
+
   required-checks:
     # Single summary check published as the literal context
     # `required-checks`. Branch protection on `main` requires this one

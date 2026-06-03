@@ -17,6 +17,22 @@ function Export-FinOpsFocusAligned {
     .PARAMETER Surface
         Optional surface filter. Defaults to all four surfaces: m365, azure,
         github, and ado.
+
+    .OUTPUTS
+        System.Collections.Specialized.OrderedDictionary. An ordered
+        dictionary with the keys ``csv_path`` and ``manifest_path``.
+
+    .EXAMPLE
+        Export-FinOpsFocusAligned -InputReport ./report.json -OutputPath ./focus.csv
+
+        Writes a FOCUS-aligned advisory CSV for all four surfaces plus
+        ./focus.csv.manifest.json.
+
+    .EXAMPLE
+        Export-FinOpsFocusAligned -InputReport ./report.json -OutputPath ./azure-focus.csv -Surface azure
+
+        Writes a FOCUS-aligned advisory export filtered to the Azure surface
+        only.
     #>
     [CmdletBinding()]
     [OutputType([System.Collections.Specialized.OrderedDictionary])]

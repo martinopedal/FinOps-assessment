@@ -42,6 +42,9 @@ Requires PowerShell 7.2+ (Core). Windows PowerShell 5.1 is unsupported.
 The PowerShell module version tracks the Python package `__version__` in lockstep.
 
 For full operator guidance, see the install section in [`README.md`](../README.md).
+Full per-cmdlet reference: [docs/cmdlets/README.md](cmdlets/README.md) (auto-generated
+from comment-based help via Microsoft.PowerShell.PlatyPS; regenerate with
+`pwsh scripts/generate_ps_cmdlet_docs.ps1`, drift-checked in CI).
 
 ### From source (development)
 
