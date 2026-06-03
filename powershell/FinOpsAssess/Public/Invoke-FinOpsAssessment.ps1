@@ -8,14 +8,16 @@ function Invoke-FinOpsAssessment {
         normalises the input CSVs, assigns personas, runs the rule engine,
         and emits the report (JSON) or the flat findings CSV.
 
-        PARTIAL PARITY: only the eight ``M365.*`` rules and the CSV reporter
-        are ported natively (Phase 2). Azure/GitHub/ADO rules are not yet
-        implemented, so their ids appear in ``summary.rules_skipped_no_impl``
-        and never produce findings. The M365 rule slice, the read CSV
-        contract, the normalised dataset, the persona engine, run metadata,
-        deterministic PII redaction, and the JSON/CSV reporters are at
-        cross-engine conformance parity. Use the Python engine for
-        non-M365 findings until the later rule phases land.
+        All four rule surfaces are ported natively and run by default:
+        ``M365.*`` (Phase 2), ``AZURE.*`` (Phase 3), and ``GITHUB.*`` /
+        ``ADO.*`` (Phase 4), so ``summary.rules_skipped_no_impl`` is empty
+        for the bundled catalogue. The read CSV contract, the normalised
+        dataset, the persona engine, run metadata, deterministic PII
+        redaction, and the JSON, CSV, and HTML (``-Format html``) reporters
+        are at cross-engine conformance parity. Companion cmdlets cover the
+        advisory triage (``Invoke-FinOpsTriage``) and FOCUS-aligned advisory
+        export (``Export-FinOpsFocusAligned``). The playbook/ticket reporter
+        is not yet ported; use the Python engine for that output.
 
     .PARAMETER InputDirectory
         Directory containing the normalised CSVs (and optional overrides.yaml).

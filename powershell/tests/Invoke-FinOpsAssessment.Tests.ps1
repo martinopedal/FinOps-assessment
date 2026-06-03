@@ -13,6 +13,8 @@ BeforeAll {
     $script:AzureCsvGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-report-azure.csv'
     $script:TriageJsonGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-triage.json'
     $script:TriageCsvGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-triage.csv'
+    $script:FocusCsvGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-focus.csv'
+    $script:FocusManifestGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-focus.csv.manifest.json'
     $script:PracticeReviewHtmlGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-practice-review.html'
     $script:HtmlReportGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-report.html'
     $script:FixedSalt = 'conformance-fixed-salt-v1'
@@ -451,6 +453,92 @@ Describe 'Triage conformance (json + csv byte-equal)' {
         $expected = [System.IO.File]::ReadAllBytes($script:TriageCsvGolden)
         [System.Linq.Enumerable]::SequenceEqual($actual, $expected) |
             Should -BeTrue -Because 'PS triage CSV must byte-match Python triage_reporter output'
+    }
+}
+
+Describe 'FOCUS-aligned AdvisoryFindingKey parity' {
+
+    It 'matches Python advisory_finding_key on a representative finding' {
+        $pythonOk = $false
+        try {
+            & python -c 'import finops_assess.reporters.focus_aligned' 2>$null
+            $pythonOk = ($LASTEXITCODE -eq 0)
+        } catch {
+            $pythonOk = $false
+        }
+        if (-not $pythonOk) {
+            Set-ItResult -Skipped -Because 'the finops_assess Python package is not importable in this environment (the byte-equal golden tests already guard parity)'
+            return
+        }
+        InModuleScope FinOpsAssess {
+            $finding = [ordered]@{
+                rule_id       = 'M365.UNUSED_LICENSE_30D'
+                surface       = 'm365'
+                principal     = 'user@contoso.example'
+                current_sku   = 'M365_E5'
+                recommendation = 'Consider downgrading to M365 E3.'
+                severity      = 'medium'
+                estimated_monthly_savings_usd = 36.0
+                evidence      = [ordered]@{
+                    days_since_last_activity = 47
+                    confidence_score = 0.75
+                    ordered_list = @('first', 'second')
+                    nested = [ordered]@{ flag = $true; notes = ('f' + [string] [char] 0x00F8 + 'lge') }
+                }
+            }
+            $psKey = Get-FinOpsFocusAdvisoryFindingKey -Finding $finding
+            $json = ConvertTo-Json $finding -Depth 32 -Compress
+            $pyKey = (& python -c "import json,sys; from finops_assess.reporters.focus_aligned import advisory_finding_key; print(advisory_finding_key(json.loads(sys.argv[1])))" $json).Trim()
+            $psKey | Should -BeExactly $pyKey
+        }
+    }
+}
+
+Describe 'FOCUS-aligned conformance (csv + manifest byte-equal)' {
+
+    BeforeAll {
+        $script:FocusOutDir = Join-Path ([System.IO.Path]::GetTempPath()) ("ps-focus-{0}" -f ([guid]::NewGuid()))
+        $script:FocusSourceReport = Join-Path $script:FocusOutDir 'demo-report.json'
+        $script:FocusCsvOut = Join-Path $script:FocusOutDir 'focus.csv'
+        $script:FocusManifestOut = "$($script:FocusCsvOut).manifest.json"
+        $prevEpoch = $env:SOURCE_DATE_EPOCH
+        $prevNow = $env:FINOPS_NOW_OVERRIDE
+        try {
+            $env:SOURCE_DATE_EPOCH = '0'
+            $env:FINOPS_NOW_OVERRIDE = $script:FixedNow
+            Invoke-FinOpsAssessment -InputDirectory $script:SamplesDir -OutputPath $script:FocusSourceReport `
+                -PiiSalt $script:FixedSalt -Format json -WarningAction SilentlyContinue | Out-Null
+            Export-FinOpsFocusAligned -InputReport $script:FocusSourceReport -OutputPath $script:FocusCsvOut | Out-Null
+        } finally {
+            if ($null -eq $prevEpoch) { Remove-Item Env:SOURCE_DATE_EPOCH -ErrorAction SilentlyContinue }
+            else { $env:SOURCE_DATE_EPOCH = $prevEpoch }
+            if ($null -eq $prevNow) { Remove-Item Env:FINOPS_NOW_OVERRIDE -ErrorAction SilentlyContinue }
+            else { $env:FINOPS_NOW_OVERRIDE = $prevNow }
+        }
+    }
+
+    AfterAll {
+        Remove-Item -LiteralPath $script:FocusSourceReport -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $script:FocusOutDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    It 'ships focus golden fixtures' {
+        Test-Path -LiteralPath $script:FocusCsvGolden | Should -BeTrue
+        Test-Path -LiteralPath $script:FocusManifestGolden | Should -BeTrue
+    }
+
+    It 'focus csv bytes equal the Python golden' {
+        $actual = [System.IO.File]::ReadAllBytes($script:FocusCsvOut)
+        $expected = [System.IO.File]::ReadAllBytes($script:FocusCsvGolden)
+        [System.Linq.Enumerable]::SequenceEqual($actual, $expected) |
+            Should -BeTrue -Because 'PS focus-aligned CSV must byte-match Python focus_aligned output'
+    }
+
+    It 'focus manifest bytes equal the Python golden' {
+        $actual = [System.IO.File]::ReadAllBytes($script:FocusManifestOut)
+        $expected = [System.IO.File]::ReadAllBytes($script:FocusManifestGolden)
+        [System.Linq.Enumerable]::SequenceEqual($actual, $expected) |
+            Should -BeTrue -Because 'PS focus-aligned manifest must byte-match Python focus_aligned output'
     }
 }
 
