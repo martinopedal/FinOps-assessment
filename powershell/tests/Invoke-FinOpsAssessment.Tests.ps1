@@ -374,6 +374,17 @@ Describe 'Triage canonical JSON helper parity' {
     }
 
     It 'matches Python _finding_ref on a representative finding' {
+        $pythonOk = $false
+        try {
+            & python -c 'import finops_assess.triage' 2>$null
+            $pythonOk = ($LASTEXITCODE -eq 0)
+        } catch {
+            $pythonOk = $false
+        }
+        if (-not $pythonOk) {
+            Set-ItResult -Skipped -Because 'the finops_assess Python package is not importable in this environment (the byte-equal golden tests already guard parity)'
+            return
+        }
         InModuleScope FinOpsAssess {
             $finding = [ordered]@{
                 rule_id                        = 'AZ.IDLE_VM_14D'
