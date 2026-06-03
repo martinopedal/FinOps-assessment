@@ -11,19 +11,20 @@ AfterAll {
 }
 
 Describe 'Get-FinOpsDataProjection' {
-    It 'ships the three projection files alongside the module' {
-        foreach ($name in 'catalog.json', 'personas.json', 'rules.json') {
+    It 'ships the projection files alongside the module' {
+        foreach ($name in 'catalog.json', 'personas.json', 'rules.json', 'schema.json', 'playbooks.json') {
             Test-Path -LiteralPath (Join-Path $script:DataRoot $name) -PathType Leaf |
                 Should -BeTrue -Because "$name must be packaged with the module"
         }
     }
 
-    It 'loads via the real module path and returns the three collections' {
+    It 'loads via the real module path and returns projection collections' {
         InModuleScope FinOpsAssess {
             $data = Get-FinOpsDataProjection
             $data.PSObject.Properties.Name | Should -Contain 'Catalog'
             $data.PSObject.Properties.Name | Should -Contain 'Personas'
             $data.PSObject.Properties.Name | Should -Contain 'Rules'
+            $data.PSObject.Properties.Name | Should -Contain 'Playbooks'
         }
     }
 

@@ -42,6 +42,7 @@ function Get-FinOpsDataProjection {
         Personas = 'personas.json'
         Rules    = 'rules.json'
         Schema   = 'schema.json'
+        Playbooks = 'playbooks.json'
     }
 
     $result = [ordered]@{}
@@ -67,9 +68,9 @@ function Get-FinOpsDataProjection {
         }
 
         # Force an array even for a single-element projection so downstream
-        # code can always rely on .Count and pipeline-array semantics. The
-        # schema projection is a single object, not a list, so keep it as-is.
-        if ($key -eq 'Schema') {
+        # code can always rely on .Count and pipeline-array semantics.
+        # schema/playbooks projections are objects, not lists, so keep as-is.
+        if ($key -in @('Schema', 'Playbooks')) {
             $result[$key] = $parsed
         } else {
             $result[$key] = @($parsed)
