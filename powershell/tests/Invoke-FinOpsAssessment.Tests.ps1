@@ -14,6 +14,7 @@ BeforeAll {
     $script:TriageJsonGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-triage.json'
     $script:TriageCsvGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-triage.csv'
     $script:PracticeReviewHtmlGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-practice-review.html'
+    $script:HtmlReportGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-report.html'
     $script:FixedSalt = 'conformance-fixed-salt-v1'
     $script:FixedNow = '2025-06-01'
     $script:Canonicaliser = Join-Path $script:RepoRoot 'scripts' 'canonicalize_report.py'
@@ -503,6 +504,82 @@ Describe 'ConvertTo-FinOpsHtmlEscaped parity' {
             $value = 'x&<>"''y'
             $actual = ConvertTo-FinOpsHtmlEscaped -Value $value
             $actual | Should -BeExactly 'x&amp;&lt;&gt;&quot;&#x27;y'
+        }
+    }
+
+    Describe 'HTML report conformance (byte-equal)' {
+
+        BeforeAll {
+            $script:HtmlOutDir = Join-Path ([System.IO.Path]::GetTempPath()) ("ps-html-report-{0}" -f ([guid]::NewGuid()))
+            $script:HtmlSourceReport = Join-Path $script:HtmlOutDir 'demo-report.json'
+            $script:HtmlActual = Join-Path $script:HtmlOutDir 'demo-report.actual.html'
+            $prevEpoch = $env:SOURCE_DATE_EPOCH
+            $prevNow = $env:FINOPS_NOW_OVERRIDE
+            try {
+                $env:SOURCE_DATE_EPOCH = '0'
+                $env:FINOPS_NOW_OVERRIDE = $script:FixedNow
+                Invoke-FinOpsAssessment -InputDirectory $script:SamplesDir -OutputPath $script:HtmlSourceReport `
+                    -PiiSalt $script:FixedSalt -Format json -WarningAction SilentlyContinue | Out-Null
+
+                $reportJson = Get-Content -LiteralPath $script:HtmlSourceReport -Raw -Encoding utf8
+                $actualText = InModuleScope FinOpsAssess -Parameters @{ ReportJson = $reportJson } {
+                    param($ReportJson)
+                    $report = ConvertFrom-FinOpsReportJson -Json $ReportJson
+                    ConvertTo-FinOpsHtmlReport -Report $report
+                }
+                [System.IO.File]::WriteAllText(
+                    $script:HtmlActual,
+                    ($actualText -replace "`r`n", "`n"),
+                    (New-Object System.Text.UTF8Encoding($false))
+                )
+            } finally {
+                if ($null -eq $prevEpoch) { Remove-Item Env:SOURCE_DATE_EPOCH -ErrorAction SilentlyContinue }
+                else { $env:SOURCE_DATE_EPOCH = $prevEpoch }
+                if ($null -eq $prevNow) { Remove-Item Env:FINOPS_NOW_OVERRIDE -ErrorAction SilentlyContinue }
+                else { $env:FINOPS_NOW_OVERRIDE = $prevNow }
+            }
+        }
+
+        AfterAll {
+            Remove-Item -LiteralPath $script:HtmlOutDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
+
+        It 'ships full-document html golden fixture' {
+            Test-Path -LiteralPath $script:HtmlReportGolden | Should -BeTrue
+        }
+
+        It 'html report bytes equal the Python golden' {
+            $actual = [System.IO.File]::ReadAllBytes($script:HtmlActual)
+            $expected = [System.IO.File]::ReadAllBytes($script:HtmlReportGolden)
+            [System.Linq.Enumerable]::SequenceEqual($actual, $expected) |
+                Should -BeTrue -Because 'PS full-document HTML must byte-match Python build_html_report output'
+        }
+    }
+
+    Describe 'ConvertTo-FinOpsMarkupSafeEscaped parity' {
+
+        It 'matches MarkupSafe entity choices for all five escaped characters' {
+            InModuleScope FinOpsAssess {
+                $value = 'a&<>"''b'
+                $actual = ConvertTo-FinOpsMarkupSafeEscaped -Value $value
+                $actual | Should -BeExactly 'a&amp;&lt;&gt;&#34;&#39;b'
+            }
+        }
+    }
+
+    Describe 'ConvertTo-FinOpsJinjaTojson parity' {
+
+        It 'matches htmlsafe_json_dumps escaping for angle/amp/apostrophe' {
+            InModuleScope FinOpsAssess {
+                $value = [ordered]@{
+                    k = "a<b>&'z"
+                    n = 3
+                    f = 1.5
+                }
+                $actual = ConvertTo-FinOpsJinjaTojson -InputObject $value -Indent 2
+                $expected = "{`n  `"f`": 1.5,`n  `"k`": `"a\u003cb\u003e\u0026\u0027z`",`n  `"n`": 3`n}"
+                $actual | Should -BeExactly $expected
+            }
         }
     }
 }

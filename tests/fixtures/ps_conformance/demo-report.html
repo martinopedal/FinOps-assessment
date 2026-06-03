@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="finops-assess 0.1.0">
+<meta name="referrer" content="no-referrer">
+<title>FinOps assessment report — 1970-01-01T00:00:00+00:00</title>
+<style>
+  /* Vendored, print-friendly CSS — no remote assets, CSP-safe. */
+  :root {
+    --fg: #1f2328;
+    --muted: #57606a;
+    --border: #d0d7de;
+    --bg: #ffffff;
+    --bg-alt: #f6f8fa;
+    --sev-info: #0969da;
+    --sev-low: #1a7f37;
+    --sev-medium: #bf8700;
+    --sev-high: #cf222e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    margin: 0;
+    padding: 2rem;
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  h1 { font-size: 1.6rem; margin: 0 0 0.25rem 0; }
+  h2 { font-size: 1.2rem; margin: 2rem 0 0.5rem 0; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+  h3 { font-size: 1rem; margin: 1rem 0 0.5rem 0; color: var(--muted); }
+  .meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .meta code { background: var(--bg-alt); padding: 0 0.3rem; border-radius: 3px; }
+  .cards { display: flex; gap: 1rem; flex-wrap: wrap; margin: 1rem 0; }
+  .card { flex: 1 1 180px; border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem 1rem; background: var(--bg-alt); }
+  .card .label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .card .value { font-size: 1.4rem; font-weight: 600; margin-top: 0.25rem; }
+  table { width: 100%; border-collapse: collapse; margin: 0.5rem 0 1.5rem 0; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--bg-alt); font-weight: 600; }
+  tr:hover { background: var(--bg-alt); }
+  .sev { display: inline-block; padding: 0.05rem 0.5rem; border-radius: 10px; font-size: 0.75rem; font-weight: 600; color: white; }
+  .sev-info    { background: var(--sev-info); }
+  .sev-low     { background: var(--sev-low); }
+  .sev-medium  { background: var(--sev-medium); }
+  .sev-high    { background: var(--sev-high); }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85rem; }
+  details { margin: 0.25rem 0; }
+  summary { cursor: pointer; color: var(--muted); }
+  pre { background: var(--bg-alt); border: 1px solid var(--border); border-radius: 4px; padding: 0.6rem; overflow-x: auto; font-size: 0.8rem; margin: 0.4rem 0 0 0; }
+  .pill-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .pill { background: var(--bg-alt); border: 1px solid var(--border); border-radius: 12px; padding: 0.1rem 0.6rem; font-size: 0.8rem; }
+  .empty { color: var(--muted); font-style: italic; padding: 0.5rem 0; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.8rem; }
+  @media print {
+    body { padding: 0.5in; max-width: none; }
+    details { page-break-inside: avoid; }
+    .card { page-break-inside: avoid; }
+    tr   { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>FinOps assessment report</h1>
+    <p class="meta">
+      Generated <code>1970-01-01T00:00:00+00:00</code> by
+      <code>finops-assess 0.1.0</code>
+      &middot; mode <code>read-only</code>
+      &middot; PII redaction <code>on</code>
+      &middot; input <code>&lt;redacted&gt;/samples</code>
+    </p>
+  </header>
+
+  <section>
+    <h2>Summary</h2>
+    <div class="cards">
+      <div class="card"><div class="label">Findings</div><div class="value">40</div></div>
+      <div class="card"><div class="label">Rules fired</div><div class="value">27</div></div>
+      <div class="card"><div class="label">Estimated monthly savings</div><div class="value">$2193.15</div></div>
+      <div class="card"><div class="label">Principals</div><div class="value">11</div></div>
+    </div>
+
+    <h3>Persona distribution</h3>
+    
+      <div class="pill-list">
+        
+          <span class="pill"><span class="mono">developer</span> &middot; 1</span>
+        
+          <span class="pill"><span class="mono">frontline_worker</span> &middot; 1</span>
+        
+          <span class="pill"><span class="mono">guest</span> &middot; 1</span>
+        
+          <span class="pill"><span class="mono">information_worker</span> &middot; 4</span>
+        
+          <span class="pill"><span class="mono">power_user_secure</span> &middot; 2</span>
+        
+          <span class="pill"><span class="mono">service_account</span> &middot; 2</span>
+        
+      </div>
+    
+
+    
+  </section>
+
+  
+    <section>
+      <h2>Microsoft 365</h2>
+      
+      
+        <table>
+          <thead>
+            <tr>
+              <th>Severity</th>
+              <th>Rule</th>
+              <th>Principal</th>
+              <th>Current SKU</th>
+              <th>Recommended SKU</th>
+              <th>Est. savings / mo</th>
+              <th>Recommendation</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td><span class="sev sev-high">high</span></td>
+                <td class="mono">M365.COPILOT_INACTIVE_60D</td>
+                <td class="mono">sha256:11a193bf7f627bbc</td>
+                <td class="mono">M365_COPILOT</td>
+                <td class="mono">—</td>
+                <td>$30.00</td>
+                <td>
+                  sha256:11a193bf7f627bbc has Copilot for M365 assigned but no Copilot interactions in the last 60 days. Reassign the seat.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "copilot_last_activity_days": null,
+  "window_days": 60
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-high">high</span></td>
+                <td class="mono">M365.COPILOT_INACTIVE_60D</td>
+                <td class="mono">sha256:7e1324b27dc4326f</td>
+                <td class="mono">M365_COPILOT</td>
+                <td class="mono">—</td>
+                <td>$30.00</td>
+                <td>
+                  sha256:7e1324b27dc4326f has Copilot for M365 assigned but no Copilot interactions in the last 60 days. Reassign the seat.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "copilot_last_activity_days": null,
+  "window_days": 60
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-high">high</span></td>
+                <td class="mono">M365.DISABLED_USER_LICENSED</td>
+                <td class="mono">sha256:11a193bf7f627bbc</td>
+                <td class="mono">SPE_E3</td>
+                <td class="mono">—</td>
+                <td>$36.00</td>
+                <td>
+                  sha256:11a193bf7f627bbc (accountEnabled = false) still has SPE_E3 assigned. Reclaim the license.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "account_enabled": false
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-high">high</span></td>
+                <td class="mono">M365.DISABLED_USER_LICENSED</td>
+                <td class="mono">sha256:11a193bf7f627bbc</td>
+                <td class="mono">M365_COPILOT</td>
+                <td class="mono">—</td>
+                <td>$30.00</td>
+                <td>
+                  sha256:11a193bf7f627bbc (accountEnabled = false) still has M365_COPILOT assigned. Reclaim the license.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "account_enabled": false
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-high">high</span></td>
+                <td class="mono">M365.UNUSED_LICENSE_30D</td>
+                <td class="mono">sha256:11a193bf7f627bbc</td>
+                <td class="mono">SPE_E3</td>
+                <td class="mono">—</td>
+                <td>$36.00</td>
+                <td>
+                  Remove the SPE_E3 assignment from sha256:11a193bf7f627bbc or step down to a lower-cost SKU. No covered service has recorded activity in the last 30 days.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "checked_signals": [
+    "entra",
+    "exchange",
+    "intune",
+    "office",
+    "sharepoint",
+    "teams"
+  ],
+  "inactivity_window_days": 30,
+  "last_activity_days": {
+    "entra": null,
+    "exchange": null,
+    "intune": null,
+    "office": null,
+    "sharepoint": null,
+    "teams": null
+  }
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-high">high</span></td>
+                <td class="mono">M365.UNUSED_LICENSE_30D</td>
+                <td class="mono">sha256:11a193bf7f627bbc</td>
+                <td class="mono">M365_COPILOT</td>
+                <td class="mono">—</td>
+                <td>$30.00</td>
+                <td>
+                  Remove the M365_COPILOT assignment from sha256:11a193bf7f627bbc or step down to a lower-cost SKU. No covered service has recorded activity in the last 30 days.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "checked_signals": [
+    "copilot"
+  ],
+  "inactivity_window_days": 30,
+  "last_activity_days": {
+    "copilot": null
+  }
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-high">high</span></td>
+                <td class="mono">M365.UNUSED_LICENSE_30D</td>
+                <td class="mono">sha256:7e1324b27dc4326f</td>
+                <td class="mono">M365_COPILOT</td>
+                <td class="mono">—</td>
+                <td>$30.00</td>
+                <td>
+                  Remove the M365_COPILOT assignment from sha256:7e1324b27dc4326f or step down to a lower-cost SKU. No covered service has recorded activity in the last 30 days.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "checked_signals": [
+    "copilot"
+  ],
+  "inactivity_window_days": 30,
+  "last_activity_days": {
+    "copilot": null
+  }
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-high">high</span></td>
+                <td class="mono">M365.UNUSED_LICENSE_30D</td>
+                <td class="mono">sha256:a604460dbab73777</td>
+                <td class="mono">SPE_E3</td>
+                <td class="mono">—</td>
+                <td>$36.00</td>
+                <td>
+                  Remove the SPE_E3 assignment from sha256:a604460dbab73777 or step down to a lower-cost SKU. No covered service has recorded activity in the last 30 days.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "checked_signals": [
+    "entra",
+    "exchange",
+    "intune",
+    "office",
+    "sharepoint",
+    "teams"
+  ],
+  "inactivity_window_days": 30,
+  "last_activity_days": {
+    "entra": null,
+    "exchange": null,
+    "intune": null,
+    "office": null,
+    "sharepoint": null,
+    "teams": null
+  }
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">M365.DUPLICATE_BUNDLE</td>
+                <td class="mono">sha256:f4442878f60fc9cf</td>
+                <td class="mono">SPE_E3</td>
+                <td class="mono">—</td>
+                <td>$10.00</td>
+                <td>
+                  sha256:f4442878f60fc9cf has SPE_E3, which already covers the capabilities of SHAREPOINTENTERPRISE. Remove SHAREPOINTENTERPRISE.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "all_assignments": [
+    "SHAREPOINTENTERPRISE",
+    "SPE_E3"
+  ],
+  "bundle": "SPE_E3",
+  "duplicate_sku": "SHAREPOINTENTERPRISE"
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">M365.E5_FEATURES_UNUSED</td>
+                <td class="mono">sha256:ff17131659e1cca4</td>
+                <td class="mono">SPE_E5</td>
+                <td class="mono">SPE_E3</td>
+                <td>$21.00</td>
+                <td>
+                  sha256:ff17131659e1cca4 is on E5 but none of the E5-exclusive capabilities (Defender for O365 P2, Purview DLP/IP, Entra P2 risk policies) have been exercised in 90 days. Consider stepping down to E3 plus targeted add-ons.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "checked_signals": [
+    "defender_o365",
+    "purview_dlp",
+    "entra_p2"
+  ],
+  "last_activity_days": {
+    "defender_o365": null,
+    "entra_p2": null,
+    "purview_dlp": null
+  },
+  "window_days": 90
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">M365.E5_FEATURES_UNUSED</td>
+                <td class="mono">sha256:e91e727d7a03b1b4</td>
+                <td class="mono">SPE_E5</td>
+                <td class="mono">SPE_E3</td>
+                <td>$21.00</td>
+                <td>
+                  sha256:e91e727d7a03b1b4 is on E5 but none of the E5-exclusive capabilities (Defender for O365 P2, Purview DLP/IP, Entra P2 risk policies) have been exercised in 90 days. Consider stepping down to E3 plus targeted add-ons.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "checked_signals": [
+    "defender_o365",
+    "purview_dlp",
+    "entra_p2"
+  ],
+  "last_activity_days": {
+    "defender_o365": null,
+    "entra_p2": null,
+    "purview_dlp": null
+  },
+  "window_days": 90
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">M365.GUEST_PREMIUM_LICENSED</td>
+                <td class="mono">sha256:a604460dbab73777</td>
+                <td class="mono">SPE_E3</td>
+                <td class="mono">—</td>
+                <td>$36.00</td>
+                <td>
+                  Guest user sha256:a604460dbab73777 has SPE_E3 assigned. Guests should rely on the host tenant&#39;s resources; remove the assignment unless explicitly justified.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "user_type": "guest"
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">M365.OVER_LICENSED_VS_PERSONA</td>
+                <td class="mono">sha256:ff17131659e1cca4</td>
+                <td class="mono">SPE_E5</td>
+                <td class="mono">SPE_F3</td>
+                <td>$49.00</td>
+                <td>
+                  sha256:ff17131659e1cca4 is classified as persona &#39;frontline_worker&#39;. Their current SKU SPE_E5 provides features beyond what this persona requires. Consider SPE_F3.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "current_features": [
+    "defender.o365.p1",
+    "defender.o365.p2",
+    "entra.p1",
+    "entra.p2",
+    "intune.mam",
+    "intune.mdm",
+    "mailbox.100gb",
+    "mailbox.2gb",
+    "mailbox.50gb",
+    "office.desktop",
+    "office.web",
+    "purview.dlp",
+    "purview.records",
+    "sharepoint.advanced",
+    "sharepoint.full",
+    "sharepoint.read",
+    "teams.basic",
+    "teams.full"
+  ],
+  "persona": "frontline_worker",
+  "persona_required_features": [
+    "intune.mam",
+    "mailbox.2gb",
+    "office.web",
+    "teams.basic"
+  ]
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">M365.OVER_LICENSED_VS_PERSONA</td>
+                <td class="mono">sha256:2de918982f86d08b</td>
+                <td class="mono">SPE_E5</td>
+                <td class="mono">O365_BUSINESS_PREMIUM</td>
+                <td>$44.50</td>
+                <td>
+                  sha256:2de918982f86d08b is classified as persona &#39;information_worker&#39;. Their current SKU SPE_E5 provides features beyond what this persona requires. Consider O365_BUSINESS_PREMIUM.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "current_features": [
+    "defender.o365.p1",
+    "defender.o365.p2",
+    "entra.p1",
+    "entra.p2",
+    "intune.mam",
+    "intune.mdm",
+    "mailbox.100gb",
+    "mailbox.2gb",
+    "mailbox.50gb",
+    "office.desktop",
+    "office.web",
+    "purview.dlp",
+    "purview.records",
+    "sharepoint.advanced",
+    "sharepoint.full",
+    "sharepoint.read",
+    "teams.basic",
+    "teams.full"
+  ],
+  "persona": "information_worker",
+  "persona_required_features": [
+    "mailbox.50gb",
+    "office.desktop",
+    "sharepoint.full",
+    "teams.full"
+  ]
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">M365.OVER_LICENSED_VS_PERSONA</td>
+                <td class="mono">sha256:11a193bf7f627bbc</td>
+                <td class="mono">SPE_E3</td>
+                <td class="mono">O365_BUSINESS_PREMIUM</td>
+                <td>$23.50</td>
+                <td>
+                  sha256:11a193bf7f627bbc is classified as persona &#39;information_worker&#39;. Their current SKU SPE_E3 provides features beyond what this persona requires. Consider O365_BUSINESS_PREMIUM.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "current_features": [
+    "entra.p1",
+    "intune.mam",
+    "intune.mdm",
+    "mailbox.100gb",
+    "mailbox.2gb",
+    "mailbox.50gb",
+    "office.desktop",
+    "office.web",
+    "sharepoint.advanced",
+    "sharepoint.full",
+    "sharepoint.read",
+    "teams.basic",
+    "teams.full"
+  ],
+  "persona": "information_worker",
+  "persona_required_features": [
+    "mailbox.50gb",
+    "office.desktop",
+    "sharepoint.full",
+    "teams.full"
+  ]
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">M365.OVER_LICENSED_VS_PERSONA</td>
+                <td class="mono">sha256:7e1324b27dc4326f</td>
+                <td class="mono">SPE_E3</td>
+                <td class="mono">O365_BUSINESS_ESSENTIALS</td>
+                <td>$30.00</td>
+                <td>
+                  sha256:7e1324b27dc4326f is classified as persona &#39;developer&#39;. Their current SKU SPE_E3 provides features beyond what this persona requires. Consider O365_BUSINESS_ESSENTIALS.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "current_features": [
+    "entra.p1",
+    "intune.mam",
+    "intune.mdm",
+    "mailbox.100gb",
+    "mailbox.2gb",
+    "mailbox.50gb",
+    "office.desktop",
+    "office.web",
+    "sharepoint.advanced",
+    "sharepoint.full",
+    "sharepoint.read",
+    "teams.basic",
+    "teams.full"
+  ],
+  "persona": "developer",
+  "persona_required_features": [
+    "mailbox.50gb",
+    "office.web",
+    "teams.full"
+  ]
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">M365.OVER_LICENSED_VS_PERSONA</td>
+                <td class="mono">sha256:b0d745b76f884376</td>
+                <td class="mono">SPE_E3</td>
+                <td class="mono">O365_BUSINESS_PREMIUM</td>
+                <td>$23.50</td>
+                <td>
+                  sha256:b0d745b76f884376 is classified as persona &#39;information_worker&#39;. Their current SKU SPE_E3 provides features beyond what this persona requires. Consider O365_BUSINESS_PREMIUM.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "current_features": [
+    "entra.p1",
+    "intune.mam",
+    "intune.mdm",
+    "mailbox.100gb",
+    "mailbox.2gb",
+    "mailbox.50gb",
+    "office.desktop",
+    "office.web",
+    "sharepoint.advanced",
+    "sharepoint.full",
+    "sharepoint.read",
+    "teams.basic",
+    "teams.full"
+  ],
+  "persona": "information_worker",
+  "persona_required_features": [
+    "mailbox.50gb",
+    "office.desktop",
+    "sharepoint.full",
+    "teams.full"
+  ]
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">M365.OVER_LICENSED_VS_PERSONA</td>
+                <td class="mono">sha256:e91e727d7a03b1b4</td>
+                <td class="mono">SPE_E5</td>
+                <td class="mono">O365_BUSINESS_PREMIUM</td>
+                <td>$44.50</td>
+                <td>
+                  sha256:e91e727d7a03b1b4 is classified as persona &#39;information_worker&#39;. Their current SKU SPE_E5 provides features beyond what this persona requires. Consider O365_BUSINESS_PREMIUM.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "current_features": [
+    "defender.o365.p1",
+    "defender.o365.p2",
+    "entra.p1",
+    "entra.p2",
+    "intune.mam",
+    "intune.mdm",
+    "mailbox.100gb",
+    "mailbox.2gb",
+    "mailbox.50gb",
+    "office.desktop",
+    "office.web",
+    "purview.dlp",
+    "purview.records",
+    "sharepoint.advanced",
+    "sharepoint.full",
+    "sharepoint.read",
+    "teams.basic",
+    "teams.full"
+  ],
+  "persona": "information_worker",
+  "persona_required_features": [
+    "mailbox.50gb",
+    "office.desktop",
+    "sharepoint.full",
+    "teams.full"
+  ]
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">M365.SHARED_MAILBOX_LICENSED</td>
+                <td class="mono">sha256:65aa6dfa246776b8</td>
+                <td class="mono">EXCHANGESTANDARD</td>
+                <td class="mono">—</td>
+                <td>$4.00</td>
+                <td>
+                  Shared mailbox sha256:65aa6dfa246776b8 (9.5 GB) does not need a paid Exchange license below the 50 GB threshold. Remove EXCHANGESTANDARD.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "mailbox_size_gb": 9.5,
+  "user_type": "shared_mailbox"
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+    </section>
+  
+    <section>
+      <h2>Azure</h2>
+      
+      
+        <table>
+          <thead>
+            <tr>
+              <th>Severity</th>
+              <th>Rule</th>
+              <th>Principal</th>
+              <th>Current SKU</th>
+              <th>Recommended SKU</th>
+              <th>Est. savings / mo</th>
+              <th>Recommendation</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td><span class="sev sev-high">high</span></td>
+                <td class="mono">AZ.IDLE_VM_14D</td>
+                <td class="mono">sha256:aae8469ec3362fca</td>
+                <td class="mono">Standard_D4s_v5</td>
+                <td class="mono">—</td>
+                <td>$140.00</td>
+                <td>
+                  Virtual machine sha256:aae8469ec3362fca has averaged 2.0% CPU and 8.0 KB/s network over 14 days. Stop or deallocate the VM, or right-size to a smaller SKU.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "avg_cpu_pct": 2.0,
+  "avg_net_kbps": 8.0,
+  "location": "eastus",
+  "window_days": 14
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-high">high</span></td>
+                <td class="mono">AZ.RESERVATION_UNDERUTILIZED</td>
+                <td class="mono">sha256:0c028d7b5cfb0cef</td>
+                <td class="mono">Standard_D4s_v5</td>
+                <td class="mono">—</td>
+                <td>—</td>
+                <td>
+                  Reservation sha256:0c028d7b5cfb0cef averaged 45.0% utilization over 30 days. Exchange or shrink the commitment at next renewal.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "monthly_cost_usd": 500.0,
+  "reservation_name": "RI-VM-D4s-EastUS",
+  "scope": "shared",
+  "sku": "Standard_D4s_v5",
+  "utilization_pct": 45.0
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">AZ.COMMITMENT_UNDER_COVERED</td>
+                <td class="mono">sha256:0c028d7b5cfb0cef</td>
+                <td class="mono">Standard_D4s_v5</td>
+                <td class="mono">—</td>
+                <td>—</td>
+                <td>
+                  Reservation sha256:0c028d7b5cfb0cef is Shared-scope and averaged 45.0% utilisation, while sibling subscription sha256:b9e41fceb6ed778d shows $120.0 of on-demand resource spend over the same window. Verify the sibling&#39;s on-demand SKUs are compatible with this reservation&#39;s family and region (Azure auto-applies on a best-fit basis), then consider widening the reservation&#39;s applied scope so the sibling&#39;s workload absorbs the unused capacity.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "monthly_cost_usd": 500.0,
+  "reservation_name": "RI-VM-D4s-EastUS",
+  "scope_kind": "Shared",
+  "sibling_on_demand_spend_usd": 120.0,
+  "sibling_sub": "sha256:b9e41fceb6ed778d",
+  "sku": "Standard_D4s_v5",
+  "utilization_pct": 45.0
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">AZ.COMMITMENT_UNDER_COVERED</td>
+                <td class="mono">sha256:0c028d7b5cfb0cef</td>
+                <td class="mono">Standard_D4s_v5</td>
+                <td class="mono">—</td>
+                <td>—</td>
+                <td>
+                  Reservation sha256:0c028d7b5cfb0cef is Shared-scope and averaged 45.0% utilisation, while sibling subscription sha256:7486e7e20d41fb2c shows $180.0 of on-demand resource spend over the same window. Verify the sibling&#39;s on-demand SKUs are compatible with this reservation&#39;s family and region (Azure auto-applies on a best-fit basis), then consider widening the reservation&#39;s applied scope so the sibling&#39;s workload absorbs the unused capacity.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "monthly_cost_usd": 500.0,
+  "reservation_name": "RI-VM-D4s-EastUS",
+  "scope_kind": "Shared",
+  "sibling_on_demand_spend_usd": 180.0,
+  "sibling_sub": "sha256:7486e7e20d41fb2c",
+  "sku": "Standard_D4s_v5",
+  "utilization_pct": 45.0
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">AZ.COMMITMENT_UNDER_COVERED</td>
+                <td class="mono">sha256:0c028d7b5cfb0cef</td>
+                <td class="mono">Standard_D4s_v5</td>
+                <td class="mono">—</td>
+                <td>—</td>
+                <td>
+                  Reservation sha256:0c028d7b5cfb0cef is Shared-scope and averaged 45.0% utilisation, while sibling subscription sha256:dd744e7f50d89f7f shows $200.0 of on-demand resource spend over the same window. Verify the sibling&#39;s on-demand SKUs are compatible with this reservation&#39;s family and region (Azure auto-applies on a best-fit basis), then consider widening the reservation&#39;s applied scope so the sibling&#39;s workload absorbs the unused capacity.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "monthly_cost_usd": 500.0,
+  "reservation_name": "RI-VM-D4s-EastUS",
+  "scope_kind": "Shared",
+  "sibling_on_demand_spend_usd": 200.0,
+  "sibling_sub": "sha256:dd744e7f50d89f7f",
+  "sku": "Standard_D4s_v5",
+  "utilization_pct": 45.0
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">AZ.DEV_TEST_SUB_MISMATCH</td>
+                <td class="mono">sha256:dd552a8468b582dd</td>
+                <td class="mono">Standard_D4s_v3</td>
+                <td class="mono">—</td>
+                <td>—</td>
+                <td>
+                  Resource sha256:dd552a8468b582dd is tagged env=prod but lives in subscription 11111111 (Dev/Test). Move the workload to a subscription with the matching offer to avoid mispricing or compliance risk.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "env_tag": "prod",
+  "location": "westus",
+  "subscription_id": "11111111",
+  "subscription_offer": "Dev/Test"
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">AZ.LOG_ANALYTICS_OVERINGEST</td>
+                <td class="mono">sha256:78d27f318cca56c3</td>
+                <td class="mono">—</td>
+                <td class="mono">—</td>
+                <td>$384.00</td>
+                <td>
+                  Workspace sha256:78d27f318cca56c3 ingested 120.0 GB/day on average. Move to commitment tier 100gb_per_day_commitment for ~32.0% list-price reduction.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "commitment_tier_gb": null,
+  "daily_gb": 120.0,
+  "est_savings_pct": 32.0,
+  "recommended_tier": "100gb_per_day_commitment",
+  "workspace_name": "law-main"
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">AZ.OVERSIZED_VM</td>
+                <td class="mono">sha256:22e77224862f2120</td>
+                <td class="mono">Standard_D8s_v5</td>
+                <td class="mono">Standard_D4s_v5</td>
+                <td>—</td>
+                <td>
+                  sha256:22e77224862f2120 (Standard_D8s_v5) shows P95 CPU 25.0% and P95 memory 30.0%. Resize to Standard_D4s_v5 in the same family.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "location": "eastus",
+  "p95_cpu_pct": 25.0,
+  "p95_mem_pct": 30.0
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">AZ.RESERVATION_SCOPE_MISMATCH</td>
+                <td class="mono">sha256:e8c77c617cd5ec45</td>
+                <td class="mono">GP_Gen5_8</td>
+                <td class="mono">—</td>
+                <td>$500.00</td>
+                <td>
+                  Reservation sha256:e8c77c617cd5ec45 is scoped to sha256:205b94d8905a9032 while subscriptions sha256:7486e7e20d41fb2c, sha256:b9e41fceb6ed778d, sha256:dd744e7f50d89f7f carry $500.0/mo of on-demand spend on potentially compatible workloads. Consider widening the reservation&#39;s applied scope (Single → Shared or Management Group) so the sibling workloads can absorb unused reserved capacity, or verify the narrow scope is intentional (e.g., chargeback isolation).
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "monthly_cost_usd": 800.0,
+  "non_owner_monthly_usd": 500.0,
+  "owner_subscription_ids": [
+    "sha256:205b94d8905a9032"
+  ],
+  "reservation_name": "RI-SQL-WestUS",
+  "scope": "single",
+  "sibling_subscription_ids": [
+    "sha256:7486e7e20d41fb2c",
+    "sha256:b9e41fceb6ed778d",
+    "sha256:dd744e7f50d89f7f"
+  ],
+  "sku": "GP_Gen5_8",
+  "utilization_pct": 92.0
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">AZ.SAVINGS_PLAN_ELIGIBLE_SPEND</td>
+                <td class="mono">sha256:0b776800ebb56925</td>
+                <td class="mono">—</td>
+                <td class="mono">—</td>
+                <td>$180.50</td>
+                <td>
+                  Scope sha256:0b776800ebb56925 shows uncovered on-demand spend of $1450.0 over Last30Days. Azure&#39;s Benefit Recommendations API projects $180.5 in savings if you verify the workload is steady-state and not the trailing edge of a one-off project, then consider a P1Y Savings Plan commitment with an hourly commit of $1.85.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "arm_sku_name": "Microsoft.Compute/virtualMachines/Standard_D4s_v5",
+  "benefit_kind": "SavingsPlan",
+  "cost_without_benefit_usd": 1450.0,
+  "lookback_period": "Last30Days",
+  "net_savings_usd": 180.5,
+  "recommended_hourly_commit_usd": 1.85,
+  "scope_kind": "Single",
+  "term": "P1Y",
+  "wastage_usd": 12.4
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">AZ.UNATTACHED_DISK</td>
+                <td class="mono">sha256:9e1ae78edb207307</td>
+                <td class="mono">Premium_LRS_512</td>
+                <td class="mono">—</td>
+                <td>$42.00</td>
+                <td>
+                  Disk sha256:9e1ae78edb207307 (? GB, Premium_LRS_512) has been unattached since 30 days ago. Delete or snapshot-and-delete.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "attached": false,
+  "days_inactive": 30,
+  "location": "eastus"
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-low">low</span></td>
+                <td class="mono">AZ.PUBLIC_IP_UNATTACHED</td>
+                <td class="mono">sha256:663f944ad18991e7</td>
+                <td class="mono">Standard</td>
+                <td class="mono">—</td>
+                <td>$3.65</td>
+                <td>
+                  Public IP sha256:663f944ad18991e7 is unattached and accruing reservation charges. Release it.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "associated": false,
+  "location": "eastus"
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-info">info</span></td>
+                <td class="mono">AZ.AHB_ELIGIBLE</td>
+                <td class="mono">sha256:c0ec52abf9bf4f97</td>
+                <td class="mono">Standard_D4s_v5</td>
+                <td class="mono">—</td>
+                <td>—</td>
+                <td>
+                  VM sha256:c0ec52abf9bf4f97 (Standard_D4s_v5, eastus) has os_type=Windows but license_type=(none). Consider enabling Azure Hybrid Benefit (Windows_Server) to reduce the Windows Server licence cost component. Verify that the organisation holds sufficient Windows Server SA or subscription licences before toggling.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "license_type": null,
+  "location": "eastus",
+  "os_type": "Windows",
+  "resource_id": "sha256:c0ec52abf9bf4f97",
+  "sku": "Standard_D4s_v5"
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+    </section>
+  
+    <section>
+      <h2>GitHub</h2>
+      
+      
+        <table>
+          <thead>
+            <tr>
+              <th>Severity</th>
+              <th>Rule</th>
+              <th>Principal</th>
+              <th>Current SKU</th>
+              <th>Recommended SKU</th>
+              <th>Est. savings / mo</th>
+              <th>Recommendation</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td><span class="sev sev-high">high</span></td>
+                <td class="mono">GH.COPILOT_INACTIVE_30D</td>
+                <td class="mono">sha256:57989b1ed0dfd1bf</td>
+                <td class="mono">GH.COPILOT_BUSINESS</td>
+                <td class="mono">—</td>
+                <td>$19.00</td>
+                <td>
+                  sha256:57989b1ed0dfd1bf holds a Copilot seat but has accepted zero suggestions in 30 days. Reassign or remove the seat.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "copilot_acceptances_30d": 0,
+  "last_activity_days": 45,
+  "org": "contoso",
+  "seat_type": "copilot_business",
+  "window_days": 30
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-high">high</span></td>
+                <td class="mono">GH.INACTIVE_SEAT_90D</td>
+                <td class="mono">sha256:a0555a9ed6dcbc63</td>
+                <td class="mono">GH.ENTERPRISE</td>
+                <td class="mono">—</td>
+                <td>$21.00</td>
+                <td>
+                  sha256:a0555a9ed6dcbc63 has had no commits, reviews, issue activity, or sign-ins in 90 days. Reclaim the GH.ENTERPRISE seat.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "last_activity_days": 180,
+  "org": "contoso",
+  "seat_type": "enterprise",
+  "window_days": 90
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">GH.GHAS_OVER_PROVISIONED</td>
+                <td class="mono">sha256:c4ad5df30840a9d2</td>
+                <td class="mono">GH.GHAS</td>
+                <td class="mono">—</td>
+                <td>—</td>
+                <td>
+                  GHAS is enabled on 40 repositories with 55 unique committers in the last 90 days, but only 12 repos have produced an alert. Disable GHAS on inactive repos to reduce billable committers.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "active_committers": 55,
+  "actively_scanned_repos": 12,
+  "ghas_repo_count": 40
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-low">low</span></td>
+                <td class="mono">GH.RUNNER_TIER_MISMATCH</td>
+                <td class="mono">sha256:c4ad5df30840a9d2</td>
+                <td class="mono">team</td>
+                <td class="mono">—</td>
+                <td>—</td>
+                <td>
+                  The org consumed 12000 runner-minutes in the last billing period against 50000 included minutes. Consumption is 76% below the team tier&#39;s included quota; verify whether a lower-tier bundle would still cover peak months.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "delta_pct": 76.0,
+  "runner_minutes_included": 50000,
+  "runner_minutes_used": 12000,
+  "runner_tier": "team"
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+    </section>
+  
+    <section>
+      <h2>Azure DevOps</h2>
+      
+      
+        <table>
+          <thead>
+            <tr>
+              <th>Severity</th>
+              <th>Rule</th>
+              <th>Principal</th>
+              <th>Current SKU</th>
+              <th>Recommended SKU</th>
+              <th>Est. savings / mo</th>
+              <th>Recommendation</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td><span class="sev sev-high">high</span></td>
+                <td class="mono">ADO.INACTIVE_BASIC_90D</td>
+                <td class="mono">sha256:f86577225f7d8e6e</td>
+                <td class="mono">ADO.BASIC</td>
+                <td class="mono">—</td>
+                <td>$6.00</td>
+                <td>
+                  sha256:f86577225f7d8e6e holds an ADO Basic seat but shows no work-item, code, or pipeline activity in 90 days. Reclaim the seat.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "last_activity_days": 120,
+  "org": "contoso",
+  "seat_type": "basic",
+  "window_days": 90
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">ADO.PARALLEL_JOBS_OVER_PROVISIONED</td>
+                <td class="mono">sha256:c4ad5df30840a9d2</td>
+                <td class="mono">—</td>
+                <td class="mono">—</td>
+                <td>$280.00</td>
+                <td>
+                  The organization owns 10 Microsoft-hosted parallel jobs but P95 concurrent usage was 3. Reduce the purchased count.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "p95_concurrent_jobs": 3,
+  "purchased_parallel_jobs": 10,
+  "surplus_jobs": 7
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">ADO.STAKEHOLDER_ELIGIBLE</td>
+                <td class="mono">sha256:8b833b79a9a4b66d</td>
+                <td class="mono">ADO.BASIC</td>
+                <td class="mono">—</td>
+                <td>$6.00</td>
+                <td>
+                  sha256:8b833b79a9a4b66d&#39;s only ADO activity in 90 days is reading boards and commenting. Step them down to the free Stakeholder access level.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "last_activity_days": 5,
+  "only_stakeholder_activity": true,
+  "org": "contoso",
+  "seat_type": "basic"
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+              <tr>
+                <td><span class="sev sev-medium">medium</span></td>
+                <td class="mono">ADO.TEST_PLANS_UNUSED</td>
+                <td class="mono">sha256:8e3e740e6e0a9abf</td>
+                <td class="mono">ADO.BASIC_TEST</td>
+                <td class="mono">ADO.BASIC</td>
+                <td>$46.00</td>
+                <td>
+                  sha256:8e3e740e6e0a9abf holds a Basic + Test Plans seat but has not opened or modified a Test Plan in 60 days. Step down to Basic.
+                  
+                    <details>
+                      <summary>Evidence (high confidence)</summary>
+                      <pre>{
+  "last_test_plan_days": 90,
+  "org": "contoso",
+  "seat_type": "basic_plus_test",
+  "window_days": 60
+}</pre>
+                    </details>
+                  
+                </td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+    </section>
+  
+
+  <section class="practice-review">
+  <h2>FinOps practice review <span class="pill">Advisory</span></h2>
+  <p class="disclaimer"><em>This section is advisory only. It summarises operator-facing posture cues derived from the canonical report and does not constitute a maturity assessment, grade, or compliance verdict.</em></p>
+  <h3>Pricing assumptions</h3>
+<p>Estimated savings are derived from public list-price catalogue defaults bundled with this tool. Customer-negotiated pricing is not distinguished in the current report schema; treat the totals as an order-of-magnitude advisory figure, not a quote.</p>
+<ul>
+  <li>Findings carrying an estimated monthly saving: <strong>31</strong></li>
+  <li>Sum of estimated monthly savings across those findings: <strong>$2193.15</strong></li>
+</ul>
+  <h3>Data-quality warnings</h3>
+<p class="empty">No data-quality warnings derived from this snapshot. Dataset coverage and rule implementation are complete for the surfaces evaluated.</p>
+  <h3>Commitment posture</h3>
+<p class="empty">Commitment-coverage data is not yet surfaced in the canonical report schema. This sub-section will populate once the upstream commitment-posture contract lands.</p>
+  <h3>SKU-mix posture</h3>
+<p class="empty">M365 family-level SKU-mix summaries are not yet surfaced in the canonical report schema. This sub-section will populate once family summaries land in the report contract.</p>
+</section>
+
+
+  <footer>
+    <p>
+      <strong>finops-assess</strong> is a read-only auditing tool. This report
+      contains advisory recommendations only — no changes were made to any
+      system. See the
+      <a href="https://github.com/martinopedal/FinOps-assessment">project
+      repository</a> for the rule definitions and source code.
+    </p>
+  </footer>
+</body>
+</html>

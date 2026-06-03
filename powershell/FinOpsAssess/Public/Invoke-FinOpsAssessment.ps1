@@ -26,7 +26,8 @@ function Invoke-FinOpsAssessment {
         emitted as a string (``csv``).
 
     .PARAMETER Format
-        Output format: ``json`` (default) or ``csv`` (flat findings table).
+        Output format: ``json`` (default), ``csv`` (flat findings table), or
+        ``html`` (full report document).
 
     .PARAMETER NoPiiRedaction
         Disables PII redaction (redaction is on by default).
@@ -57,7 +58,7 @@ function Invoke-FinOpsAssessment {
         [string] $OutputPath,
 
         [Parameter()]
-        [ValidateSet('json', 'csv')]
+        [ValidateSet('json', 'csv', 'html')]
         [string] $Format = 'json',
 
         [Parameter()]
@@ -102,6 +103,23 @@ function Invoke-FinOpsAssessment {
             return
         }
         return (ConvertTo-FinOpsCsvReport -Finding $engine.Findings)
+    }
+
+    if ($Format -ceq 'html') {
+        $html = ConvertTo-FinOpsHtmlReport -Report $report
+        if ($OutputPath) {
+            $dir = Split-Path -Parent $OutputPath
+            if ($dir -and -not (Test-Path -LiteralPath $dir)) {
+                New-Item -ItemType Directory -Path $dir -Force | Out-Null
+            }
+            [System.IO.File]::WriteAllText(
+                $OutputPath,
+                ($html -replace "`r`n", "`n"),
+                (New-Object System.Text.UTF8Encoding($false))
+            )
+            return
+        }
+        return $html
     }
 
     if ($OutputPath) {
