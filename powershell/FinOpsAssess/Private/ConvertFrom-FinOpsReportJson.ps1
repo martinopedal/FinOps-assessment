@@ -3,7 +3,7 @@ Set-StrictMode -Version Latest
 # Faithful, version-portable JSON reader for finops-assess report files.
 #
 # Native ``ConvertFrom-Json`` coerces ISO-8601 timestamp strings (such as
-# ``run.generated_at``) into ``[datetime]`` objects. The ``-DateKind String``
+# ``run.generated_at``) into ``[datetime]`` objects. The DateKind=String
 # switch disables that, but it only exists on PowerShell 7.5+, so relying on
 # it breaks on the 7.4 runtime used in CI. To stay byte-identical to the
 # Python ``json.loads`` semantics on every supported PowerShell version we

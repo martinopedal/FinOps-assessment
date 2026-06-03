@@ -60,6 +60,8 @@ tests/fixtures/ps_conformance/demo-report-azure.csv text eol=lf
 # Cross-engine conformance golden fixtures (PowerShell Phase 5a: triage JSON/CSV).
 tests/fixtures/ps_conformance/demo-triage.csv text eol=lf
 tests/fixtures/ps_conformance/demo-triage.json text eol=lf
+# Cross-engine conformance golden fixture (PowerShell Phase 5b: practice-review HTML fragment).
+tests/fixtures/ps_conformance/demo-practice-review.html text eol=lf
 
 # Repo-wide line-ending policy (issue #81) — pin LF endings for all
 # source code, data, and doc files to eliminate spurious whitespace

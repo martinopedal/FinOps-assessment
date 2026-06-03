@@ -13,6 +13,7 @@ BeforeAll {
     $script:AzureCsvGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-report-azure.csv'
     $script:TriageJsonGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-triage.json'
     $script:TriageCsvGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-triage.csv'
+    $script:PracticeReviewHtmlGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-practice-review.html'
     $script:FixedSalt = 'conformance-fixed-salt-v1'
     $script:FixedNow = '2025-06-01'
     $script:Canonicaliser = Join-Path $script:RepoRoot 'scripts' 'canonicalize_report.py'
@@ -449,5 +450,59 @@ Describe 'Triage conformance (json + csv byte-equal)' {
         $expected = [System.IO.File]::ReadAllBytes($script:TriageCsvGolden)
         [System.Linq.Enumerable]::SequenceEqual($actual, $expected) |
             Should -BeTrue -Because 'PS triage CSV must byte-match Python triage_reporter output'
+    }
+}
+
+Describe 'Practice-review conformance (html byte-equal)' {
+
+    BeforeAll {
+        $script:PracticeReviewOutDir = Join-Path ([System.IO.Path]::GetTempPath()) ("ps-practice-review-{0}" -f ([guid]::NewGuid()))
+        $script:PracticeReviewSourceReport = Join-Path $script:PracticeReviewOutDir 'demo-report.json'
+        $prevEpoch = $env:SOURCE_DATE_EPOCH
+        $prevNow = $env:FINOPS_NOW_OVERRIDE
+        try {
+            $env:SOURCE_DATE_EPOCH = '0'
+            $env:FINOPS_NOW_OVERRIDE = $script:FixedNow
+            Invoke-FinOpsAssessment -InputDirectory $script:SamplesDir -OutputPath $script:PracticeReviewSourceReport `
+                -PiiSalt $script:FixedSalt -Format json -WarningAction SilentlyContinue | Out-Null
+        } finally {
+            if ($null -eq $prevEpoch) { Remove-Item Env:SOURCE_DATE_EPOCH -ErrorAction SilentlyContinue }
+            else { $env:SOURCE_DATE_EPOCH = $prevEpoch }
+            if ($null -eq $prevNow) { Remove-Item Env:FINOPS_NOW_OVERRIDE -ErrorAction SilentlyContinue }
+            else { $env:FINOPS_NOW_OVERRIDE = $prevNow }
+        }
+    }
+
+    AfterAll {
+        Remove-Item -LiteralPath $script:PracticeReviewSourceReport -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $script:PracticeReviewOutDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    It 'ships practice-review html golden fixture' {
+        Test-Path -LiteralPath $script:PracticeReviewHtmlGolden | Should -BeTrue
+    }
+
+    It 'practice-review html bytes equal the Python golden' {
+        $reportJson = Get-Content -LiteralPath $script:PracticeReviewSourceReport -Raw -Encoding utf8
+        $actualText = InModuleScope FinOpsAssess -Parameters @{ ReportJson = $reportJson } {
+            param($ReportJson)
+            $report = ConvertFrom-FinOpsReportJson -Json $ReportJson
+            Get-FinOpsPracticeReviewHtml -Report $report
+        }
+        $actual = [System.Text.Encoding]::UTF8.GetBytes($actualText)
+        $expected = [System.IO.File]::ReadAllBytes($script:PracticeReviewHtmlGolden)
+        [System.Linq.Enumerable]::SequenceEqual($actual, $expected) |
+            Should -BeTrue -Because 'PS practice-review HTML must byte-match Python render_practice_review_section output'
+    }
+}
+
+Describe 'ConvertTo-FinOpsHtmlEscaped parity' {
+
+    It 'matches Python html.escape quote=True ordering and entities' {
+        InModuleScope FinOpsAssess {
+            $value = 'x&<>"''y'
+            $actual = ConvertTo-FinOpsHtmlEscaped -Value $value
+            $actual | Should -BeExactly 'x&amp;&lt;&gt;&quot;&#x27;y'
+        }
     }
 }
