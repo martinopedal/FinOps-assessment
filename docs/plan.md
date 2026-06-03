@@ -199,6 +199,11 @@ stage-4 reverses it.
 The shipped milestone history has moved to [`CHANGELOG.md`](../CHANGELOG.md).
 Future delivery tracking lives in GitHub issues with a `squad:*` label.
 
+Phase 7 status: **7a (PowerShell module manifest hygiene + PSGallery readiness test) is shipped**.
+Phase 7b (tag-triggered release workflow) is tracked as a separate PR. The first PSGallery version
+remains `0.1.0` because the PowerShell manifest `ModuleVersion` is lockstep-tested against Python
+`__version__`.
+
 ---
 
 ## 3. Architecture

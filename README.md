@@ -113,12 +113,25 @@ $report = ./scripts/Invoke-FinOpsAssess.ps1 -Demo -OutputDir ./out
 $report.findings | Where-Object severity -eq 'high' | Format-Table
 ```
 
-A **native PowerShell module** (`FinOpsAssess`) is being delivered
-side-by-side with the Python engine for operators who prefer to stay in
-PowerShell end-to-end. It is shipped in phases; Phase 0 provides
-`Get-FinOpsInfo` and `Test-FinOpsConfiguration`. See
-[`docs/powershell.md`](docs/powershell.md) for the cmdlet reference,
-parity matrix, and conformance contract.
+A **native PowerShell module** (`FinOpsAssess`) is available for operators who prefer to stay in
+PowerShell end-to-end. See [`docs/powershell.md`](docs/powershell.md) for cmdlet reference,
+parity matrix, and conformance details.
+
+## Install via PowerShell Gallery
+
+```powershell
+Install-Module FinOpsAssess -Repository PSGallery
+Install-Module FinOpsAssess -Repository PSGallery -RequiredVersion 0.1.0
+Import-Module FinOpsAssess
+Get-FinOpsInfo
+```
+
+Requires PowerShell 7.2+ (Core). Windows PowerShell 5.1 is unsupported.
+
+The PowerShell module version is intentionally locked to the Python package
+`__version__` (same release number for both runtimes).
+
+### From source (development)
 
 ```powershell
 Import-Module ./powershell/FinOpsAssess/FinOpsAssess.psd1 -Force

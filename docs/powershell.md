@@ -27,10 +27,23 @@ unsupported in PowerShell.**
   guarantee (materially different JSON, encoding, TLS, and class
   behaviour).
 
-## Install / import
+## Installation (PowerShell Gallery)
 
-Phase 0 is not yet published to the PowerShell Gallery. Import from a
-clone:
+Install from PSGallery (canonical distribution path):
+
+```powershell
+Install-Module FinOpsAssess -Repository PSGallery
+Install-Module FinOpsAssess -Repository PSGallery -RequiredVersion 0.1.0
+Import-Module FinOpsAssess
+Get-FinOpsInfo
+```
+
+Requires PowerShell 7.2+ (Core). Windows PowerShell 5.1 is unsupported.
+The PowerShell module version tracks the Python package `__version__` in lockstep.
+
+For full operator guidance, see the install section in [`README.md`](../README.md).
+
+### From source (development)
 
 ```powershell
 Import-Module ./powershell/FinOpsAssess/FinOpsAssess.psd1 -Force
