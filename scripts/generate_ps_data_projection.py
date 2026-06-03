@@ -67,6 +67,7 @@ from finops_assess.models import (
     UsageSignal,
     UserRecord,
 )
+from finops_assess.reporters._playbook_env import extract_template_vars
 from finops_assess.rules import load_personas, load_rules
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -76,6 +77,7 @@ CATALOG_FILE = "catalog.json"
 PERSONAS_FILE = "personas.json"
 RULES_FILE = "rules.json"
 SCHEMA_FILE = "schema.json"
+PLAYBOOKS_FILE = "playbooks.json"
 
 # Each NormalizedDataset list field, the record model that validates its
 # rows, and the CSV file the offline collector reads it from. Mirrors
@@ -233,6 +235,22 @@ def build_rules_projection() -> str:
     return _to_json([rule.model_dump() for rule in load_rules()])
 
 
+def build_playbooks_projection() -> str:
+    """Return the canonical JSON projection of playbook template sources + render inputs."""
+    root = REPO_ROOT / "src" / "finops_assess" / "data" / "playbooks"
+    payload: dict[str, dict[str, object]] = {}
+    for path in sorted(root.rglob("*.j2")):
+        rule_id = path.stem
+        surface = path.parent.name
+        template = path.read_text(encoding="utf-8")
+        payload[rule_id] = {
+            "surface": surface,
+            "template": template,
+            "render_inputs": extract_template_vars(template),
+        }
+    return _to_json(payload)
+
+
 def _projection() -> dict[str, str]:
     """Map output filename -> canonical JSON contents."""
     return {
@@ -240,6 +258,7 @@ def _projection() -> dict[str, str]:
         PERSONAS_FILE: build_personas_projection(),
         RULES_FILE: build_rules_projection(),
         SCHEMA_FILE: build_schema_projection(),
+        PLAYBOOKS_FILE: build_playbooks_projection(),
     }
 
 

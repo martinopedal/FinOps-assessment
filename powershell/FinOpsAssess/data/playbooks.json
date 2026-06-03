@@ -1,0 +1,247 @@
+{
+  "ADO.INACTIVE_BASIC_90D": {
+    "render_inputs": [
+      "principal"
+    ],
+    "surface": "ado",
+    "template": "[TITLE]\nInactive Azure DevOps Basic seat (90 days): {{ principal }}\n\n[DESCRIPTION]\nThe user **{{ principal }}** holds an **ADO Basic** seat but has recorded no\nwork-item, code, or pipeline activity in the last 90 days.\n\nAzure DevOps Basic seats are billed per user. Inactive seats can be reclaimed\nat no loss of historical data — work items, code, and pipelines remain\naccessible.\n\n[REMEDIATION_STEPS]\n1. Verify the inactivity signal in the Azure DevOps organisation settings (Users > Access levels > Last activity).\n2. Contact {{ principal }} or their manager to determine if there is a legitimate reason for inactivity (extended leave, role change, cross-project move).\n3. If no legitimate reason exists, consider changing the access level from Basic to Stakeholder (free), or removing the user from the organisation.\n4. Note: downgrading to Stakeholder limits the user to read-only board access; they cannot create or edit work items in advanced boards, push code, or run pipelines.\n\n[VERIFICATION_CHECKLIST]\n- Inactivity confirmed in ADO Users view for 90+ days.\n- User or manager consulted.\n- No open PRs, assigned work items in sprint, or on-call pipeline ownership identified.\n- Access level changed to Stakeholder or user removed; decision documented.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/azure/devops/organizations/billing/buy-basic-access-add-users\n- https://learn.microsoft.com/en-us/azure/devops/organizations/security/access-levels\n"
+  },
+  "ADO.PARALLEL_JOBS_OVER_PROVISIONED": {
+    "render_inputs": [
+      "p95_concurrent_jobs",
+      "principal",
+      "purchased_parallel_jobs"
+    ],
+    "surface": "ado",
+    "template": "[TITLE]\nAzure DevOps parallel jobs over-provisioned: {{ principal }}\n\n[DESCRIPTION]\nThe Azure DevOps organisation **{{ principal }}** owns\n**{{ purchased_parallel_jobs if purchased_parallel_jobs is defined else 'more' }}**\nMicrosoft-hosted parallel jobs but P95 concurrent usage was only\n**{{ p95_concurrent_jobs if p95_concurrent_jobs is defined else 'lower' }}**.\n\nPurchased parallel jobs that regularly go unused represent committed spend that\ncan be reduced. Consider reducing the purchased count at the next renewal.\n\n[REMEDIATION_STEPS]\n1. Review the pipeline concurrency report in Azure DevOps organisation settings (Pipelines > Parallel jobs usage).\n2. Confirm the P95 concurrent usage trend over 30+ days is consistently below the purchased quantity.\n3. Identify whether peak pipeline load is driven by short-lived bursts or sustained concurrency needs.\n4. Reduce the purchased parallel job count to match P95 usage plus a small headroom buffer (e.g. P95 + 1 or 2).\n5. Monitor pipeline queue times for 30 days after the change to confirm no regression.\n\n[VERIFICATION_CHECKLIST]\n- P95 concurrent usage confirmed below purchased quantity over 30+ days.\n- Peak pipeline load pattern reviewed for transient bursts.\n- Budget owner approved reduction.\n- Parallel job count reduced; queue time monitored for 30 days.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/azure/devops/pipelines/licensing/concurrent-jobs\n- https://learn.microsoft.com/en-us/azure/devops/organizations/billing/billing-faq\n"
+  },
+  "ADO.STAKEHOLDER_ELIGIBLE": {
+    "render_inputs": [
+      "principal"
+    ],
+    "surface": "ado",
+    "template": "[TITLE]\nADO user eligible for Stakeholder downgrade: {{ principal }}\n\n[DESCRIPTION]\nThe user **{{ principal }}** holds an **ADO Basic** seat but their only observed\nactivity in the last 90 days is reading boards and commenting. This activity\npattern is fully supported by the free **Stakeholder** access level.\n\nDowngrading to Stakeholder eliminates the per-user Basic seat charge without\nreducing the user's actual capability needs.\n\n[REMEDIATION_STEPS]\n1. Confirm in the ADO organisation settings (Users > Access levels) that {{ principal }}'s recent activity is limited to board reads and comments.\n2. Check whether {{ principal }} has any upcoming sprint tasks, assigned work items requiring editor access, or pipeline ownership.\n3. Consult {{ principal }} or their manager to confirm the Stakeholder level covers their workflow.\n4. If confirmed, change the access level from Basic to Stakeholder.\n5. Inform the user of the change and provide Stakeholder documentation.\n\n[VERIFICATION_CHECKLIST]\n- Only board-read and comment activity confirmed in ADO for 90+ days.\n- No upcoming sprint tasks or editor-access requirements identified.\n- User or manager consulted and agreed.\n- Access level changed to Stakeholder; user notified.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/azure/devops/organizations/security/access-levels\n- https://learn.microsoft.com/en-us/azure/devops/organizations/billing/buy-basic-access-add-users\n"
+  },
+  "ADO.TEST_PLANS_UNUSED": {
+    "render_inputs": [
+      "principal"
+    ],
+    "surface": "ado",
+    "template": "[TITLE]\nADO Basic+Test Plans seat unused (60 days): {{ principal }}\n\n[DESCRIPTION]\nThe user **{{ principal }}** holds an **ADO Basic + Test Plans** seat but has not\nopened or modified a Test Plan in the last 60 days.\n\nThe Test Plans add-on carries a significant per-user premium over the Basic\ntier. Users who no longer use Test Plans should be stepped down to Basic.\n\n[REMEDIATION_STEPS]\n1. Verify in the Azure DevOps organisation settings that {{ principal }} has no recent Test Plans activity (test runs, test case modifications, test plan creation).\n2. Contact {{ principal }} or their manager to confirm whether Test Plans access is still needed.\n3. Check whether {{ principal }} is the plan owner for any upcoming test cycles.\n4. If Test Plans access is no longer needed, change the access level from Basic + Test Plans to Basic.\n5. If a future test cycle requires Test Plans, schedule a temporary re-upgrade aligned to the sprint timeline.\n\n[VERIFICATION_CHECKLIST]\n- No Test Plans activity confirmed in ADO for 60+ days.\n- User or manager consulted.\n- No upcoming sprint test cycle assigns Test Plans authorship to this user.\n- Access level changed to Basic; user notified.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/azure/devops/test/create-a-test-plan\n- https://learn.microsoft.com/en-us/azure/devops/organizations/security/access-levels\n"
+  },
+  "AZ.AHB_ELIGIBLE": {
+    "render_inputs": [
+      "license_type",
+      "location",
+      "principal",
+      "sku"
+    ],
+    "surface": "azure",
+    "template": "[TITLE]\nWindows VM without Azure Hybrid Benefit: {{ principal }}\n\n[DESCRIPTION]\nThe virtual machine **{{ principal }}** (SKU: {{ sku if sku is defined else '(unknown)' }},\nregion: {{ location if location is defined else '(unknown)' }}) is running Windows\n(os_type=Windows) but does not have Azure Hybrid Benefit (AHB) applied\n(license_type={{ license_type if license_type is defined else '(none)' }}).\n\nEnabling AHB with `license_type=Windows_Server` eliminates the Windows Server\nlicence cost component from the VM's hourly rate, typically reducing the total\nprice by 40–50%. This requires the organisation to hold sufficient Windows Server\nSoftware Assurance (SA) or Windows Server subscription licences.\n\nThis is an **informational** finding — verify licence entitlement before toggling.\n\n[REMEDIATION_STEPS]\n1. Confirm the organisation holds Windows Server Software Assurance or subscription licences that are not already allocated to other VMs. Each two-processor licence covers one D/E-series VM (up to 16 cores) or two A-series VMs.\n2. Locate the VM in the Azure portal: Virtual Machines > {{ principal }}.\n3. Under Configuration (or via Azure CLI / ARM template), set the licence type to \"Azure Hybrid Benefit for Windows Server\".\n4. Verify the change in Cost Management: the VM's compute rate should drop to the Linux-equivalent base rate within the next billing cycle.\n5. If the organisation does NOT hold sufficient SA licences, do not enable AHB — document this as an intentional exception and consider whether purchasing SA would be cost-effective given the fleet size.\n\n[VERIFICATION_CHECKLIST]\n- Windows Server SA / subscription licence entitlement confirmed: yes / no.\n- Sufficient unallocated licences available for this VM's core count: yes / no.\n- AHB toggled on for the VM: yes / no.\n- Cost reduction verified in the next billing cycle: yes / no.\n- If not toggling: rationale documented (e.g., insufficient SA coverage, short-lived VM).\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/azure/virtual-machines/windows/hybrid-use-benefit-licensing\n- https://learn.microsoft.com/en-us/azure/cost-management-billing/savings-plan/savings-plan-compute-overview\n- https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list\n"
+  },
+  "AZ.COMMITMENT_RENEWAL_REVIEW": {
+    "render_inputs": [
+      "days_until_expiry",
+      "expiry_date",
+      "principal"
+    ],
+    "surface": "azure",
+    "template": "[TITLE]\nReservation expiring with auto-renew not configured: {{ principal }}\n\n[DESCRIPTION]\nThe reservation **{{ principal }}** expires on\n**{{ expiry_date if expiry_date is defined else '(date unknown)' }}**\n({{ days_until_expiry if days_until_expiry is defined else '?' }} days from this run)\nand is not configured to auto-renew. The operator's renewal-intent flag on the\nMicrosoft.Capacity reservations API is currently **off**.\n\nThis is a forward-looking decision lever, not an active waste signal. Verify\nwhether the workload still needs reserved capacity before the expiry date.\nIf yes, consider renewing or exchanging the reservation. If no, plan for the\nworkload to fall back to on-demand pricing on the expiry date and capture the\nprojected on-demand cost in your forecast.\n\n[REMEDIATION_STEPS]\n1. Locate the reservation in the Azure portal: Cost Management + Billing > Reservations > {{ principal }}.\n2. Confirm the workload that consumes this reservation is still running and still needs reserved capacity. Check the resources currently covered by the reservation and the trailing 30 to 90 day utilisation trend.\n3. If the workload is steady-state and will continue past {{ expiry_date if expiry_date is defined else 'the expiry date' }}, decide between (a) configuring auto-renew on the existing reservation, (b) exchanging for a different SKU or term that better matches the current workload, or (c) purchasing a new reservation (or Savings Plan) before the expiry date.\n4. If the workload is winding down or has changed shape, plan for the resources to fall back to on-demand pricing on {{ expiry_date if expiry_date is defined else 'the expiry date' }} and add the projected on-demand monthly cost to the next forecast cycle.\n5. Document the decision (renew / exchange / let lapse) and the rationale, with the expiry date as the deadline.\n\n[VERIFICATION_CHECKLIST]\n- Workload still needs reserved capacity: confirmed (yes / no).\n- Renewal decision documented (renew, exchange, or let lapse) with rationale.\n- If letting lapse: projected on-demand monthly cost added to the forecast.\n- If renewing or exchanging: action scheduled before {{ expiry_date if expiry_date is defined else 'the expiry date' }}.\n- Finance / FinOps team notified of the decision and any cost-shape change.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/reservation-renew\n- https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/exchange-and-refund-azure-reservations\n- https://learn.microsoft.com/en-us/rest/api/reserved-vm-instances/reservation/list-all\n"
+  },
+  "AZ.COMMITMENT_UNDER_COVERED": {
+    "render_inputs": [
+      "principal",
+      "scope_kind",
+      "sibling_on_demand_spend_usd",
+      "sibling_sub",
+      "utilization_pct"
+    ],
+    "surface": "azure",
+    "template": "[TITLE]\nUnder-utilised reservation with sibling subscription on-demand spend: {{ principal }}\n\n[DESCRIPTION]\nThe reservation **{{ principal }}** is {{ scope_kind if scope_kind is defined else 'Unknown' }}-scope and averaged\n**{{ utilization_pct if utilization_pct is defined else 'low' }}% utilisation**\nover the last 30 days, while sibling subscription **{{ sibling_sub if sibling_sub is defined else '(sibling subscription)' }}** shows\n**${{ sibling_on_demand_spend_usd if sibling_on_demand_spend_usd is defined else '(amount unknown)' }}** of on-demand resource spend over the same window.\n\nThis indicates a scope-widening opportunity: the reservation has unused capacity,\nand a sibling subscription is paying on-demand for workloads that could potentially\nfall under the reservation's coverage.\n\n[REMEDIATION_STEPS]\n1. Review the reservation utilisation details in Azure Cost Management > Reservations for {{ principal }}.\n2. Identify the on-demand resources in subscription {{ sibling_sub if sibling_sub is defined else '(sibling subscription)' }} and verify their SKU family and region match the reservation's coverage (Azure auto-applies reservations on a best-fit basis).\n3. Check the reservation's current applied scope (Single, Shared, or ManagementGroup) in the Azure portal.\n4. If the sibling subscription's workload is compatible and should be covered, consider widening the reservation's applied scope so the sibling's resources absorb the unused capacity.\n5. If the sibling is not compatible or is intentionally excluded, document the rationale.\n\n[VERIFICATION_CHECKLIST]\n- Reservation utilisation trend reviewed in Azure Cost Management for 30+ days.\n- Sibling subscription's on-demand resources verified for SKU/region compatibility.\n- Reservation applied scope reviewed and documented.\n- Scope-widening decision documented with timeline (or exclusion rationale).\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/reservation-utilization\n- https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/prepare-buy-reservation#reservation-scope\n"
+  },
+  "AZ.DEV_TEST_SUB_MISMATCH": {
+    "render_inputs": [
+      "env_tag",
+      "principal",
+      "subscription_id",
+      "subscription_offer"
+    ],
+    "surface": "azure",
+    "template": "[TITLE]\nDev/test subscription mismatch: {{ principal }}\n\n[DESCRIPTION]\nThe resource **{{ principal }}** is tagged\n**env={{ env_tag if env_tag is defined else 'unknown' }}** but resides in\nsubscription **{{ subscription_id if subscription_id is defined else 'unknown' }}**\n(offer: **{{ subscription_offer if subscription_offer is defined else 'unknown' }}**).\nThe environment tag and subscription offer disagree, which may indicate:\n\n- A production workload running in a dev/test subscription (compliance and SLA risk), or\n- A dev/test workload in a production subscription (missed pricing discount).\n\n[REMEDIATION_STEPS]\n1. Verify the environment tag on {{ principal }} is accurate (check with the workload owner).\n2. Verify the subscription offer type is correct for the intended workload class.\n3. If a production workload is in a dev/test subscription: plan migration to a production subscription. Dev/test offers may lack SLAs and are not covered by Microsoft's 99.9% uptime commitments.\n4. If a dev/test workload is in a production subscription: plan migration to a dev/test subscription to take advantage of discounted pricing.\n5. Update the resource tag or subscription placement and document the change.\n\n[VERIFICATION_CHECKLIST]\n- Workload owner confirmed environment classification.\n- Subscription offer type verified with subscription admin.\n- Mismatch type (prod-in-devtest vs devtest-in-prod) documented.\n- Migration plan created or tag corrected, with timeline.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/dev-test-subscriptions\n- https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/landing-zone/design-area/resource-org-subscriptions\n"
+  },
+  "AZ.IDLE_VM_14D": {
+    "render_inputs": [
+      "avg_cpu_pct",
+      "avg_net_kbps",
+      "principal"
+    ],
+    "surface": "azure",
+    "template": "[TITLE]\nIdle virtual machine: {{ principal }}\n\n[DESCRIPTION]\nThe virtual machine **{{ principal }}** has averaged\n**{{ avg_cpu_pct if avg_cpu_pct is defined else 'very low' }}% CPU** and\n**{{ avg_net_kbps if avg_net_kbps is defined else 'negligible' }} KB/s network**\nover the last 14 days. This level of utilisation suggests the VM may be\nidle or running a dormant workload.\n\nDeallocating or right-sizing an idle VM eliminates compute and potential\ndisk-allocation charges.\n\n[REMEDIATION_STEPS]\n1. Verify the workload owner: check resource tags (Owner, CostCenter, Environment) on {{ principal }}.\n2. Confirm the low-utilisation signal in Azure Monitor metrics (CPU, network, disk IOPS) over 14+ days.\n3. Contact the workload owner and ask whether the VM is needed. Provide the utilisation evidence.\n4. If the VM is unused: consider deallocating (preserves the disk and config) or deleting (releases all charges). If it is needed but oversized, consider right-sizing to a smaller SKU instead.\n5. Schedule a follow-up review in 30 days if the workload owner requests more time.\n\n[VERIFICATION_CHECKLIST]\n- Workload owner identified via resource tags.\n- Utilisation data confirmed in Azure Monitor.\n- Workload owner consulted and decision documented.\n- VM deallocated / deleted / right-sized, or explicit keep decision recorded.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/azure/cost-management-billing/costs/tutorial-acm-opt-recommendations\n- https://learn.microsoft.com/en-us/azure/virtual-machines/resize-vm\n"
+  },
+  "AZ.LOG_ANALYTICS_OVERINGEST": {
+    "render_inputs": [
+      "daily_gb",
+      "est_savings_pct",
+      "principal",
+      "recommended_tier"
+    ],
+    "surface": "azure",
+    "template": "[TITLE]\nLog Analytics workspace on sub-optimal pricing tier: {{ principal }}\n\n[DESCRIPTION]\nThe Log Analytics workspace **{{ principal }}** ingests an average of\n**{{ daily_gb if daily_gb is defined else 'significant' }} GB/day**, which puts it\nin the sweet spot for a commitment pricing tier. Moving to\n**{{ recommended_tier if recommended_tier is defined else 'a commitment tier' }}**\ncould reduce list-price costs by approximately\n**{{ est_savings_pct if est_savings_pct is defined else 'a significant' }}%**.\n\nCommitment tiers offer a discounted per-GB rate in exchange for a minimum\ndaily ingestion commitment. They are billed even on low-ingest days, so\nverify the average is representative before switching.\n\n[REMEDIATION_STEPS]\n1. Review 30-day ingestion trends for {{ principal }} in the Azure portal (Log Analytics workspace > Usage and estimated costs).\n2. Confirm the average daily ingest volume is stable and representative (not inflated by a one-time event).\n3. Calculate the break-even point between pay-as-you-go and {{ recommended_tier if recommended_tier is defined else 'the recommended commitment tier' }}.\n4. If committed tier is beneficial, change the pricing tier in the workspace settings.\n5. Set a calendar reminder to review ingest volume in 90 days.\n\n[VERIFICATION_CHECKLIST]\n- 30-day ingest trend reviewed and confirmed stable.\n- Break-even calculation performed.\n- No upcoming workload change that would materially reduce ingest volume.\n- Tier changed and billing confirmed in next Cost Management report.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/azure/azure-monitor/logs/cost-logs\n- https://azure.microsoft.com/en-us/pricing/details/monitor/\n"
+  },
+  "AZ.OVERSIZED_VM": {
+    "render_inputs": [
+      "current_sku",
+      "p95_cpu_pct",
+      "p95_mem_pct",
+      "principal",
+      "recommended_sku"
+    ],
+    "surface": "azure",
+    "template": "[TITLE]\nOversized virtual machine: {{ principal }}\n\n[DESCRIPTION]\nThe virtual machine **{{ principal }}** (currently **{{ current_sku }}**) shows\nP95 CPU of **{{ p95_cpu_pct if p95_cpu_pct is defined else 'low' }}%** and\nP95 memory of **{{ p95_mem_pct if p95_mem_pct is defined else 'low' }}%** over\n14 days. Both metrics remain well below 40%, suggesting the VM is significantly\nover-provisioned.\n\nRight-sizing to a smaller SKU in the same family can reduce compute charges\nwhile maintaining adequate headroom.\n\n[REMEDIATION_STEPS]\n1. Review 14-day CPU and memory percentiles in Azure Monitor for {{ principal }}.\n2. Identify the recommended target SKU ({{ recommended_sku if recommended_sku else 'smaller SKU in same family' }}) and confirm it is available in the VM's current region.\n3. Schedule a maintenance window with the workload owner.\n4. Resize the VM and monitor for 48 hours to confirm performance is acceptable.\n5. Revert if performance degrades.\n\n[VERIFICATION_CHECKLIST]\n- P95 CPU and memory confirmed below 40% over 14 days in Azure Monitor.\n- Target SKU availability confirmed in the VM's region.\n- Workload owner approved resize.\n- Resize performed and monitored for 48 hours without regression.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/azure/virtual-machines/resize-vm\n- https://learn.microsoft.com/en-us/azure/azure-monitor/vm/vminsights-performance\n"
+  },
+  "AZ.PUBLIC_IP_UNATTACHED": {
+    "render_inputs": [
+      "principal"
+    ],
+    "surface": "azure",
+    "template": "[TITLE]\nUnassociated public IP address: {{ principal }}\n\n[DESCRIPTION]\nThe Standard public IP address **{{ principal }}** is not associated with any\nresource (load balancer, VM NIC, NAT gateway, etc.) and is accruing reservation\ncharges.\n\nReleasing an unused public IP address removes ongoing charges immediately.\n\n[REMEDIATION_STEPS]\n1. Confirm the IP is unassociated in the Azure portal (Networking > Public IP addresses).\n2. Check Azure Activity Log and DNS records to determine whether any external system depends on this IP.\n3. If no external dependency exists, consider releasing (deleting) the public IP.\n4. If the IP is reserved for a future deployment, document the planned use case and timeline.\n\n[VERIFICATION_CHECKLIST]\n- IP confirmed unassociated in Azure portal.\n- Activity Log and DNS reviewed for any dependency.\n- No active external dependency identified.\n- IP released or hold documented with planned use case and review date.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/azure/virtual-network/public-ip-addresses\n- https://azure.microsoft.com/en-us/pricing/details/ip-addresses/\n"
+  },
+  "AZ.RESERVATION_SCOPE_MISMATCH": {
+    "render_inputs": [
+      "non_owner_usd",
+      "owner_subs",
+      "principal",
+      "sibling_subs",
+      "sku"
+    ],
+    "surface": "azure",
+    "template": "[TITLE]\nSingle-scope reservation with sibling on-demand spend: {{ principal }}\n\n[DESCRIPTION]\nThe reservation **{{ principal }}** is applied to a single scope\n({{ owner_subs if owner_subs is defined else '(unknown)' }}) while\nsibling subscriptions\n({{ sibling_subs if sibling_subs is defined else '(unknown)' }})\ncarry **${{ non_owner_usd if non_owner_usd is defined else '?' }}/mo**\nof on-demand spend on potentially compatible workloads.\n\nWidening the reservation scope (Single → Shared or Management Group)\nwould let sibling workloads absorb unused reserved capacity, reducing\ntotal on-demand cost. However, scope widening changes the chargeback\nmodel — verify that the narrow scope is not required for cost-centre\nisolation before making changes.\n\n[REMEDIATION_STEPS]\n1. Locate the reservation in the Azure portal: Cost Management + Billing > Reservations > {{ principal }}.\n2. Review the reservation's current utilisation trend (30-day and 90-day). If utilisation is consistently below 80%, the sibling workloads are strong candidates for absorbing the slack.\n3. Identify the sibling subscriptions ({{ sibling_subs if sibling_subs is defined else '(unknown)' }}) and confirm their workloads are compatible with the reserved SKU ({{ sku if sku is defined else '(unknown)' }}).\n4. If chargeback isolation is NOT required, widen the reservation's applied scope from Single to Shared (or Management Group if applicable).\n5. If chargeback isolation IS required, consider purchasing a separate reservation for the sibling workloads or converting their spend to a Savings Plan.\n6. Document the decision and the rationale in the team's FinOps log.\n\n[VERIFICATION_CHECKLIST]\n- Sibling workloads confirmed compatible with reserved SKU: yes / no.\n- Chargeback isolation requirement verified with finance: required / not required.\n- If widened: scope change applied and new utilisation trend monitored for 7 days.\n- If not widened: rationale documented; separate reservation or Savings Plan evaluated.\n- Finance / FinOps team notified of the decision and projected cost impact.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/prepare-buy-reservation\n- https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/manage-reserved-vm-instance\n- https://learn.microsoft.com/en-us/rest/api/reserved-vm-instances/reservation/list-all\n"
+  },
+  "AZ.RESERVATION_UNDERUTILIZED": {
+    "render_inputs": [
+      "principal",
+      "utilization_pct"
+    ],
+    "surface": "azure",
+    "template": "[TITLE]\nUnder-utilised reservation / savings plan: {{ principal }}\n\n[DESCRIPTION]\nThe reservation or savings plan **{{ principal }}** averaged only\n**{{ utilization_pct if utilization_pct is defined else 'low' }}% utilisation**\nover the last 30 days. Reservations below ~80% effective utilisation represent\nover-committed spend — you are paying for capacity you are not using.\n\nExchange or shrink the commitment at the next renewal window to align the\nreservation with actual usage.\n\n[REMEDIATION_STEPS]\n1. Review the reservation utilisation details in Azure Cost Management > Reservations.\n2. Identify which resources are (and are not) covered by {{ principal }}.\n3. Determine whether workloads have scaled down or been decommissioned since the reservation was purchased.\n4. At the next exchange or renewal window, consider right-sizing the reservation to match current usage (e.g. reduce quantity, change instance size flexibility settings, or switch to a Savings Plan if the workload mix has diversified).\n5. If the reservation is not exchangeable, document the residual commitment and its planned end date.\n\n[VERIFICATION_CHECKLIST]\n- Utilisation trend reviewed in Azure Cost Management for 30+ days.\n- Root cause of under-utilisation identified (workload change, decommission, etc.).\n- Exchange or renewal plan documented with timeline.\n- Finance / FinOps team notified of residual commitment.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/reservation-utilization\n- https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/exchange-and-refund-azure-reservations\n"
+  },
+  "AZ.SAVINGS_PLAN_ELIGIBLE_SPEND": {
+    "render_inputs": [
+      "cost_without_benefit_usd",
+      "lookback_period",
+      "net_savings_usd",
+      "principal",
+      "recommended_hourly_commit_usd",
+      "term"
+    ],
+    "surface": "azure",
+    "template": "[TITLE]\nUncovered Azure spend eligible for Savings Plan: {{ principal }}\n\n[DESCRIPTION]\nThe scope **{{ principal }}** has **${{ cost_without_benefit_usd | default('(amount unknown)') }}** of uncovered\non-demand spend over **{{ lookback_period | default('the lookback window') }}**.\n\nAzure's Benefit Recommendations API projects **${{ net_savings_usd | default('(savings unknown)') }}**\nin savings if you commit to a **{{ term | default('P1Y') }}** Savings Plan with an hourly\ncommit of **${{ recommended_hourly_commit_usd | default('(amount unknown)') }}**.\n\nVerify the workload is steady-state and not the trailing edge of a one-off\nproject, then consider the Savings Plan commitment.\n\n[REMEDIATION_STEPS]\n1. Review the workload pattern for {{ principal }} over the past 60 days in Azure Cost Management to confirm steady on-demand spend.\n2. Verify this is not a temporary spike or trailing-edge workload (pilot ending, migration rollback, pre-decommission).\n3. If the spend is steady-state, evaluate the recommended Savings Plan commitment amount ({{ recommended_hourly_commit_usd | default('unknown') }}/hour).\n4. Coordinate with finance / procurement on the commitment term ({{ term | default('P1Y') }}) and approval process.\n5. Submit the Savings Plan commitment via Azure Cost Management or coordinate with your billing administrator.\n6. Schedule a 90-day follow-up review to validate actual utilisation and savings achieved.\n\n[VERIFICATION_CHECKLIST]\n- Workload pattern reviewed in Azure Cost Management (60+ days).\n- Steady-state spend confirmed (not temporary / pilot / ending workload).\n- Finance / procurement approval obtained for the commitment.\n- Savings Plan commitment submitted or scheduled.\n- 90-day follow-up review scheduled.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/azure/cost-management-billing/savings-plan/\n- https://learn.microsoft.com/en-us/azure/cost-management-billing/costs/tutorial-acm-opt-recommendations\n"
+  },
+  "AZ.UNATTACHED_DISK": {
+    "render_inputs": [
+      "principal"
+    ],
+    "surface": "azure",
+    "template": "[TITLE]\nUnattached managed disk: {{ principal }}\n\n[DESCRIPTION]\nThe managed disk **{{ principal }}** has been unattached (not mounted to any VM)\nfor 7 or more days. Unattached disks continue to accrue storage reservation\ncharges even when no data is being read or written.\n\nSnapshot the disk and delete it if the data is no longer needed, or attach\nit to the appropriate VM if detachment was unintentional.\n\n[REMEDIATION_STEPS]\n1. Identify the disk owner from resource tags (Owner, CostCenter) on {{ principal }}.\n2. Check Azure Activity Log to determine when the disk was last detached and from which VM.\n3. Contact the owner and ask whether the disk contents are still needed.\n4. If data is no longer needed: consider creating a final snapshot (for recovery), then deleting the disk.\n5. If data is still needed but detachment was unintentional: re-attach the disk to the correct VM.\n\n[VERIFICATION_CHECKLIST]\n- Owner identified via resource tags.\n- Activity Log reviewed to confirm detach event and duration.\n- Owner consulted.\n- Disk deleted (with optional snapshot) or re-attached, decision documented.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/azure/virtual-machines/disks-find-unattached-portal-powershell\n- https://learn.microsoft.com/en-us/azure/virtual-machines/snapshot-copy-managed-disk\n"
+  },
+  "GH.COPILOT_INACTIVE_30D": {
+    "render_inputs": [
+      "principal"
+    ],
+    "surface": "github",
+    "template": "[TITLE]\nInactive GitHub Copilot seat (30 days): {{ principal }}\n\n[DESCRIPTION]\nThe user **{{ principal }}** holds a GitHub Copilot seat but has accepted zero\nCopilot suggestions in the last 30 days.\n\nCopilot seats are a per-seat add-on. Seats with no acceptance activity should be\nreassigned to developers on the waitlist who are actively writing code.\n\n[REMEDIATION_STEPS]\n1. Confirm the zero-acceptance signal in the GitHub Copilot usage dashboard for the organisation.\n2. Contact {{ principal }} or their manager to determine if there is a legitimate reason (role change, extended leave, new to the org).\n3. If no legitimate reason exists, consider reassigning the Copilot seat to a developer on the waiting list.\n4. Re-evaluate the allocation policy if multiple seats show low acceptance rates.\n\n[VERIFICATION_CHECKLIST]\n- Zero Copilot acceptances confirmed in GitHub usage dashboard for 30+ days.\n- User or manager consulted.\n- No legitimate reason for inactivity (leave, role change) identified.\n- Seat reassigned or justification documented.\n\n[REFERENCES]\n- https://docs.github.com/en/copilot/managing-copilot/managing-github-copilot-in-your-organization/reviewing-github-copilot-activity-in-your-organization\n- https://docs.github.com/en/billing/managing-billing-for-github-copilot/about-billing-for-github-copilot\n"
+  },
+  "GH.GHAS_OVER_PROVISIONED": {
+    "render_inputs": [
+      "active_committers",
+      "actively_scanned",
+      "ghas_repo_count",
+      "principal"
+    ],
+    "surface": "github",
+    "template": "[TITLE]\nGitHub Advanced Security over-provisioned: {{ principal }}\n\n[DESCRIPTION]\nGitHub Advanced Security (GHAS) is enabled on\n**{{ ghas_repo_count if ghas_repo_count is defined else 'multiple' }}** repositories\nin organisation **{{ principal }}** with\n**{{ active_committers if active_committers is defined else 'several' }}** unique\ncommitters in the last 90 days, but only\n**{{ actively_scanned if actively_scanned is defined else 'a subset of' }}**\nrepositories have produced an alert or scan result.\n\nGHAS is billed per unique active committer. Disabling GHAS on repositories that\nproduce no scanning signal can reduce the billable committer count.\n\n[REMEDIATION_STEPS]\n1. Review the GHAS billing breakdown in the GitHub organisation settings (Billing & plans > GitHub Advanced Security).\n2. Identify repositories where GHAS is enabled but no code scanning, secret scanning, or Dependabot alerts have fired in 90+ days.\n3. For each inactive repository: determine whether GHAS is required by policy (compliance, security baseline).\n4. If GHAS is not required by policy on an inactive repo, consider disabling it to reduce billable committers.\n5. Re-run the GHAS billing estimate to confirm savings before and after changes.\n\n[VERIFICATION_CHECKLIST]\n- GHAS-enabled repos with no alert history identified.\n- Each inactive repo reviewed for policy/compliance requirement.\n- Approval obtained from security team before disabling GHAS on any repo.\n- GHAS disabled on approved repos; billable committer count reduced.\n\n[REFERENCES]\n- https://docs.github.com/en/billing/managing-billing-for-github-advanced-security/about-billing-for-github-advanced-security\n- https://docs.github.com/en/code-security/getting-started/github-security-features\n"
+  },
+  "GH.INACTIVE_SEAT_90D": {
+    "render_inputs": [
+      "current_sku",
+      "principal"
+    ],
+    "surface": "github",
+    "template": "[TITLE]\nInactive GitHub seat (90 days): {{ principal }}\n\n[DESCRIPTION]\nThe GitHub user **{{ principal }}** holds a **{{ current_sku if current_sku else 'paid' }}**\nseat but has recorded no commits, pull-request reviews, issue activity, or\nsign-ins in the last 90 days.\n\nInactive seats incur per-seat charges without delivering developer productivity\nvalue. Reclaim the seat or move the user to a free-tier access level if\nappropriate.\n\n[REMEDIATION_STEPS]\n1. Verify the inactivity signal in the GitHub organisation's People view (filter by last activity).\n2. Contact {{ principal }} or their manager to confirm whether they still require a paid seat.\n3. If the user has left the organisation or no longer needs GitHub access: consider removing them from the organisation (releases the seat).\n4. If the user needs read-only access (e.g. for viewing repos): outside collaborator access does not consume a paid seat.\n5. Document the decision in the GitHub access management record.\n\n[VERIFICATION_CHECKLIST]\n- Inactivity confirmed in GitHub org People view for 90+ days.\n- User or manager consulted.\n- No pending code review, open PR, or on-call dependency identified.\n- Seat reclaimed or access level changed, decision documented.\n\n[REFERENCES]\n- https://docs.github.com/en/organizations/managing-membership-in-your-organization\n- https://docs.github.com/en/billing/managing-billing-for-your-github-account/about-billing-for-github-accounts\n"
+  },
+  "GH.RUNNER_TIER_MISMATCH": {
+    "render_inputs": [
+      "included_minutes",
+      "principal",
+      "used_minutes"
+    ],
+    "surface": "github",
+    "template": "[TITLE]\nGitHub runner-minute tier mismatch: {{ principal }}\n\n[DESCRIPTION]\nThe GitHub organisation **{{ principal }}** consumed\n**{{ used_minutes if used_minutes is defined else 'a mismatched number of' }}**\nrunner minutes in the last billing period against\n**{{ included_minutes if included_minutes is defined else 'the included' }}**\nincluded minutes.\n\nA significant gap between consumed and included minutes indicates either:\n- Over-provisioned plan: you are paying for runner minutes that go unused, or\n- Under-provisioned plan: you are regularly exceeding the included quota and incurring overage charges.\n\n[REMEDIATION_STEPS]\n1. Review the runner-minute usage chart in GitHub organisation Billing & plans.\n2. Determine whether usage is consistently above or below the included quota.\n3. If consistently over the quota: consider upgrading to a higher tier or switching to self-hosted runners for cost-intensive workflows.\n4. If consistently under the quota: consider downgrading to a lower tier at the next billing renewal.\n5. Set usage alerts in GitHub billing settings to trigger at 80% of the included quota.\n\n[VERIFICATION_CHECKLIST]\n- Runner-minute usage trend reviewed over 3+ billing periods.\n- Consistent over- or under-utilisation confirmed.\n- Self-hosted runner feasibility assessed if overages are frequent.\n- Tier change planned and approved by budget owner.\n\n[REFERENCES]\n- https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions\n- https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners\n"
+  },
+  "M365.COPILOT_INACTIVE_60D": {
+    "render_inputs": [
+      "principal"
+    ],
+    "surface": "m365",
+    "template": "[TITLE]\nCopilot for M365 seat inactive 60 days: {{ principal }}\n\n[DESCRIPTION]\nThe user **{{ principal }}** has a **Copilot for M365** add-on seat assigned but\nhas recorded zero Copilot interactions in the last 60 days.\n\nCopilot seats are expensive add-ons. Inactive seats should be reassigned to\nusers who will actively use the capability.\n\n[REMEDIATION_STEPS]\n1. Confirm the inactivity signal in the Microsoft 365 Admin Center Copilot usage report.\n2. Contact {{ principal }} or their manager to understand if there is a legitimate reason for non-use (role change, leave, onboarding delay).\n3. If no legitimate reason exists, consider reassigning the Copilot seat to an active user on the waitlist.\n4. Document the reassignment decision.\n\n[VERIFICATION_CHECKLIST]\n- Copilot usage report reviewed; zero interactions confirmed for 60+ days.\n- User or manager consulted.\n- No legitimate reason for inactivity identified.\n- Seat reassigned to a user on the waitlist, or documented justification retained.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/microsoft-365/admin/activity-reports/microsoft365-copilot-usage\n- https://learn.microsoft.com/en-us/microsoft-365/admin/manage/assign-licenses-to-users\n"
+  },
+  "M365.DISABLED_USER_LICENSED": {
+    "render_inputs": [
+      "current_sku",
+      "principal"
+    ],
+    "surface": "m365",
+    "template": "[TITLE]\nDisabled account with active license: {{ principal }}\n\n[DESCRIPTION]\nThe account **{{ principal }}** has been disabled (accountEnabled = false) but\nstill carries **{{ current_sku }}**. Disabled accounts do not consume services,\nso the license is accruing charges without delivering value.\n\nReclaim the license unless a compliance hold or offboarding policy requires\nit to remain assigned temporarily.\n\n[REMEDIATION_STEPS]\n1. Confirm the account is genuinely disabled and not temporarily suspended (check Azure AD / Entra sign-in logs).\n2. Check for compliance holds (eDiscovery, litigation hold, or retention policy) that may require the mailbox to remain licensed.\n3. If no hold exists, consider removing {{ current_sku }} and returning the license to the pool.\n4. Archive or soft-delete the account according to your offboarding policy.\n\n[VERIFICATION_CHECKLIST]\n- Account confirmed disabled in Entra ID.\n- No active eDiscovery or retention hold on the mailbox.\n- License reclaimed and returned to pool.\n- Offboarding record updated in HR / ITSM.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/microsoft-365/admin/add-users/delete-a-user\n- https://learn.microsoft.com/en-us/purview/ediscovery-holds\n"
+  },
+  "M365.DUPLICATE_BUNDLE": {
+    "render_inputs": [
+      "current_sku",
+      "principal"
+    ],
+    "surface": "m365",
+    "template": "[TITLE]\nDuplicate bundle assignment: {{ principal }}\n\n[DESCRIPTION]\nThe user **{{ principal }}** holds **{{ current_sku }}**, which already includes the\ncapabilities covered by a separately assigned child SKU. Carrying both results\nin duplicate charges.\n\nRemoving the redundant child SKU eliminates the overlap without affecting any\nfunctionality.\n\n[REMEDIATION_STEPS]\n1. Identify the specific child SKU (duplicate_sku) that overlaps with {{ current_sku }}.\n2. Verify the overlap with the Microsoft 365 SKU documentation or the M365 Maps reference.\n3. Consider removing the redundant child SKU from {{ principal }}.\n4. Confirm the user retains all required functionality after the removal.\n\n[VERIFICATION_CHECKLIST]\n- Overlap confirmed: child SKU capabilities are a strict subset of {{ current_sku }}.\n- User or manager consulted and no standalone entitlements depend on the child SKU.\n- Removal performed and license returned to pool.\n- Change logged in ITSM.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/microsoft-365/admin/misc/licenses-overview\n- https://m365maps.com/\n"
+  },
+  "M365.E5_FEATURES_UNUSED": {
+    "render_inputs": [
+      "current_sku",
+      "principal"
+    ],
+    "surface": "m365",
+    "template": "[TITLE]\nE5 license with unused premium features: {{ principal }}\n\n[DESCRIPTION]\nThe user **{{ principal }}** is on **{{ current_sku }}** (E5) but none of the\nE5-exclusive capabilities — Defender for Office 365 P2, Microsoft Purview DLP /\nInformation Protection, or Entra ID P2 risk policies — have produced an activity\nsignal in the last 90 days.\n\nIf the E5-exclusive features are genuinely unneeded, stepping down to E3 plus\ntargeted add-ons may reduce costs significantly.\n\n[REMEDIATION_STEPS]\n1. Review the Microsoft 365 Admin Center security and compliance reports for {{ principal }} to confirm absence of Defender P2, Purview, and Entra P2 activity.\n2. Check whether the user is subject to a security policy that mandates E5 entitlements (e.g., Conditional Access or tenant-wide security baseline).\n3. Consult the security / compliance team before downgrading any user that may be under a compliance or audit scope.\n4. If downgrade is approved, consider migrating {{ principal }} to E3 plus only the add-ons they actually use.\n\n[VERIFICATION_CHECKLIST]\n- E5-exclusive feature usage confirmed absent for 90+ days in Admin Center.\n- Security and compliance team consulted.\n- No mandatory security baseline requires E5.\n- Downgrade path to E3 + targeted add-ons costed and approved.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/microsoft-365/security/defender/microsoft-365-defender\n- https://learn.microsoft.com/en-us/purview/purview-compliance-portal\n- https://learn.microsoft.com/en-us/entra/id-protection/overview-identity-protection\n"
+  },
+  "M365.GUEST_PREMIUM_LICENSED": {
+    "render_inputs": [
+      "current_sku",
+      "principal"
+    ],
+    "surface": "m365",
+    "template": "[TITLE]\nB2B guest with premium M365 license: {{ principal }}\n\n[DESCRIPTION]\nThe Entra B2B guest **{{ principal }}** holds **{{ current_sku }}**, an interactive\nM365 user license. Guest users typically rely on the host tenant's resources;\nassigning a full user license is unusual and may represent an error or\na misconfigured onboarding.\n\nVerify the assignment is intentional before removing it.\n\n[REMEDIATION_STEPS]\n1. Contact the business sponsor who invited {{ principal }} and confirm the license assignment is required.\n2. Review what M365 services the guest actually needs (Teams chat vs. mailbox, SharePoint edit vs. view, etc.).\n3. If the full license is not justified, consider removing {{ current_sku }} and relying on guest-access entitlements provided by the host tenant.\n4. Document the decision in the guest-user lifecycle record.\n\n[VERIFICATION_CHECKLIST]\n- Business sponsor consulted and confirmed (or denied) the license requirement.\n- Guest access entitlements reviewed against actual usage.\n- License removed or explicitly justified and documented.\n- Guest user lifecycle record updated.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/entra/external-id/what-is-b2b\n- https://learn.microsoft.com/en-us/microsoft-365/admin/misc/guest-user-access\n"
+  },
+  "M365.OVER_LICENSED_VS_PERSONA": {
+    "render_inputs": [
+      "current_sku",
+      "persona",
+      "principal",
+      "recommended_sku"
+    ],
+    "surface": "m365",
+    "template": "[TITLE]\nOver-licensed user vs persona: {{ principal }}\n\n[DESCRIPTION]\nThe user **{{ principal }}** is classified as persona **{{ persona if persona is defined else 'unknown' }}** but holds\n**{{ current_sku }}**, which provides capabilities beyond what this persona\nrequires. A lower-cost SKU may be sufficient.\n\nVerify the persona classification is accurate before acting.\n\n[REMEDIATION_STEPS]\n1. Confirm the persona classification for {{ principal }} is accurate (check job title, department, and group membership).\n2. Review which features {{ principal }} actively uses versus what {{ current_sku }} provides.\n3. If the persona classification is correct and the extra features are unused, consider migrating to {{ recommended_sku if recommended_sku else 'a lower-tier SKU' }}.\n4. Coordinate the SKU change with the user and their manager to avoid service disruption.\n\n[VERIFICATION_CHECKLIST]\n- Persona classification confirmed accurate.\n- User or manager consulted about feature requirements.\n- No business-critical workload depends on the extra features in {{ current_sku }}.\n- Migration window planned to avoid disruption.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/microsoft-365/admin/misc/licenses-overview\n- https://learn.microsoft.com/en-us/microsoft-365/admin/manage/assign-licenses-to-users\n"
+  },
+  "M365.SHARED_MAILBOX_LICENSED": {
+    "render_inputs": [
+      "current_sku",
+      "mailbox_size_gb",
+      "principal"
+    ],
+    "surface": "m365",
+    "template": "[TITLE]\nShared mailbox with unnecessary paid license: {{ principal }}\n\n[DESCRIPTION]\nThe shared mailbox **{{ principal }}** is under 50 GB and holds **{{ current_sku }}**.\nShared mailboxes under the 50 GB threshold do not require a paid Exchange Online\nlicense — they can be accessed by delegates without one.\n\nRemoving the license eliminates ongoing charges without affecting mailbox\naccessibility.\n\n[REMEDIATION_STEPS]\n1. Confirm {{ principal }} is a shared mailbox (not a user mailbox or resource mailbox) in the Exchange Admin Center.\n2. Verify the mailbox size is below 50 GB ({{ mailbox_size_gb if mailbox_size_gb is defined else 'check in EAC' }} GB reported).\n3. Check whether the mailbox has automapping requirements or Outlook profile dependencies that need a license.\n4. If no special requirements exist, consider removing {{ current_sku }} from the shared mailbox.\n\n[VERIFICATION_CHECKLIST]\n- Confirmed shared mailbox type in Exchange Admin Center.\n- Mailbox size verified below 50 GB.\n- No automapping or special licensing requirements identified.\n- License removed and returned to pool.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/microsoft-365/admin/email/about-shared-mailboxes\n- https://learn.microsoft.com/en-us/exchange/collaboration-exo/shared-mailboxes\n"
+  },
+  "M365.UNUSED_LICENSE_30D": {
+    "render_inputs": [
+      "current_sku",
+      "principal"
+    ],
+    "surface": "m365",
+    "template": "[TITLE]\nUnused M365 license: {{ principal }}\n\n[DESCRIPTION]\nThe user **{{ principal }}** has **{{ current_sku }}** assigned but no service-plan\nactivity has been detected in the last 30 days.\n\nInactive licenses accrue charges without delivering value. Verify with the\nuser's manager and reclaim or downsize the assignment.\n\n[REMEDIATION_STEPS]\n1. Open the Microsoft 365 Admin Center and review the activity report for {{ principal }}.\n2. Verify with the user's manager that the license is genuinely unused and not subject to a compliance hold (eDiscovery, litigation hold).\n3. If no hold exists, consider removing the {{ current_sku }} assignment or stepping down to a lower-cost SKU.\n4. Return the reclaimed seat to the available pool and update licence tracking records.\n\n[VERIFICATION_CHECKLIST]\n- Confirmed no service-plan activity in M365 Admin Center for 30+ days.\n- Manager sign-off obtained before reclaiming.\n- No compliance hold (eDiscovery / litigation hold) detected.\n- License returned to pool and change logged in ITSM.\n\n[REFERENCES]\n- https://learn.microsoft.com/en-us/microsoft-365/admin/activity-reports/overview\n- https://learn.microsoft.com/en-us/microsoft-365/admin/misc/add-licenses-bought-through-vlsc\n"
+  }
+}

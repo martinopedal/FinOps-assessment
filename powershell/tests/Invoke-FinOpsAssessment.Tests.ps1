@@ -15,6 +15,8 @@ BeforeAll {
     $script:TriageCsvGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-triage.csv'
     $script:FocusCsvGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-focus.csv'
     $script:FocusManifestGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-focus.csv.manifest.json'
+    $script:PlaybookJsonlGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-playbook.jsonl'
+    $script:PlaybookManifestGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-playbook.jsonl.manifest.json'
     $script:PracticeReviewHtmlGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-practice-review.html'
     $script:HtmlReportGolden = Join-Path $script:RepoRoot 'tests' 'fixtures' 'ps_conformance' 'demo-report.html'
     $script:FixedSalt = 'conformance-fixed-salt-v1'
@@ -539,6 +541,63 @@ Describe 'FOCUS-aligned conformance (csv + manifest byte-equal)' {
         $expected = [System.IO.File]::ReadAllBytes($script:FocusManifestGolden)
         [System.Linq.Enumerable]::SequenceEqual($actual, $expected) |
             Should -BeTrue -Because 'PS focus-aligned manifest must byte-match Python focus_aligned output'
+    }
+}
+
+Describe 'Playbook conformance (jsonl + manifest byte-equal)' {
+
+    BeforeAll {
+        $script:PlaybookOutDir = Join-Path ([System.IO.Path]::GetTempPath()) ("ps-playbook-{0}" -f ([guid]::NewGuid()))
+        $script:PlaybookSourceReport = Join-Path $script:PlaybookOutDir 'demo-report.json'
+        $script:PlaybookOut = Join-Path $script:PlaybookOutDir 'playbook.jsonl'
+        $prevEpoch = $env:SOURCE_DATE_EPOCH
+        $prevNow = $env:FINOPS_NOW_OVERRIDE
+        try {
+            $env:SOURCE_DATE_EPOCH = '0'
+            $env:FINOPS_NOW_OVERRIDE = $script:FixedNow
+            Invoke-FinOpsAssessment -InputDirectory $script:SamplesDir -OutputPath $script:PlaybookSourceReport `
+                -PiiSalt $script:FixedSalt -Format json -WarningAction SilentlyContinue | Out-Null
+            Export-FinOpsPlaybook -InputReport $script:PlaybookSourceReport -OutputPath $script:PlaybookOut | Out-Null
+        } finally {
+            if ($null -eq $prevEpoch) { Remove-Item Env:SOURCE_DATE_EPOCH -ErrorAction SilentlyContinue }
+            else { $env:SOURCE_DATE_EPOCH = $prevEpoch }
+            if ($null -eq $prevNow) { Remove-Item Env:FINOPS_NOW_OVERRIDE -ErrorAction SilentlyContinue }
+            else { $env:FINOPS_NOW_OVERRIDE = $prevNow }
+        }
+    }
+
+    AfterAll {
+        Remove-Item -LiteralPath $script:PlaybookSourceReport -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $script:PlaybookOutDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    It 'ships playbook golden fixtures' {
+        Test-Path -LiteralPath $script:PlaybookJsonlGolden | Should -BeTrue
+        Test-Path -LiteralPath $script:PlaybookManifestGolden | Should -BeTrue
+    }
+
+    It 'playbook jsonl bytes equal the Python golden' {
+        $actual = [System.IO.File]::ReadAllBytes($script:PlaybookOut)
+        $expected = [System.IO.File]::ReadAllBytes($script:PlaybookJsonlGolden)
+        [System.Linq.Enumerable]::SequenceEqual($actual, $expected) |
+            Should -BeTrue -Because 'PS playbook JSONL must byte-match Python write_playbook_export output'
+    }
+
+    It 'playbook manifest bytes equal the Python golden' {
+        $actual = [System.IO.File]::ReadAllBytes("$($script:PlaybookOut).manifest.json")
+        $expected = [System.IO.File]::ReadAllBytes($script:PlaybookManifestGolden)
+        [System.Linq.Enumerable]::SequenceEqual($actual, $expected) |
+            Should -BeTrue -Because 'PS playbook manifest must byte-match Python build_playbook_manifest output'
+    }
+
+    It 'renders is-defined and default fallback branches' {
+        InModuleScope FinOpsAssess {
+            $ctx = [System.Collections.Generic.Dictionary[string, object]]::new([System.StringComparer]::Ordinal)
+            $ctx['principal'] = 'sha256:demo'
+            $template = "X {{ owner_subs if owner_subs is defined else '(unknown)' }} Y {{ lookback_period | default('the lookback window') }}"
+            $rendered = ConvertTo-FinOpsPlaybookTemplate -Template $template -Context $ctx
+            $rendered | Should -BeExactly 'X (unknown) Y the lookback window'
+        }
     }
 }
 
