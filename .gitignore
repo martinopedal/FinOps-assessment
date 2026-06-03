@@ -44,3 +44,4 @@ reports/
 # §11 ceremony scratch files
 pr-body.md
 stage-*.md
+testResults.xml
