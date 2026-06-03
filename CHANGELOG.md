@@ -9,6 +9,17 @@ release.
 
 ### Added
 
+- **PowerShell Graph live collector parity (Phase 6b).**
+  Added `Get-FinOpsGraphCollector` and wired
+  `Invoke-FinOpsLiveCollection -Surface Graph` to emit
+  `users.csv`, `license_assignments.csv`, and `usage.csv` with structural
+  parity to Python's `collect_graph` under a pinned clock override.
+  Added the shared `scripts/generate_ps_live_collector_fixtures.py`
+  generator + `tests/test_ps_live_collector_fixtures.py` drift gate using
+  committed recorded graph `_input/` fixtures, and flipped
+  `Get-FinOpsInfo` to per-surface enforcement (`Graph=true`, overall
+  `ScopeGuard.Enforced='partial'`).
+
 - **PowerShell live-collector base (Phase 6a).**
   Added shared live-mode scaffolding:
   `Get-FinOpsAccessToken` (scope/token/PAT acquisition),

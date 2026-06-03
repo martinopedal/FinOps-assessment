@@ -533,8 +533,9 @@ Pester via `[System.IO.File]::ReadAllBytes`.
 
 ## Live mode (Phase 6)
 
-Phase 6a ships the shared live-collector base and the public dispatcher
-`Invoke-FinOpsLiveCollection`. Surface collectors themselves are staged in 6b–6e.
+Phase 6a shipped the shared live-collector base and the public dispatcher
+`Invoke-FinOpsLiveCollection`. Phase 6b now ships the Graph collector;
+ARM/GitHub/Azure DevOps collectors remain staged in 6c–6e.
 
 ```powershell
 Invoke-FinOpsLiveCollection -Surface Graph -OutputPath ./live
@@ -548,6 +549,28 @@ Invoke-FinOpsLiveCollection -Surface Graph -OutputPath ./live
 | ARM | `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, and one of `AZURE_FEDERATED_TOKEN_FILE` or `AZURE_CLIENT_SECRET` | Uses `Get-FinOpsAccessToken -Scope arm` |
 | GitHub | `GITHUB_TOKEN` (or pass `-Token`/`-Pat`) | Classic scopes are validated by the read-only guard |
 | Azure DevOps | `AZURE_DEVOPS_TOKEN` or `AZURE_DEVOPS_PAT` (or pass `-Token`/`-Pat`) | Bearer or PAT paths both flow through the guard |
+
+### Graph (Microsoft 365)
+
+`Invoke-FinOpsLiveCollection -Surface Graph` writes:
+`users.csv`, `license_assignments.csv`, and `usage.csv`.
+
+- **Required environment/auth inputs:** `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`,
+  plus one of `AZURE_FEDERATED_TOKEN_FILE` (OIDC/workload identity) or
+  `AZURE_CLIENT_SECRET` (service principal secret).
+- **Endpoints called:**
+  - `GET https://graph.microsoft.com/v1.0/users?...&$top=999&$count=true`
+    with `ConsistencyLevel: eventual`
+  - `GET .../reports/getMailboxUsageDetail(period='D30')`
+  - `GET .../reports/getOffice365ActiveUserDetail(period='D30')`
+  - `GET .../reports/getMicrosoft365CopilotUsageSummary(period='D30')`
+- **Required read-only Graph permissions:**
+  `User.Read.All`, `Reports.Read.All`, `Organization.Read.All`, and
+  `AuditLog.Read.All` (required for `signInActivity`).
+
+`Get-FinOpsInfo` now reports per-surface posture truthfully:
+Graph enforcement is live (`ScopeGuard.Enforced = 'partial'`,
+`RuntimeScopeGuardEnforced = $true`) while ARM/GitHub/ADO stay unshipped.
 
 ### SecureString posture (honest note)
 

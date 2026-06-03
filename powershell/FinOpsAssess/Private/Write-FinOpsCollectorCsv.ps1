@@ -47,7 +47,13 @@ function Write-FinOpsCollectorCsv {
     }
 
     $tempPath = "$Path.tmp"
-    [System.IO.File]::WriteAllText($tempPath, $csv, (New-Object System.Text.UTF8Encoding($false)))
-    Move-Item -LiteralPath $tempPath -Destination $Path -Force
+    try {
+        [System.IO.File]::WriteAllText($tempPath, $csv, (New-Object System.Text.UTF8Encoding($false)))
+        Move-Item -LiteralPath $tempPath -Destination $Path -Force
+    } finally {
+        if (Test-Path -LiteralPath $tempPath) {
+            Remove-Item -LiteralPath $tempPath -Force -ErrorAction SilentlyContinue
+        }
+    }
     return $Path
 }

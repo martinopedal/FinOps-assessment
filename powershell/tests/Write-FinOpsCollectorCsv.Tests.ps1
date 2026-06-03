@@ -71,6 +71,19 @@ Describe 'Write-FinOpsCollectorCsv' {
         }
     }
 
+    It 'cleans up temporary file when Move-Item fails' {
+        InModuleScope FinOpsAssess -Parameters @{ OutPath = $script:OutPath } {
+            param($OutPath)
+            Mock Move-Item { throw 'destination locked' }
+
+            {
+                Write-FinOpsCollectorCsv -Path $OutPath -Header @('a') -Row @([pscustomobject]@{ a = 'x' })
+            } | Should -Throw -ExpectedMessage '*destination locked*'
+
+            Test-Path -LiteralPath ($OutPath + '.tmp') | Should -BeFalse
+        }
+    }
+
     It 'round-trips via ConvertFrom-FinOpsCsvText to the same cells' {
         InModuleScope FinOpsAssess -Parameters @{ OutPath = $script:OutPath } {
             param($OutPath)
