@@ -9,6 +9,16 @@ release.
 
 ### Added
 
+- **PowerShell live-collector base (Phase 6a).**
+  Added shared live-mode scaffolding:
+  `Get-FinOpsAccessToken` (scope/token/PAT acquisition),
+  `Invoke-FinOpsRestRequest` (GET-only wrapper with paging/retry),
+  `Write-FinOpsCollectorCsv` (atomic LF UTF-8 no-BOM writer),
+  `Get-FinOpsNow` (deterministic clock override), and
+  `Invoke-FinOpsLiveCollection` (dispatcher wiring the read-only scope guard
+  before per-surface worker dispatch). Surface collectors are not yet shipped;
+  Graph/ARM/GitHub/ADO implementations land in Phases 6b–6e.
+
 - **PowerShell engine — playbook/ticket reporter parity (Phase 5d).**
   Added native `Export-FinOpsPlaybook` plus
   `powershell/FinOpsAssess/Private/Get-FinOpsPlaybook.ps1` to export

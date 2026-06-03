@@ -396,6 +396,12 @@ GitHub, ADO) from v0.6.0 (#71). Use `--surface azure` for v0.5.0 Azure-only beha
 All collectors emit the same normalized record shape so the rule engine
 is source-agnostic.
 
+**Phase-6 status:** PowerShell live-collector base scaffolding shipped in
+Phase 6a (`Get-FinOpsAccessToken`, `Invoke-FinOpsRestRequest` GET-only,
+`Write-FinOpsCollectorCsv`, `Get-FinOpsNow`, `Invoke-FinOpsLiveCollection`
+dispatcher + scope-guard call-site). Per-surface collectors follow in
+Phases 6b–6e.
+
 ---
 
 ## 7a. Dual-maintenance governance (PowerShell side-by-side)

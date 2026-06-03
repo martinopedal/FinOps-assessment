@@ -42,7 +42,7 @@ Import-Module ./powershell/FinOpsAssess/FinOpsAssess.psd1 -Force
 |--------------------------|------------------------------|-----------------------------------|
 | `info`                   | `Get-FinOpsInfo`             | ✅ implemented                     |
 | `validate`               | `Test-FinOpsConfiguration`   | 🟡 structural + version-lock only; schema validation in Phase 1 |
-| `collect`                | `Invoke-FinOpsCollection`    | ⛔ not started (Phase 6)           |
+| `collect`                | `Invoke-FinOpsLiveCollection`| 🟡 Phase 6a scaffold (auth/guard/dispatcher); surface workers land in 6b–6e |
 | `run`                    | `Invoke-FinOpsAssessment`    | 🟡 report envelope + JSON reporter + **8 M365 rules** + CSV reporter (Phase 2); **12 Azure rules** (Phase 3); **4 GitHub rules + 4 ADO rules** (Phase 4); ✅ full-document HTML reporter byte-parity over `samples/` (Phase 5c) |
 | `demo`                   | `Invoke-FinOpsDemo`          | ⛔ not started (Phase 1)           |
 | `triage`                 | `Invoke-FinOpsTriage`        | ✅ advisory triage JSON+CSV parity (Phase 5a) + ✅ practice-review HTML fragment parity via private helpers (Phase 5b), both over `samples/` |
@@ -530,6 +530,45 @@ Pester via `[System.IO.File]::ReadAllBytes`.
 > scope for this slice: non-ASCII `ensure_ascii=False` paths, per-run/cleartext
 > manifest branches, overlay/template provenance, orphan scan, and PII-warning
 > CLI stderr behaviour.
+
+## Live mode (Phase 6)
+
+Phase 6a ships the shared live-collector base and the public dispatcher
+`Invoke-FinOpsLiveCollection`. Surface collectors themselves are staged in 6b–6e.
+
+```powershell
+Invoke-FinOpsLiveCollection -Surface Graph -OutputPath ./live
+```
+
+### Environment variables by surface
+
+| Surface | Required env (default path) | Notes |
+|---|---|---|
+| Graph | `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, and one of `AZURE_FEDERATED_TOKEN_FILE` or `AZURE_CLIENT_SECRET` | Uses `Get-FinOpsAccessToken -Scope graph` |
+| ARM | `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, and one of `AZURE_FEDERATED_TOKEN_FILE` or `AZURE_CLIENT_SECRET` | Uses `Get-FinOpsAccessToken -Scope arm` |
+| GitHub | `GITHUB_TOKEN` (or pass `-Token`/`-Pat`) | Classic scopes are validated by the read-only guard |
+| Azure DevOps | `AZURE_DEVOPS_TOKEN` or `AZURE_DEVOPS_PAT` (or pass `-Token`/`-Pat`) | Bearer or PAT paths both flow through the guard |
+
+### SecureString posture (honest note)
+
+Tokens and PATs stay as `SecureString` through module plumbing and are only
+unwrapped in short-lived locals when a header must be built or token claims must
+be inspected. On Linux/macOS, `SecureString` is operational hardening (avoids
+echo/history/accidental logging), **not** cryptographic memory protection.
+
+### Deterministic clock + CSV notes
+
+- `Get-FinOpsNow` honors `FINOPS_NOW_OVERRIDE=yyyy-MM-dd` for deterministic
+  day-math in tests and fixture generation.
+- `Write-FinOpsCollectorCsv` writes UTF-8 (no BOM) with **LF** line endings and
+  RFC-4180 quoting.
+- Live-collector parity assertions are structural at normalized-dataset level
+  (plus targeted literal checks), not full-file byte equality.
+
+### Phase sequencing
+
+- **6a (this slice):** auth + GET-only REST wrapper + atomic CSV writer + dispatcher.
+- **6b–6e:** Graph, ARM, GitHub, and Azure DevOps collectors.
 
 ## Conformance & CI
 
