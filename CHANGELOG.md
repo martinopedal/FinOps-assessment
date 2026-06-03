@@ -7,7 +7,14 @@ release.
 
 ## Unreleased
 
+## [0.1.0] — 2026-06-03
+
 ### Added
+
+- **PowerShell Gallery packaging metadata + readiness gate (Phase 7a).**
+  Shipped gallery-ready manifest hygiene (`Description`, expanded tags, and 0.1.0 release notes),
+  added `FinOpsAssess.PSGalleryReadiness.Tests.ps1`, and documented PSGallery as the canonical
+  install path. First gallery version remains `0.1.0` to preserve lockstep with Python `__version__`.
 
 - **PowerShell Azure DevOps live collector parity (Phase 6e).**
   Added `Get-FinOpsAdoCollector` and wired
