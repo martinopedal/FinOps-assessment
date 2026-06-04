@@ -62,6 +62,99 @@ Describe 'Get-FinOpsGitHubCollector + GitHub dispatcher guard' {
             }
         }
 
+        It 'reads X-OAuth-Scopes from WebHeaderCollection-like headers without Contains overload errors' {
+            InModuleScope FinOpsAssess {
+                $auth = [pscustomobject]@{ AccessToken = (New-TestSecureString -Value 'ghp_readonly'); Source = 'caller-bearer' }
+                Mock Get-FinOpsAccessToken { $auth }
+                Mock Invoke-WebRequest {
+                    $headers = [System.Net.WebHeaderCollection]::new()
+                    $headers.Add('X-OAuth-Scopes', 'read:org')
+                    $headers.Add('X-OAuth-Scopes', 'read:enterprise')
+                    [pscustomobject]@{
+                        Headers = $headers
+                        Content = '{}'
+                    }
+                }
+                Mock Assert-FinOpsReadOnlyScope {}
+                Mock Get-FinOpsGitHubCollector {
+                    [pscustomobject]@{ FilesWritten = @('github_seats.csv', 'github_orgs.csv'); RowCounts = [ordered]@{ github_seats = 0; github_orgs = 0 } }
+                }
+
+                { Invoke-FinOpsLiveCollection -Surface GitHub -OutputPath 'out' -Token (New-TestSecureString -Value 'ghp_readonly') } | Should -Not -Throw
+                Assert-MockCalled Assert-FinOpsReadOnlyScope -Times 1 -Exactly
+                Assert-MockCalled Get-FinOpsGitHubCollector -Times 1 -Exactly
+            }
+        }
+
+        It 'Dictionary[string,IEnumerable[string]] header shape (PS7 live type) does not crash on Contains and extracts scopes' {
+            # Regression for: "Cannot find an overload for Contains and the argument count: 1"
+            # Dictionary<string,IEnumerable<string>> implements IDictionary but exposes
+            # Contains(object) only as an explicit interface member; PowerShell's dynamic
+            # dispatch cannot resolve it from the concrete type reference.
+            # Get-FinOpsHeaderValue avoids .Contains() entirely by iterating .Keys.
+            # This test pins that fix and ensures the IEnumerable join path is exercised.
+            InModuleScope FinOpsAssess {
+                $auth = [pscustomobject]@{ AccessToken = (New-TestSecureString -Value 'ghp_readonly'); Source = 'caller-bearer' }
+                Mock Get-FinOpsAccessToken { $auth }
+                Mock Invoke-WebRequest {
+                    $headers = [System.Collections.Generic.Dictionary[string, System.Collections.Generic.IEnumerable[string]]]::new(
+                        [System.StringComparer]::OrdinalIgnoreCase)
+                    $headers['X-OAuth-Scopes'] = [string[]]@('read:org, read:enterprise, read:packages')
+                    [pscustomobject]@{ Headers = $headers; Content = '{}' }
+                }
+                Mock Assert-FinOpsReadOnlyScope {}
+                Mock Get-FinOpsGitHubCollector {
+                    [pscustomobject]@{ FilesWritten = @('github_seats.csv', 'github_orgs.csv'); RowCounts = [ordered]@{ github_seats = 0; github_orgs = 0 } }
+                }
+
+                { Invoke-FinOpsLiveCollection -Surface GitHub -OutputPath 'out' -Token (New-TestSecureString -Value 'ghp_readonly') } | Should -Not -Throw
+                Assert-MockCalled Assert-FinOpsReadOnlyScope -Times 1 -Exactly -ParameterFilter {
+                    $Surface -ceq 'GitHub' -and $Scope.Count -eq 3
+                }
+            }
+        }
+
+        It 'Dictionary[string,IEnumerable[string]] without X-OAuth-Scopes key does not crash and guard fails closed' {
+            # Ensures the IDictionary branch in Get-FinOpsHeaderValue returns $null cleanly
+            # (no MethodException) when the key is absent, and that the real scope guard
+            # correctly refuses with a fail-closed error for the empty-scope case.
+            InModuleScope FinOpsAssess {
+                $auth = [pscustomobject]@{ AccessToken = (New-TestSecureString -Value 'github_pat_fg_dict'); Source = 'caller-bearer' }
+                Mock Get-FinOpsAccessToken { $auth }
+                Mock Invoke-WebRequest {
+                    $headers = [System.Collections.Generic.Dictionary[string, System.Collections.Generic.IEnumerable[string]]]::new(
+                        [System.StringComparer]::OrdinalIgnoreCase)
+                    $headers['Content-Type'] = [string[]]@('application/json')
+                    [pscustomobject]@{ Headers = $headers; Content = '{}' }
+                }
+                Mock Get-FinOpsGitHubCollector {}
+
+                { Invoke-FinOpsLiveCollection -Surface GitHub -OutputPath 'out' -Token (New-TestSecureString -Value 'github_pat_fg_dict') } |
+                    Should -Throw -ExpectedMessage '*fail-closed*'
+                Assert-MockCalled Get-FinOpsGitHubCollector -Times 0 -Exactly
+            }
+        }
+
+        It 'WebHeaderCollection without X-OAuth-Scopes header does not crash and guard fails closed' {
+            # Complements the success-path WebHeaderCollection test above.
+            # When the header is absent, GetValues returns $null; Get-FinOpsHeaderValue
+            # returns $null; scopes is empty; the real guard throws fail-closed.
+            InModuleScope FinOpsAssess {
+                $auth = [pscustomobject]@{ AccessToken = (New-TestSecureString -Value 'ghp_ps51_noscopehdr'); Source = 'caller-bearer' }
+                Mock Get-FinOpsAccessToken { $auth }
+                Mock Invoke-WebRequest {
+                    $headers = [System.Net.WebHeaderCollection]::new()
+                    $headers.Add('Content-Type', 'application/json')
+                    [pscustomobject]@{ Headers = $headers; Content = '{}' }
+                }
+                Mock Get-FinOpsGitHubCollector {}
+
+                { Invoke-FinOpsLiveCollection -Surface GitHub -OutputPath 'out' -Token (New-TestSecureString -Value 'ghp_ps51_noscopehdr') } |
+                    Should -Throw -ExpectedMessage '*fail-closed*'
+                Assert-MockCalled Get-FinOpsGitHubCollector -Times 0 -Exactly
+            }
+        }
+
         It 'refuses write-shaped classic scopes and does not invoke worker' {
             InModuleScope FinOpsAssess {
                 $auth = [pscustomobject]@{ AccessToken = (New-TestSecureString -Value 'ghp_write'); Source = 'caller-bearer' }
@@ -365,5 +458,3 @@ Describe 'Get-FinOpsGitHubCollector + GitHub dispatcher guard' {
         }
     }
 }
-
-
