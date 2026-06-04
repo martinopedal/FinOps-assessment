@@ -84,6 +84,6 @@ Describe 'Test-FinOpsConfiguration includes the data projection check' {
         $result.Success | Should -BeTrue
         $projChecks = @($result.Checks | Where-Object { $_.Check -like 'data-projection-*' })
         $projChecks.Count | Should -Be 3
-        ($projChecks | Where-Object { $_.Status -ne 'pass' }).Count | Should -Be 0
+        @($projChecks | Where-Object { $_.Status -ne 'pass' }).Count | Should -Be 0
     }
 }
