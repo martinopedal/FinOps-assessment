@@ -82,8 +82,8 @@ function Test-FinOpsCatalogCoverage {
 
         [switch] $NoFailOnGap,
 
-        # Included for API symmetry with other Test-FinOps* cmdlets. This cmdlet always writes
-        # a structured result to the pipeline; -PassThru is a no-op.
+        # When present, emits the result as a [pscustomobject] to the pipeline.
+        # When absent, the result is serialised to JSON text via ConvertTo-Json -Depth 5.
         [switch] $PassThru
     )
 
