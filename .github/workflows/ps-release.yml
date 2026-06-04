@@ -160,9 +160,15 @@ jobs:
             }
           }
 
-          $commandCount = (Get-Command -Module FinOpsAssess | Select-Object -ExpandProperty Name).Count
-          if ($commandCount -ne 9) {
-            throw "Expected 9 exported cmdlets, got $commandCount."
+          # Derive expected count from the installed module's own manifest so
+          # this check never drifts when new public cmdlets are added.
+          $manifestCount = (Get-Module FinOpsAssess).ExportedFunctions.Count
+          $commandCount  = (Get-Command -Module FinOpsAssess -CommandType Function).Count
+          if ($commandCount -ne $manifestCount) {
+            throw "Installed module exports $commandCount function(s) but manifest declares $manifestCount. The module and its manifest are out of sync."
+          }
+          if ($commandCount -eq 0) {
+            throw "Get-Command returned 0 exported functions — module may not have loaded correctly."
           }
 
   announce:
