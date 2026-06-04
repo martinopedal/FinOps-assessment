@@ -251,3 +251,76 @@ def test_azure_reservations_csv_legacy_loads_with_null_scope_ids(tmp_path: Path)
     legacy = dataset.azure_reservations[0]
     assert legacy.applied_scope_subscription_ids is None
     assert legacy.utilization_pct == 55.0
+
+
+def test_azure_benefit_recommendation_reservation_kind_round_trip(tmp_path: Path) -> None:
+    """benefit_kind='Reservation' must load through the strict-column CSV loader.
+
+    The model allows both 'SavingsPlan' and 'Reservation'; the existing sample
+    test covers SavingsPlan.  This test pins the Reservation path end-to-end
+    to prevent a regression where only the default value was exercised.
+    """
+    (tmp_path / "azure_benefit_recommendations.csv").write_text(
+        "recommendation_id,scope,scope_kind,term,lookback_period,arm_sku_name,"
+        "cost_without_benefit_usd,recommended_hourly_commit_usd,net_savings_usd,"
+        "wastage_usd,benefit_kind\n"
+        "/providers/Microsoft.CostManagement/benefitRecommendations/r2,"
+        "/subscriptions/00000000-0000-0000-0000-000000000002,Single,P3Y,Last7Days,"
+        "Microsoft.Compute/virtualMachines/Standard_D8s_v5,2900.00,3.70,360.00,24.80,Reservation\n",
+        encoding="utf-8",
+    )
+    dataset = collect_from_directory(tmp_path)
+    assert len(dataset.azure_benefit_recommendations) == 1
+    rec = dataset.azure_benefit_recommendations[0]
+    assert rec.benefit_kind == "Reservation"
+    assert rec.term == "P3Y"
+    assert rec.lookback_period == "Last7Days"
+    assert rec.net_savings_usd == pytest.approx(360.00)
+
+
+def test_azure_reservations_capitalized_auto_renew_parses_correctly(tmp_path: Path) -> None:
+    """Title-case 'True'/'False' (common in PowerShell output) parse to correct booleans.
+
+    The _coerce_row helper lower-cases values before the bool set-membership
+    check, so 'True' → True and 'False' → False without any production-code
+    change.  This test pins that behaviour so a future refactor cannot
+    silently break PowerShell-exported CSVs.
+    """
+    (tmp_path / "azure_reservations.csv").write_text(
+        "reservation_id,reservation_name,sku,scope,utilization_pct,monthly_cost_usd,"
+        "expiry_date,auto_renew\n"
+        "/providers/Microsoft.Capacity/reservationOrders/o-1/reservations/r-1,"
+        "RI-VM-D4s,Standard_D4s_v5,shared,72.0,1450.00,2026-07-12,True\n"
+        "/providers/Microsoft.Capacity/reservationOrders/o-2/reservations/r-2,"
+        "RI-SQL,GP_Gen5_8,single,85.0,720.00,2026-08-30,False\n",
+        encoding="utf-8",
+    )
+    dataset = collect_from_directory(tmp_path)
+    assert len(dataset.azure_reservations) == 2
+    assert dataset.azure_reservations[0].auto_renew is True
+    assert dataset.azure_reservations[1].auto_renew is False
+
+
+def test_collect_partial_csv_presence_yields_empty_missing_surfaces(tmp_path: Path) -> None:
+    """Only users.csv present: all other surfaces must be empty lists, no exception.
+
+    Verifies that the CSV collector does not require all files to be present
+    simultaneously — a partial export (e.g., Graph-only run) is always valid.
+    """
+    (tmp_path / "users.csv").write_text(
+        "principal,display_name\nalice@example.test,Alice\n",
+        encoding="utf-8",
+    )
+    dataset = collect_from_directory(tmp_path)
+    assert len(dataset.users) == 1
+    assert dataset.assignments == []
+    assert dataset.usage == []
+    assert dataset.azure_resources == []
+    assert dataset.azure_reservations == []
+    assert dataset.azure_log_workspaces == []
+    assert dataset.azure_benefit_recommendations == []
+    assert dataset.github_seats == []
+    assert dataset.github_orgs == []
+    assert dataset.ado_seats == []
+    assert dataset.ado_orgs == []
+    assert dataset.overrides == {}

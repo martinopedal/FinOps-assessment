@@ -100,7 +100,7 @@ Import-Module ./powershell/FinOpsAssess/FinOpsAssess.psd1 -Force
 | `demo`                   | `Invoke-FinOpsDemo`          | ⛔ not started (Phase 1)           |
 | `triage`                 | `Invoke-FinOpsTriage`        | ✅ advisory triage JSON+CSV parity (Phase 5a) + ✅ practice-review HTML fragment parity via private helpers (Phase 5b), both over `samples/` |
 | `catalog refresh`        | `Update-FinOpsCatalog`       | ⛔ not started (Phase 6)           |
-| `catalog coverage`       | `Test-FinOpsCatalogCoverage` | ⛔ not started (Phase 6)           |
+| `catalog coverage`       | `Test-FinOpsCatalogCoverage` | ✅ implemented                     |
 | `export focus-aligned`   | `Export-FinOpsFocusAligned`  | ✅ advisory CSV + manifest byte parity over `samples/` (Phase 5e) |
 | `run --format playbook`  | `Export-FinOpsPlaybook`      | ✅ playbook/ticket JSONL + manifest parity over `samples/` (Phase 5d, standalone exporter) |
 

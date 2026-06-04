@@ -49,6 +49,10 @@ writes normalized CSVs to disk.
 
 Builds advisory triage JSON/CSV artefacts from an existing report JSON.
 
+### [Test-FinOpsCatalogCoverage](Test-FinOpsCatalogCoverage.md)
+
+Compares the Microsoft upstream M365 SKU catalogue against the local data projection.
+
 ### [Test-FinOpsConfiguration](Test-FinOpsConfiguration.md)
 
 Self-tests the module's structural integrity and version lock.

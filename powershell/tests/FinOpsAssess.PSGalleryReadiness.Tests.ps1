@@ -13,6 +13,7 @@ BeforeAll {
         'Invoke-FinOpsAssessment',
         'Invoke-FinOpsLiveCollection',
         'Invoke-FinOpsTriage',
+        'Test-FinOpsCatalogCoverage',
         'Test-FinOpsConfiguration',
         'Test-FinOpsReadOnlyScope'
     )
@@ -40,7 +41,7 @@ Describe 'PSGallery readiness' {
     }
 
     It 'exports exactly the expected public function set' {
-        @($script:ManifestData.FunctionsToExport).Count | Should -Be 9
+        @($script:ManifestData.FunctionsToExport).Count | Should -Be 10
 
         $expected = $script:ExpectedFunctions | Sort-Object
         $actual = @($script:ManifestData.FunctionsToExport) | Sort-Object

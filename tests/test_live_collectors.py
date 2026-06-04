@@ -76,6 +76,136 @@ def _make_bytes_resp(payload: bytes, status: int = 200) -> MagicMock:
 class TestGraphCollector:
     """Tests for :mod:`finops_assess.collectors.graph_collector`."""
 
+    def test_collect_graph_optional_endpoints_404_still_writes_csvs(self, tmp_path: Path) -> None:
+        """Report endpoints returning 404 must not crash collect_graph.
+
+        mailbox/active-user/Copilot report endpoints are optional; when they
+        fail the collector must still write all three CSV files and load the
+        user row without mailbox or activity data.
+        """
+        from finops_assess.collectors.graph_collector import collect_graph
+
+        cred = _mock_credential()
+        users_resp = {
+            "value": [
+                {
+                    "userPrincipalName": "alice@contoso.test",
+                    "displayName": "Alice",
+                    "userType": "Member",
+                    "accountEnabled": True,
+                    "assignedLicenses": [{"skuId": "6fd2c87f-b296-42f0-b197-1e91e994b900"}],
+                    "signInActivity": {"lastSignInDateTime": "2023-01-01T00:00:00Z"},
+                }
+            ]
+        }
+
+        def _side_effect(url: str, **kwargs: Any) -> MagicMock:
+            if "reports" in url.lower():
+                resp = MagicMock()
+                resp.raise_for_status.side_effect = RuntimeError("404 Not Found")
+                return resp
+            return _make_json_resp(users_resp)
+
+        with patch("requests.Session") as mock_session_cls:
+            session = MagicMock()
+            session.get.side_effect = _side_effect
+            mock_session_cls.return_value = session
+            collect_graph(tmp_path, _credential=cred)  # must not raise
+
+        assert (tmp_path / "users.csv").exists()
+        assert (tmp_path / "license_assignments.csv").exists()
+        assert (tmp_path / "usage.csv").exists()
+
+        dataset = collect_from_directory(tmp_path)
+        assert len(dataset.users) == 1
+        assert dataset.users[0].principal == "alice@contoso.test"
+        # Mailbox size absent because the report endpoint failed
+        assert dataset.users[0].mailbox_size_gb is None
+
+    def test_collect_graph_user_with_absent_sign_in_activity(self, tmp_path: Path) -> None:
+        """A user object with no signInActivity key must produce a valid row.
+
+        Graph omits the signInActivity property when AuditLog.Read.All is
+        missing or when the user has never signed in.  The collector must
+        write the row with last_sign_in_days=None, not crash.
+        """
+        from finops_assess.collectors.graph_collector import collect_graph
+
+        cred = _mock_credential()
+        users_resp = {
+            "value": [
+                {
+                    "userPrincipalName": "bob@contoso.test",
+                    "displayName": "Bob",
+                    "userType": "Member",
+                    "accountEnabled": True,
+                    "assignedLicenses": [],
+                    # signInActivity key deliberately absent
+                }
+            ]
+        }
+
+        def _side_effect(url: str, **kwargs: Any) -> MagicMock:
+            if "users" in url.lower():
+                return _make_json_resp(users_resp)
+            return _make_bytes_resp(b"")
+
+        with patch("requests.Session") as mock_session_cls:
+            session = MagicMock()
+            session.get.side_effect = _side_effect
+            mock_session_cls.return_value = session
+            collect_graph(tmp_path, _credential=cred)
+
+        dataset = collect_from_directory(tmp_path)
+        assert len(dataset.users) == 1
+        assert dataset.users[0].principal == "bob@contoso.test"
+        assert dataset.users[0].last_sign_in_days is None
+
+    def test_collect_graph_odata_pagination_merges_pages(self, tmp_path: Path) -> None:
+        """Two-page user collection via @odata.nextLink must yield one row per user.
+
+        The list_all helper follows the nextLink URL; this test verifies that
+        both page-1 and page-2 users land in users.csv and are readable.
+        """
+        from finops_assess.collectors.graph_collector import collect_graph
+
+        cred = _mock_credential()
+
+        def _make_user(upn: str, name: str) -> dict[str, Any]:
+            return {
+                "userPrincipalName": upn,
+                "displayName": name,
+                "userType": "Member",
+                "accountEnabled": True,
+                "assignedLicenses": [],
+            }
+
+        page1: dict[str, Any] = {
+            "value": [_make_user("alice@contoso.test", "Alice")],
+            "@odata.nextLink": "https://graph.microsoft.com/v1.0/users?$skiptoken=page2token",
+        }
+        page2: dict[str, Any] = {
+            "value": [_make_user("bob@contoso.test", "Bob")],
+        }
+
+        def _side_effect(url: str, **kwargs: Any) -> MagicMock:
+            if "skiptoken" in url:
+                return _make_json_resp(page2)
+            if "users" in url.lower():
+                return _make_json_resp(page1)
+            return _make_bytes_resp(b"")
+
+        with patch("requests.Session") as mock_session_cls:
+            session = MagicMock()
+            session.get.side_effect = _side_effect
+            mock_session_cls.return_value = session
+            collect_graph(tmp_path, _credential=cred)
+
+        dataset = collect_from_directory(tmp_path)
+        assert len(dataset.users) == 2
+        principals = {u.principal for u in dataset.users}
+        assert principals == {"alice@contoso.test", "bob@contoso.test"}
+
     def test_collect_graph_writes_csvs(self, tmp_path: Path) -> None:
         from finops_assess.collectors.graph_collector import collect_graph
 
