@@ -286,7 +286,14 @@ function Invoke-FinOpsLiveCollection {
                 }
                 return [string]$indexed
             }
-        } catch {}
+        } catch {
+            Write-Verbose (
+                "Header indexer lookup for '{0}' failed on type '{1}' with exception type '{2}'." -f
+                $Name,
+                $Headers.GetType().FullName,
+                $_.Exception.GetType().FullName
+            )
+        }
 
         $matchedProperty = @($Headers.PSObject.Properties | Where-Object {
                 [string]::Equals($_.Name, $Name, [System.StringComparison]::OrdinalIgnoreCase)
