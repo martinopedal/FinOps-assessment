@@ -1,29 +1,29 @@
-#requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '5.0.0' }
+﻿#requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '5.0.0' }
 #
 # Regression coverage for Test-FinOpsCatalogCoverage (PowerShell parity with
 # `finops-assess catalog coverage`).
 #
-# All tests use LOCAL CSV fixtures only — no network calls are made.
+# All tests use LOCAL CSV fixtures only -- no network calls are made.
 # Fixture files:
-#   tests/fixtures/ms_skus_minimal.csv   – 4 unique SKUs (E3/E5/F3/Copilot), all in curated catalogue
-#   tests/fixtures/ms_skus_with_gap.csv  – 2 unique SKUs (E3 + TOTALLY_NEW_SKU_2099, gap guaranteed)
+#   tests/fixtures/ms_skus_minimal.csv   - 4 unique SKUs (E3/E5/F3/Copilot), all in curated catalogue
+#   tests/fixtures/ms_skus_with_gap.csv  - 2 unique SKUs (E3 + TOTALLY_NEW_SKU_2099, gap guaranteed)
 #
 # PESTER 5 SCOPE NOTE:
 # -Skip:($expr) is evaluated at DISCOVERY time. Variables for skip conditions must therefore be
 # set at top-level script scope (before any Describe block). Fixture variables that are only
 # needed at execution time are set inside BeforeAll blocks to correctly bind to the run-phase scope.
 
-# ─── Discovery-time setup (top-level, runs before Describe blocks are evaluated) ─
+# --- Discovery-time setup (top-level, runs before Describe blocks are evaluated) -
 
-# Check by file existence — avoids an Import-Module call at discovery time.
+# Check by file existence -- avoids an Import-Module call at discovery time.
 $script:CmdletFile      = Join-Path $PSScriptRoot '..' 'FinOpsAssess' 'Public' 'Test-FinOpsCatalogCoverage.ps1'
 $script:CmdletAvailable = Test-Path -LiteralPath $script:CmdletFile -PathType Leaf
 
-# ─── Execution-time setup (BeforeAll, runs before any It block executes) ──────
+# --- Execution-time setup (BeforeAll, runs before any It block executes) ------
 
 BeforeAll {
     $script:ModuleManifest = Join-Path $PSScriptRoot '..' 'FinOpsAssess' 'FinOpsAssess.psd1'
-    # Fixture paths: two levels up from powershell/tests/ → repo root → tests/fixtures/
+    # Fixture paths: two levels up from powershell/tests/ -> repo root -> tests/fixtures/
     $script:FixturesRoot   = [System.IO.Path]::GetFullPath(
         (Join-Path $PSScriptRoot '..' '..' 'tests' 'fixtures'))
     $script:MinimalCsv     = Join-Path $script:FixturesRoot 'ms_skus_minimal.csv'
@@ -35,9 +35,9 @@ AfterAll {
     Remove-Module FinOpsAssess -Force -ErrorAction SilentlyContinue
 }
 
-# ─── Pre-flight: fixture guard ──────────────────────────────────────────────
+# --- Pre-flight: fixture guard ----------------------------------------------
 
-Describe 'Test-FinOpsCatalogCoverage — fixture files exist' {
+Describe 'Test-FinOpsCatalogCoverage -- fixture files exist' {
     It 'ms_skus_minimal.csv is present in tests/fixtures/' {
         Test-Path -LiteralPath $script:MinimalCsv -PathType Leaf |
             Should -BeTrue -Because 'ms_skus_minimal.csv must be committed under tests/fixtures/'
@@ -58,7 +58,7 @@ Describe 'Test-FinOpsCatalogCoverage — fixture files exist' {
     }
 }
 
-Describe 'Test-FinOpsCatalogCoverage — module export (TDD-red until cmdlet lands)' {
+Describe 'Test-FinOpsCatalogCoverage -- module export (TDD-red until cmdlet lands)' {
     It 'Test-FinOpsCatalogCoverage.ps1 exists under Public/' {
         $cmdletFile = Join-Path $PSScriptRoot '..' 'FinOpsAssess' 'Public' 'Test-FinOpsCatalogCoverage.ps1'
         Test-Path -LiteralPath $cmdletFile -PathType Leaf |
@@ -71,9 +71,9 @@ Describe 'Test-FinOpsCatalogCoverage — module export (TDD-red until cmdlet lan
     }
 }
 
-# ─── Result shape ────────────────────────────────────────────────────────────
+# --- Result shape ------------------------------------------------------------
 
-Describe 'Test-FinOpsCatalogCoverage — result shape' -Skip:(-not $script:CmdletAvailable) {
+Describe 'Test-FinOpsCatalogCoverage -- result shape' -Skip:(-not $script:CmdletAvailable) {
     BeforeAll {
         # -NoFailOnGap: prevents BeforeAll from throwing on gap fixture.
         # -PassThru: returns structured [pscustomobject] instead of JSON text.
@@ -101,7 +101,7 @@ Describe 'Test-FinOpsCatalogCoverage — result shape' -Skip:(-not $script:Cmdle
         $script:GapResult.catalog_count | Should -BeGreaterThan 0
     }
 
-    It 'result has CoveragePct in the 0–100 range' {
+    It 'result has CoveragePct in the 0-100 range' {
         $script:GapResult.PSObject.Properties.Name | Should -Contain 'coverage_pct'
         $script:GapResult.coverage_pct | Should -BeGreaterOrEqual 0
         $script:GapResult.coverage_pct | Should -BeLessOrEqual 100
@@ -126,9 +126,9 @@ Describe 'Test-FinOpsCatalogCoverage — result shape' -Skip:(-not $script:Cmdle
     }
 }
 
-# ─── Gap detection ───────────────────────────────────────────────────────────
+# --- Gap detection -----------------------------------------------------------
 
-Describe 'Test-FinOpsCatalogCoverage — gap detection' -Skip:(-not $script:CmdletAvailable) {
+Describe 'Test-FinOpsCatalogCoverage -- gap detection' -Skip:(-not $script:CmdletAvailable) {
     BeforeAll {
         $script:GapResult = Test-FinOpsCatalogCoverage -Source $script:GapCsv -NoFailOnGap -PassThru
     }
@@ -149,15 +149,15 @@ Describe 'Test-FinOpsCatalogCoverage — gap detection' -Skip:(-not $script:Cmdl
     }
 }
 
-# ─── Deduplication ───────────────────────────────────────────────────────────
+# --- Deduplication -----------------------------------------------------------
 
-Describe 'Test-FinOpsCatalogCoverage — deduplication of service-plan rows' -Skip:(-not $script:CmdletAvailable) {
+Describe 'Test-FinOpsCatalogCoverage -- deduplication of service-plan rows' -Skip:(-not $script:CmdletAvailable) {
     BeforeAll {
         # ms_skus_minimal.csv: 7 rows but only 4 unique String_Ids
-        #   SPE_E3 × 3 rows (Exchange, SharePoint, Teams service plans)
-        #   SPE_E5 × 2 rows
-        #   SPE_F3 × 1 row
-        #   M365_COPILOT × 1 row
+        #   SPE_E3 x 3 rows (Exchange, SharePoint, Teams service plans)
+        #   SPE_E5 x 2 rows
+        #   SPE_F3 x 1 row
+        #   M365_COPILOT x 1 row
         $script:MinResult = Test-FinOpsCatalogCoverage -Source $script:MinimalCsv -NoFailOnGap -PassThru
     }
 
@@ -168,9 +168,9 @@ Describe 'Test-FinOpsCatalogCoverage — deduplication of service-plan rows' -Sk
     }
 }
 
-# ─── Fail-on-gap behaviour ───────────────────────────────────────────────────
+# --- Fail-on-gap behaviour ---------------------------------------------------
 
-Describe 'Test-FinOpsCatalogCoverage — fail-on-gap (default)' -Skip:(-not $script:CmdletAvailable) {
+Describe 'Test-FinOpsCatalogCoverage -- fail-on-gap (default)' -Skip:(-not $script:CmdletAvailable) {
     It 'throws a terminating error by default when the upstream CSV contains uncatalogued SKUs' {
         { Test-FinOpsCatalogCoverage -Source $script:GapCsv } |
             Should -Throw -Because 'fail-on-gap is the conservative default (mirrors --fail-on-gap in Python CLI)'
@@ -188,9 +188,9 @@ Describe 'Test-FinOpsCatalogCoverage — fail-on-gap (default)' -Skip:(-not $scr
     }
 }
 
-# ─── m365_uncategorized exclusion ────────────────────────────────────────────
+# --- m365_uncategorized exclusion --------------------------------------------
 
-Describe 'Test-FinOpsCatalogCoverage — m365_uncategorized family excluded from coverage' -Skip:(-not $script:CmdletAvailable) {
+Describe 'Test-FinOpsCatalogCoverage -- m365_uncategorized family excluded from coverage' -Skip:(-not $script:CmdletAvailable) {
     It 'still reports TOTALLY_NEW_SKU_2099 as missing even when an autogen stub exists' {
         # Mirrors Python regression: test_compute_coverage_excludes_autogen_stubs_from_local_count.
         # The cmdlet must delegate gap computation to the same logic that excludes
@@ -203,9 +203,9 @@ Describe 'Test-FinOpsCatalogCoverage — m365_uncategorized family excluded from
     }
 }
 
-# ─── No live calls / offline safety ─────────────────────────────────────────
+# --- No live calls / offline safety -----------------------------------------
 
-Describe 'Test-FinOpsCatalogCoverage — no live Microsoft endpoints' -Skip:(-not $script:CmdletAvailable) {
+Describe 'Test-FinOpsCatalogCoverage -- no live Microsoft endpoints' -Skip:(-not $script:CmdletAvailable) {
     It 'accepts a local filesystem path as -Source without hitting the network' {
         # If the implementation ignores -Source and hits the default URL, this test
         # would fail or return wrong upstream counts.
