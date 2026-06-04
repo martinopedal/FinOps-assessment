@@ -12,8 +12,11 @@ AfterAll {
 
 Describe 'FinOpsAssess module surface' {
     It 'exports exactly the expected public functions' {
+        $expected = @('Assert-FinOpsReadOnlyScope', 'Export-FinOpsFocusAligned', 'Export-FinOpsPlaybook', 'Get-FinOpsInfo', 'Invoke-FinOpsAssessment', 'Invoke-FinOpsLiveCollection', 'Invoke-FinOpsTriage', 'Test-FinOpsCatalogCoverage', 'Test-FinOpsConfiguration', 'Test-FinOpsReadOnlyScope')
         $exported = (Get-Command -Module FinOpsAssess -CommandType Function).Name | Sort-Object
-        $exported | Should -Be @('Assert-FinOpsReadOnlyScope', 'Export-FinOpsFocusAligned', 'Export-FinOpsPlaybook', 'Get-FinOpsInfo', 'Invoke-FinOpsAssessment', 'Invoke-FinOpsLiveCollection', 'Invoke-FinOpsTriage', 'Test-FinOpsConfiguration', 'Test-FinOpsReadOnlyScope')
+        # Strict count check ensures neither additions nor deletions slip through undetected.
+        $exported.Count | Should -Be $expected.Count -Because "module must export exactly $($expected.Count) public functions"
+        $exported | Should -Be $expected
     }
 
     It 'declares PowerShell 7.2+ as the minimum supported version' {
