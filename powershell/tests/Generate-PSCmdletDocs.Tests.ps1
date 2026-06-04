@@ -30,7 +30,7 @@ Describe 'Test-FinOpsCmdletHelpCompleteness' {
             param()
         }
 
-        $offenders = Test-FinOpsCmdletHelpCompleteness -Name 'Test-DocHelpComplete'
+        $offenders = @(Test-FinOpsCmdletHelpCompleteness -Name 'Test-DocHelpComplete')
         $offenders.Count | Should -Be 0
     }
 
