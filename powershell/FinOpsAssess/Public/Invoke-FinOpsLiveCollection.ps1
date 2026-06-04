@@ -221,6 +221,87 @@ function Invoke-FinOpsLiveCollection {
         return $secure
     }
 
+    function Get-FinOpsHeaderValue {
+        param(
+            [Parameter()] [object] $Headers,
+            [Parameter(Mandatory)] [string] $Name
+        )
+
+        if ($null -eq $Headers) { return $null }
+
+        if ($Headers -is [System.Collections.IDictionary]) {
+            foreach ($key in @($Headers.Keys)) {
+                if ([string]::Equals([string]$key, $Name, [System.StringComparison]::OrdinalIgnoreCase)) {
+                    $rawValue = $Headers[$key]
+                    if ($rawValue -is [System.Collections.IEnumerable] -and $rawValue -isnot [string]) {
+                        return (@($rawValue | ForEach-Object { [string]$_ }) -join ', ')
+                    }
+                    return [string]$rawValue
+                }
+            }
+            return $null
+        }
+
+        if ($Headers -is [System.Net.Http.Headers.HttpHeaders]) {
+            $typedValues = $null
+            if ($Headers.TryGetValues($Name, [ref]$typedValues)) {
+                return (@($typedValues | ForEach-Object { [string]$_ }) -join ', ')
+            }
+            return $null
+        }
+
+        if ($Headers -is [System.Net.WebHeaderCollection]) {
+            $headerValues = $Headers.GetValues($Name)
+            if ($null -ne $headerValues) {
+                return (@($headerValues | ForEach-Object { [string]$_ }) -join ', ')
+            }
+            return $null
+        }
+
+        $headerValues = $null
+        if ($Headers.PSObject.Methods.Name -contains 'TryGetValues') {
+            $typedValues = $null
+            if ($Headers.TryGetValues($Name, [ref]$typedValues)) {
+                return (@($typedValues | ForEach-Object { [string]$_ }) -join ', ')
+            }
+            return $null
+        }
+
+        if ($Headers.PSObject.Methods.Name -contains 'GetValues') {
+            try {
+                $headerValues = $Headers.GetValues($Name)
+            } catch {
+                $headerValues = $null
+            }
+            if ($null -ne $headerValues) {
+                return (@($headerValues | ForEach-Object { [string]$_ }) -join ', ')
+            }
+        }
+
+        try {
+            $indexed = $Headers[$Name]
+            if ($null -ne $indexed) {
+                if ($indexed -is [System.Collections.IEnumerable] -and $indexed -isnot [string]) {
+                    return (@($indexed | ForEach-Object { [string]$_ }) -join ', ')
+                }
+                return [string]$indexed
+            }
+        } catch {}
+
+        $matchedProperty = @($Headers.PSObject.Properties | Where-Object {
+                [string]::Equals($_.Name, $Name, [System.StringComparison]::OrdinalIgnoreCase)
+            } | Select-Object -First 1)
+        if ($matchedProperty.Count -gt 0) {
+            $value = $matchedProperty[0].Value
+            if ($value -is [System.Collections.IEnumerable] -and $value -isnot [string]) {
+                return (@($value | ForEach-Object { [string]$_ }) -join ', ')
+            }
+            return [string]$value
+        }
+
+        return $null
+    }
+
     $tokenArgs = @{}
     if ($PSBoundParameters.ContainsKey('TenantId')) { $tokenArgs['TenantId'] = $TenantId }
     if ($PSBoundParameters.ContainsKey('Token')) { $tokenArgs['Token'] = $Token }
@@ -290,11 +371,7 @@ function Invoke-FinOpsLiveCollection {
             } else {
                 $null
             }
-            $scopeHeader = $null
-            if ($probeResponseHeaders -is [System.Collections.IDictionary]) {
-                if ($probeResponseHeaders.Contains('X-OAuth-Scopes')) { $scopeHeader = [string]$probeResponseHeaders['X-OAuth-Scopes'] }
-                elseif ($probeResponseHeaders.Contains('x-oauth-scopes')) { $scopeHeader = [string]$probeResponseHeaders['x-oauth-scopes'] }
-            }
+            $scopeHeader = Get-FinOpsHeaderValue -Headers $probeResponseHeaders -Name 'X-OAuth-Scopes'
             $scopes = @()
             if (-not [string]::IsNullOrWhiteSpace($scopeHeader)) {
                 $scopes = @(
