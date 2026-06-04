@@ -12,9 +12,18 @@ import json
 import tempfile
 from pathlib import Path
 
-from click.testing import CliRunner
+from click.testing import CliRunner, Result
 
 from finops_assess.cli import main
+
+
+def _stderr_or_output(result: Result) -> str:
+    """Return stderr when CliRunner captures it separately, else combined output."""
+    try:
+        stderr = result.stderr
+    except ValueError:
+        return result.output
+    return str(stderr)
 
 
 def _write_orphan(directory: Path) -> Path:
@@ -55,14 +64,17 @@ def test_cleanup_orphans_cli_removes_orphaned_jsonl(tmp_path: Path) -> None:
             "--skip-warnings",
         ],
     )
-    assert result.exit_code == 0, f"CLI failed: stdout={result.stdout!r} stderr={result.stderr!r}"
+    stderr_or_output = _stderr_or_output(result)
+    assert result.exit_code == 0, (
+        f"CLI failed: stdout={result.stdout!r} stderr_or_output={stderr_or_output!r}"
+    )
     assert not orphan.exists(), "Orphan should have been deleted by --cleanup-orphans"
     assert out_jsonl.exists(), "Playbook JSONL should have been written"
     manifest = out_jsonl.parent / (out_jsonl.name + ".manifest.json")
     assert manifest.exists(), "Manifest should have been written"
     # The CLI must report orphan removal on stderr.
-    assert "orphan" in result.stderr.lower(), (
-        f"Expected stderr mention of orphan removal; got: {result.stderr!r}"
+    assert "orphan" in stderr_or_output.lower(), (
+        f"Expected stderr mention of orphan removal; got: {stderr_or_output!r}"
     )
     # And the manifest must declare the new (honest) per-run stability.
     parsed = json.loads(manifest.read_text(encoding="utf-8"))
@@ -96,6 +108,9 @@ def test_cleanup_orphans_cli_default_off_preserves_orphans(tmp_path: Path) -> No
             "--skip-warnings",
         ],
     )
-    assert result.exit_code == 0, f"CLI failed: stdout={result.stdout!r} stderr={result.stderr!r}"
+    stderr_or_output = _stderr_or_output(result)
+    assert result.exit_code == 0, (
+        f"CLI failed: stdout={result.stdout!r} stderr_or_output={stderr_or_output!r}"
+    )
     assert orphan.exists(), "Orphan must survive when --cleanup-orphans is absent"
     assert out_jsonl.exists(), "Playbook JSONL should have been written"
