@@ -13,6 +13,7 @@ env/
 
 # Testing & coverage
 .pytest_cache/
+tests/.pytest_tmp/
 .coverage
 .coverage.*
 htmlcov/
