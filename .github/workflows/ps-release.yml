@@ -49,9 +49,21 @@ jobs:
       - name: Validate module manifest
         shell: pwsh
         run: Test-ModuleManifest -Path './powershell/FinOpsAssess/FinOpsAssess.psd1'
+      - name: Install Pester and PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
+          Install-Module Pester -MinimumVersion 5.5.0 -Scope CurrentUser -Force
       - name: Run Pester suite
         shell: pwsh
-        run: Invoke-Pester -Path powershell/tests -Output Detailed -CI
+        run: |
+          Import-Module Pester -MinimumVersion 5.5.0 -Force
+          $config = New-PesterConfiguration
+          $config.Run.Path = './powershell/tests'
+          $config.Run.Throw = $true
+          $config.Output.Verbosity = 'Detailed'
+          Invoke-Pester -Configuration $config
       - name: Run PSScriptAnalyzer
         shell: pwsh
         run: |
