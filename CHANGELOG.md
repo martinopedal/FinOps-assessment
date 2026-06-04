@@ -7,6 +7,10 @@ release.
 
 ## Unreleased
 
+_None._
+
+## [0.1.0] — 2026-06-03
+
 ### Added
 
 - **PowerShell cmdlet reference docs + drift gate (Phase 7c).**
@@ -25,10 +29,6 @@ release.
   The workflow enforces tag-vs-manifest matching plus CHANGELOG readiness via
   shared `scripts/Test-ReleaseReadiness.ps1` functions exercised directly by
   Pester tests.
-
-## [0.1.0] — 2026-06-03
-
-### Added
 
 - **PowerShell Gallery packaging metadata + readiness gate (Phase 7a).**
   Shipped gallery-ready manifest hygiene (`Description`, expanded tags, and 0.1.0 release notes),
